@@ -77,13 +77,13 @@ function init(){
 			.then(function(jR){
 				var address = jR.address;
         if (address)
-				    objWithCoordinates.push({municipality:address.city||address.town||address.village||address.hamlet,id:station.id,"@class":"it.bz.idm.bdp.dto.StationDto",stationType:station.stationType});
+				    objWithCoordinates.push({municipality:address.city||address.town||address.village||address.hamlet,id:station.id,"_t":"it.bz.idm.bdp.dto.StationDto",stationType:station.stationType});
         else {
             logger.info("Could not get address info of object with id" + station.id);
         }
 			}).then(function(){
 				setTimeout(recursiveRetrival,1000);
-			}).catch(err => console.log(err));
+			}).catch(function(err){console.log(err);setTimeout(recursiveRetrival,1000)});
 		}
 	}).catch(err => console.log(err));
 }
