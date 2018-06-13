@@ -1,0 +1,14 @@
+TODO
+====
+
+Known issues and bugs
+--------------------------------------------------------------------------------
+		
+	
+	
+To be done in future releases
+--------------------------------------------------------------------------------
+		
+	- Add more periodicities (currently only hourly periodicities), such 
+	that requests for the next half hour or quarter hours can be 
+	processed.
