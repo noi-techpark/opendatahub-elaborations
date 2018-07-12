@@ -18,7 +18,8 @@ pipeline {
 	}
 	stage('Archive'){
             steps {
-	       sh 'cp ts-forecast/target/parking-forecast.war /var/builds/prod-server-dc/' 
+	       sh 'mkdir -p /var/builds/prod-server-elaborations/'
+	       sh 'cp ts-forecast/target/parking-forecast.war /var/builds/prod-server-elaborations/' 
 	    }
         }
     }
