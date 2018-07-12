@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment{
-	FORECAST_CONFIG=credentials('test-parking-forecasts.properties')
+	FORECAST_CONFIG=credentials('prod-parking-forecasts')
     }
     stages {
         stage('Test') {
