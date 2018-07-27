@@ -3,6 +3,7 @@ pipeline {
 
     environment{
 	FORECAST_CONFIG=credentials('test-parking-forecasts.properties')
+	TESTSERVER_TOMCAT_ENDPOINT=credentials('testserver-tomcat8-url')
     }
     stages {
         stage('Test') {
@@ -20,6 +21,11 @@ pipeline {
             steps {
 	       sh 'cp ts-forecast/target/parking-forecast.war /var/builds/test-server/' 
 	    }
+        }
+	stage('Deploy') {
+            steps{
+                sh 'cd ts-forecast && mvn tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
+            }
         }
     }
 }
