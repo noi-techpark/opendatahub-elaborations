@@ -4,11 +4,13 @@ pipeline {
     environment{
 	FORECAST_CONFIG=credentials('test-parking-forecasts.properties')
 	TESTSERVER_TOMCAT_ENDPOINT=credentials('testserver-tomcat8-url')
+	DATABASE_PROPERTIES=credentials('parking-forecasts-db-properties')
     }
     stages {
         stage('Test') {
             steps {
 	       sh 'cat ${FORECAST_CONFIG} > ts-model/src/main/resources/META-INF/spring/external.properties'
+	       sh 'cat ${DATABASE_PROPERTIES} > ts-model/src/main/resources/META-INF/spring/database.properties'
 	       sh 'cd ts-model && mvn clean test' 
             }
         }
@@ -17,11 +19,6 @@ pipeline {
 	       sh 'cd ts-model && mvn package' 
 	    }
 	}
-	stage('Archive'){
-            steps {
-	       sh 'cp ts-model/target/parking-forecast.war /var/builds/test-server/' 
-	    }
-        }
 	stage('Deploy') {
             steps{
                 sh 'cd ts-model && mvn tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
