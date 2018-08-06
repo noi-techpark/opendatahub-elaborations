@@ -1,0 +1,16 @@
+TODO
+====
+
+Known issues and bugs
+--------------------------------------------------------------------------------
+		
+	
+	
+To be done in future releases
+--------------------------------------------------------------------------------
+		
+	- Add more periodicities (currently only hourly periodicities), 
+	if the performance issues with large datasets in weka can be solved
+	- Implement data preprocessor in order to clean the most evident 
+	errors
+	- add skip-lists, if performance issues can be solved

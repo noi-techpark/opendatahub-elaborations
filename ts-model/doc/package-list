@@ -1,0 +1,13 @@
+it.unibz.tsmodel
+it.unibz.tsmodel.configuration
+it.unibz.tsmodel.dao
+it.unibz.tsmodel.domain
+it.unibz.tsmodel.forecast
+it.unibz.tsmodel.forecast.domain
+it.unibz.tsmodel.model
+it.unibz.tsmodel.model.evaluation
+it.unibz.tsmodel.model.strategy
+it.unibz.tsmodel.overlay
+it.unibz.tsmodel.overlay.weather
+it.unibz.tsmodel.parser
+it.unibz.tsmodel.parser.tis
