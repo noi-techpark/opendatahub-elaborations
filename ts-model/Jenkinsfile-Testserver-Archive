@@ -7,10 +7,15 @@ pipeline {
 	DATABASE_PROPERTIES=credentials('parking-forecasts-db-properties')
     }
     stages {
-        stage('Test') {
-            steps {
+	stage('Configure'){
+	   steps{
 	       sh 'cat ${FORECAST_CONFIG} > ts-model/src/main/resources/META-INF/spring/external.properties'
 	       sh 'cat ${DATABASE_PROPERTIES} > ts-model/src/main/resources/META-INF/spring/database.properties'
+               sh 'sed -i -e "s%\\(log4j.appender.R.File=\\).*\\$%\\1/var/log/opendatahub/data-collectors/tsmodel.log%" ts-model/src/main/resources/log4j.properties'
+	   }
+	}
+        stage('Test') {
+            steps {
 	       sh 'cd ts-model && mvn clean test' 
             }
         }
