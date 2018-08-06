@@ -25,7 +25,7 @@ pipeline {
 	stage('Archive'){
             steps {
 	       sh 'mkdir -p /var/builds/prod-server-elaborations/'
-       	       sh 'cp ts-model/target/parking-forecast.war /var/builds/prod-server-elaborations/' 
+       	       sh 'cp ts-model/target/ts-model.war /var/builds/prod-server-elaborations/' 
 	    }
         }
     }
