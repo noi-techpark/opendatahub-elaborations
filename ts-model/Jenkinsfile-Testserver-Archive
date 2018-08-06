@@ -2,14 +2,12 @@ pipeline {
     agent any
 
     environment{
-	FORECAST_CONFIG=credentials('test-parking-forecasts.properties')
 	TESTSERVER_TOMCAT_ENDPOINT=credentials('testserver-tomcat8-url')
 	DATABASE_PROPERTIES=credentials('parking-forecasts-db-properties')
     }
     stages {
 	stage('Configure'){
 	   steps{
-	       sh 'cat ${FORECAST_CONFIG} > ts-model/src/main/resources/META-INF/spring/external.properties'
 	       sh 'cat ${DATABASE_PROPERTIES} > ts-model/src/main/resources/META-INF/spring/database.properties'
                sh 'sed -i -e "s%\\(log4j.appender.R.File=\\).*\\$%\\1/var/log/opendatahub/data-collectors/tsmodel.log%" ts-model/src/main/resources/log4j.properties'
 	   }

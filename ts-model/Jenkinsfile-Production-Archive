@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+
+    environment{
+        DATABASE_PROPERTIES=credentials('parking-forecasts-db-properties')
+    }
+    stages {
+        stage('Configure'){
+           steps{
+               sh 'cat ${DATABASE_PROPERTIES} > ts-model/src/main/resources/META-INF/spring/database.properties'
+               sh 'sed -i -e "s%\\(log4j.appender.R.File=\\).*\\$%\\1/var/log/opendatahub/data-collectors/tsmodel.log%" ts-model/src/main/resources/log4j.properties'
+           }
+        }
+
+        stage('Test') {
+            steps {
+	       sh 'cd ts-model && mvn clean test' 
+            }
+        }
+	stage('Build'){
+            steps {
+	       sh 'cd ts-model && mvn package' 
+	    }
+	}
+	stage('Archive'){
+            steps {
+	       sh 'mkdir -p /var/builds/prod-server-elaborations/'
+       	       sh 'cp ts-model/target/parking-forecast.war /var/builds/prod-server-elaborations/' 
+	    }
+        }
+    }
+}
