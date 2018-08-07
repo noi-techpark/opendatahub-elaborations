@@ -1,13 +1,9 @@
 pipeline {
     agent any
 
-    environment{
-	FORECAST_CONFIG=credentials('prod-parking-forecasts')
-    }
     stages {
         stage('Test') {
             steps {
-	       sh 'cat ${FORECAST_CONFIG} > ts-forecast/src/main/resources/META-INF/spring/external.properties'
 	       sh 'cd ts-forecast && mvn clean test' 
             }
         }
