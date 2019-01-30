@@ -29,7 +29,7 @@ var getTownNameByCoordinate = function(longitude,latitude){
 		request.get({
     			url: osmReverseLookupUrl,
 			headers:{
-				referer:'IDM-Suedtirol'
+				referer:'NOI-Techpark'
 			},
 		    	json: true,
 			qs:{
@@ -66,18 +66,17 @@ function init(){
 		var objWithCoordinates = [];
 		recursiveRetrival();
 		function recursiveRetrival(){
-      logger.info("Found "+ objWithCoordinates.length +" of " + totalLength);
-			if (stations.length === 0){
-        logger.info("About to send "+objWithCoordinates.length +" objects");
-				send(objWithCoordinates);
-				return objWithCoordinates;
-			}
+      logger.info("Found "+ (totalLength-stations.length+1) +" of " + totalLength);
+			if (stations.length === 0)
+				return ;
 			var station = stations.pop();
 			getTownNameByCoordinate(station.longitude, station.latitude)
 			.then(function(jR){
 				var address = jR.address;
-        if (address)
-				    objWithCoordinates.push({municipality:address.city||address.town||address.village||address.hamlet,id:station.id,"_t":"it.bz.idm.bdp.dto.StationDto",stationType:station.stationType});
+        if (address){
+						logger.info("About to send an object");
+				    send([{municipality:address.city||address.town||address.village||address.hamlet,id:station.id,"_t":"it.bz.idm.bdp.dto.StationDto",stationType:station.stationType}]);
+				}
         else {
             logger.info("Could not get address info of object with id" + station.id);
         }
