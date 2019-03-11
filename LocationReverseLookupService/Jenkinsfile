@@ -1,0 +1,23 @@
+pipeline {
+    agent {
+        dockerfile {
+            filename 'docker/Dockerfile'
+        }
+    }
+    stages {
+        stage('Configure') {
+            steps {
+            }
+        }
+        stage('Install') {
+            steps {
+                sh 'cd LocationReverseLookupService && npm install'
+            }
+        }
+        stage('Run') {
+            steps {
+		sh 'cd LocationReverseLookupService && node app.js'
+            }
+        }
+    }
+}
