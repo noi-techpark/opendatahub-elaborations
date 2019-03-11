@@ -1,14 +1,11 @@
 pipeline {
     agent {
         dockerfile {
-            filename 'docker/Dockerfile'
+            filename 'LocationReverseLookupService/docker/Dockerfile'
+            additionalBuildArgs '--build-arg JENKINS_USER_ID=`id -u jenkins` --build-arg JENKINS_GROUP_ID=`id -g jenkins`'
         }
     }
     stages {
-        stage('Configure') {
-            steps {
-            }
-        }
         stage('Install') {
             steps {
                 sh 'cd LocationReverseLookupService && npm install'
