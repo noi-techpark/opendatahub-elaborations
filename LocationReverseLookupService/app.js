@@ -1,5 +1,6 @@
-const endpoint = "http://127.0.0.1:8080/writer/json/stationsWithoutMunicipality";
-const sendUrl = "http://127.0.0.1:8080/writer/json/patchStations";
+const endpointUrl = process.env.odhEndpoint;
+const stationsUrl = endpointUrl+"/stationsWithoutMunicipality";
+const sendUrl = endpointUrl+"/patchStations";
 const logger = require('winston');
 logger.level='info';
 const osmReverseLookupUrl = "http://nominatim.openstreetmap.org/reverse";
@@ -11,10 +12,10 @@ exports.handler = (event, context, callback) => {
 exports.getInputData = function(){
 	return new Promise(function(resolve,reject){
 		request.get({
-			url: endpoint,
+			url: stationsUrl,
 		    	json: true
 		}, function (error, response, body) {
-			logger.info(body);
+			logger.debug(body);
     			if (!error && response.statusCode === 200)
 				      resolve(body);
 		    	else
