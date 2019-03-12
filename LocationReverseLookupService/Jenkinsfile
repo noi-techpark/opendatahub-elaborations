@@ -1,4 +1,7 @@
 pipeline {
+    environment{
+        odhEndpoint = credentials('rls.odhTestEndpoint')
+    }
     agent {
         dockerfile {
             filename 'LocationReverseLookupService/docker/Dockerfile'
