@@ -1,0 +1,23 @@
+pipeline {
+    environment{
+        odhEndpoint = credentials('rls.odhEndpoint')
+    }
+    agent {
+        dockerfile {
+            filename 'LocationReverseLookupService/docker/Dockerfile'
+            additionalBuildArgs '--build-arg JENKINS_USER_ID=`id -u jenkins` --build-arg JENKINS_GROUP_ID=`id -g jenkins`'
+        }
+    }
+    stages {
+        stage('Install') {
+            steps {
+                sh 'cd LocationReverseLookupService && npm install'
+            }
+        }
+        stage('Run') {
+            steps {
+		sh 'cd LocationReverseLookupService && node app.js'
+            }
+        }
+    }
+}
