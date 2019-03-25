@@ -11,16 +11,16 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * @author mreinstalder
  * persistence functions for {@link ParkingPlace} objects
- *
+ * @author mreinstalder
+ * @author Patrick Bertolla
  */
 @Repository
 public class ParkingPlaceDao {
 
 	@PersistenceContext
 	private EntityManager entityManager;
-	
+
 //	/**
 //	 * @param id
 //	 * @return the {@link ParkingPlace} with the requested id
@@ -28,7 +28,7 @@ public class ParkingPlaceDao {
 //	public  ParkingPlace findParkingPlace(int id) {
 //        return entityManager.find(ParkingPlace.class, id);
 //    }
-	
+
 	/**
 	 * @return the list of {@link ParkingPlace} present in the DB
 	 */
@@ -42,5 +42,14 @@ public class ParkingPlaceDao {
 	@Transactional
 	public void persist(ParkingPlace place) {
 		entityManager.persist(place);
+	}
+
+	/**
+	 * update an existing parkingplace
+	 * @param place entity to update/merge
+	 */
+	@Transactional
+	public void merge(ParkingPlace place) {
+		entityManager.merge(place);
 	}
 }
