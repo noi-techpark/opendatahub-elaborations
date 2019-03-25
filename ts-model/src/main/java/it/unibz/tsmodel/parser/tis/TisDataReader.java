@@ -25,7 +25,8 @@ import it.unibz.tsmodel.domain.ParkingPlace;
  * https://bitbucket.org/sipai/sipai-mobile/wiki/TIS%20Webservices
  * 
  * @author mreinstadler
- * 
+ * @author Patrick Bertolla
+ *
  */
 class TisDataReader {
 
@@ -35,7 +36,7 @@ class TisDataReader {
 	/**
 	 * the url of the webservice determining the free slots
 	 */
-	private final static String FREESLOTS_URL = "http://ipchannels.integreen-life.bz.it/parking/rest/get-records-in-timeframe?name=free&station=";
+	private final static String OCCUPIED_URL = "http://ipchannels.integreen-life.bz.it/parking/rest/get-records-in-timeframe?name=occupied&station=";
 	/**
 	 * the url of the webservice determining the parking ids
 	 */
@@ -64,7 +65,7 @@ class TisDataReader {
 		}
 		Calendar now = Calendar.getInstance();
 		int count =0;
-		StringBuilder urlStringBuilder = new StringBuilder(FREESLOTS_URL);
+		StringBuilder urlStringBuilder = new StringBuilder(OCCUPIED_URL);
 		urlStringBuilder.append(parkingId);
 		urlStringBuilder.append("&from=");
 		urlStringBuilder.append(fromDate.getTime());
@@ -178,6 +179,32 @@ class TisDataReader {
 			return null;
 		}
 	}
+	/**
+	 * @param config the configuration of the application
+	 * @return List of all station metadata provided by the noi webservice
+	 */
+	public static List<Map<String,Object>> retrieveParkingPlaces(TSModelConfig config) {
+		logger.info("Sync parking places");
+		try {
+			StringBuilder urlStringBuilder = new StringBuilder(
+					PARKING_METADATA_URL);
+			URL url;
+			url = new URL(urlStringBuilder.toString());
+			//url = new URL("http", PROXY, 8080, urlStringBuilder.toString());
+			URLConnection urlConnection = url.openConnection();
+			urlConnection.setDoOutput(true);
+			urlConnection.setAllowUserInteraction(false);
+			BufferedReader bufferedReader = new BufferedReader(
+					new InputStreamReader(urlConnection.getInputStream()));
+			JSONDeserializer<List<Map<String, Object>>> jsonDeserializer = new JSONDeserializer<List<Map<String, Object>>>();
+			List<Map<String, Object>> stations = jsonDeserializer
+					.deserialize(bufferedReader);
+			return stations;
+		} catch (IOException e) {
+			logger.warn( "Fail to retrieve parking stations metadata");
+			return null;
+		}
+	}
 	private static Map<String, Object> findStation(List<Map<String, Object>> stations, String parkingid) {
 		for (Map<String, Object> station : stations) {
 			if (station.get("id").toString().equals(parkingid))
@@ -190,7 +217,7 @@ class TisDataReader {
 	 * @return the freeslotsUrl
 	 */
 	public static String getFreeslotsUrl() {
-		return FREESLOTS_URL;
+		return OCCUPIED_URL;
 	}
 
 	/**
@@ -206,6 +233,5 @@ class TisDataReader {
 	public static String getParkingMetadataUrl() {
 		return PARKING_METADATA_URL;
 	}
-
 
 }
