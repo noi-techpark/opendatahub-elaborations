@@ -1,24 +1,27 @@
 package it.unibz.tsmodel.parser.tis;
 
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import it.unibz.tsmodel.configuration.TSModelConfig;
 import it.unibz.tsmodel.dao.ParkingObservationDao;
 import it.unibz.tsmodel.dao.ParkingPlaceDao;
 import it.unibz.tsmodel.domain.ParkingObservation;
 import it.unibz.tsmodel.domain.ParkingPlace;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-
-import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-
 /**
- * @author mreinstadler this utility class performs all the actions on parking
+ * this utility class performs all the actions on parking
  *         lots (stored in database and found through TIS webservice)
- * 
+ * @author mreinstadler
+ * @author Patrick Bertolla
+ *
  */
 public class ParkingUtil {
 
@@ -68,39 +71,57 @@ public class ParkingUtil {
 	/**
 	 * @return the list of {@link ParkingPlace} found in the database.
 	 *         furthermore the tis webservice is asked for new places and they
-	 *         are saved and added to that list
+	 *         are upserted
 	 */
 	public List<ParkingPlace> retrieveParkingPlaces() {
+
 		List<ParkingPlace> storedPlaces = this.placeDao.findAllParkingPlaces();
-		ArrayList<String> tisPids = TisDataReader.retrieveParkingIDs(config);
-		for (String pid : tisPids) {
-			if (!placeContained(storedPlaces, pid)) {
-				ParkingPlace newPlace = TisDataReader.retrieveParkingPlace(pid, config);
-				placeDao.persist(newPlace);
-				storedPlaces.add(newPlace);	
-			}
-		}
+		List<Map<String, Object>> wsStations = TisDataReader.retrieveParkingPlaces(config);
+		upsertParkingPlaces(storedPlaces,wsStations);
 		return storedPlaces;
 	}
 
-	
+
 
 	/**
-	 * @param parkingPlaces
-	 *            the list of {@link ParkingPlace}. can be null
-	 * @param pid
-	 *            the id of the {@link ParkingPlace}
-	 * @return true if the list contains the {@link ParkingPlace} with the
-	 *         requested id
+	 * Upserts current stations in db, using station metadata provided by tis-webservice
+	 * @param storedPlaces places which are stored in the local db
+	 * @param wsStations places which the tis webservice provides
 	 */
-	private boolean placeContained(List<ParkingPlace> parkingPlaces, String pid) {
+	private void upsertParkingPlaces(List<ParkingPlace> storedPlaces, List<Map<String, Object>> wsStations) {
+		for (Map<String, Object> parkingplace:wsStations) {
+			String pid = parkingplace.get("id").toString();
+			if (pid != null) {
+				ParkingPlace storedPlace = placeContained(storedPlaces,pid);
+				if (storedPlace != null) {
+					storedPlace.setPhone((String) parkingplace.get("phonenumber"));
+					storedPlace.setAdress((String) parkingplace.get("mainaddress"));
+					storedPlace.setMaxSlots((Integer) parkingplace.get("capacity"));
+					storedPlace.setName((String) parkingplace.get("name"));
+					storedPlace.setDescription((String) parkingplace.get("name"));
+					storedPlace.setLongitude((Double) parkingplace.get("longitude"));
+					storedPlace.setLatitude((Double) parkingplace.get("latitude"));
+					placeDao.merge(storedPlace);
+				}
+				else {
+					ParkingPlace newPlace = new ParkingPlace(parkingplace);
+					placeDao.persist(newPlace);
+					storedPlaces.add(newPlace);
+				}
+
+			}
+
+		}
+	}
+
+	private ParkingPlace placeContained(List<ParkingPlace> parkingPlaces, String pid) {
 		if(parkingPlaces==null||parkingPlaces.isEmpty())
-			return false;
+			return null;
 		for (ParkingPlace p : parkingPlaces) {
 			if (p.getParkingId().equals(pid))
-				return true;
+				return p;
 		}
-		return false;
+		return null;
 	}
 
 	/**
