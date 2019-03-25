@@ -1,14 +1,5 @@
 package it.unibz.tsmodel.parser;
 
-import it.unibz.tsmodel.configuration.TSModelConfig;
-import it.unibz.tsmodel.domain.ObservationPeriodicity;
-import it.unibz.tsmodel.domain.ParkingObservation;
-import it.unibz.tsmodel.domain.ParkingPlace;
-import it.unibz.tsmodel.overlay.OverlayAttributes;
-import it.unibz.tsmodel.parser.filter.TSInterpolationFilter;
-import it.unibz.tsmodel.parser.filter.TSManualInterpolFilter;
-import it.unibz.tsmodel.parser.tis.ParkingUtil;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,11 +8,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import it.unibz.tsmodel.configuration.TSModelConfig;
+import it.unibz.tsmodel.domain.ObservationPeriodicity;
+import it.unibz.tsmodel.domain.ParkingObservation;
+import it.unibz.tsmodel.domain.ParkingPlace;
+import it.unibz.tsmodel.overlay.OverlayAttributes;
+import it.unibz.tsmodel.parser.filter.TSInterpolationFilter;
+import it.unibz.tsmodel.parser.tis.ParkingUtil;
+
 /**
  * @author mreinstadler this class is used to generate arff strings for the weka
  *         input. For further information on arff strings see the weka
  *         documentation on http://weka.wikispaces.com/ARFF
- * 
+ *
  */
 public class TimeSeries {
 
@@ -35,7 +34,7 @@ public class TimeSeries {
 	private ParkingUtil parkingUtil;
 
 
-	
+
 	/**
 	 * initializes the {@link TimeSeries}
 	 */
@@ -44,12 +43,12 @@ public class TimeSeries {
 
 
 	/**
-	 * this method creates history arff strings in the following way: 
-	 * 1) Looks for parking lots 
-	 * 2) Creates for each lots all the observations from db 
-	 * 3) checks the TIS webservice if new observations are available and persists them 
+	 * this method creates history arff strings in the following way:
+	 * 1) Looks for parking lots
+	 * 2) Creates for each lots all the observations from db
+	 * 3) checks the TIS webservice if new observations are available and persists them
 	 * 4) Filters the observations if required (see {@link ObservationPeriodicity}) for time-spans
-	 * 5) Filters the observations for faulty data  
+	 * 5) Filters the observations for faulty data
 	 * 6) creates for each parking place the arff string
 	 * @param periodicity the time distance between {@link ParkingObservation}
 	 * @return the list of {@link ArffParkingObject}, one for each parking
@@ -65,7 +64,7 @@ public class TimeSeries {
 			String parkingId = place.getParkingId();
 			logger.info("Start to create arff string for parkingplace " + parkingId);
 			List<ParkingObservation> parkingObservations = parkingUtil.getPersistedParkingObservations(parkingId);
-			parkingObservations = parkingUtil.constructStoredAndNewObservations(parkingObservations, place.getParkingId());
+			parkingObservations = parkingUtil.constructStoredAndNewObservations(parkingObservations, place);
 				parkingObservations = arffStringGenerator.filterObservationsTimespan(
 						parkingObservations, periodicity);
 			TSInterpolationFilter filter = this.config.getInterpolationStrategy().getInterpolationStrategy();
@@ -89,7 +88,7 @@ public class TimeSeries {
 	 * @return the arff instances for the future
 	 */
 	public String generateFutureArff(ObservationPeriodicity periodicity) {
-		ArffFutureGenerator arffFutureGenerator = 
+		ArffFutureGenerator arffFutureGenerator =
 				new ArffFutureGenerator(periodicity, this.config);
 		String futureArffString = arffFutureGenerator.generateArff(
 					null, this.overlayAttributes);
@@ -112,8 +111,8 @@ public class TimeSeries {
 	public static String getForecastAttribute() {
 		return ArffPreprocessor.FORECASTATTRIBUTE;
 	}
-		
-	
+
+
 
 	/**
 	 * @return the config
@@ -145,7 +144,7 @@ public class TimeSeries {
 	public void setOverlayAttributes(OverlayAttributes overlayAttributes) {
 		this.overlayAttributes = overlayAttributes;
 	}
-	
+
 	/**
 	 * @return the futureDates
 	 */
@@ -160,13 +159,13 @@ public class TimeSeries {
 	public void setFutureDates(ArrayList<Timestamp> futureDates) {
 		this.futureDates = futureDates;
 	}
-	
-	
 
-	
 
-	
-	
-	
+
+
+
+
+
+
 
 }

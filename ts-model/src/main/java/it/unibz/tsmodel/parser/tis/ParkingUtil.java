@@ -35,16 +35,16 @@ public class ParkingUtil {
 	/**
 	 * adds new {@link ParkingObservation} found through Tis webservice to the
 	 * already stored {@link ParkingObservation} in database
-	 * 
+	 *
 	 * @param dbParkingObservations
 	 *            the {@link ParkingObservation} s found in the db
-	 * @param parkingId
-	 *            the id of the {@link ParkingObservation} s found in the db
-	 * @return the new list of {@link ParkingObservation} containing stored 
+	 * @param place
+	 *            the parking place {@link ParkingObservation} found in the db
+	 * @return the new list of {@link ParkingObservation} containing stored
 	 * observations and newly found observation
 	 */
-	public List<ParkingObservation> constructStoredAndNewObservations( 
-			List<ParkingObservation> dbParkingObservations, String parkingId) {
+	public List<ParkingObservation> constructStoredAndNewObservations(
+			List<ParkingObservation> dbParkingObservations, ParkingPlace place) {
 		Date lastDate= Calendar.getInstance().getTime();
 		List<ParkingObservation> result;
 		if (dbParkingObservations == null || dbParkingObservations.isEmpty()) {
@@ -56,7 +56,7 @@ public class ParkingUtil {
 					result.size() - 1).getTimestamp();
 			lastDate = DateUtils.addMinutes(lastDate, 5);
 		}
-		ArrayList<ParkingObservation> newObservations = TisDataReader.retrieveFreeSlotss(parkingId, lastDate, config);
+		ArrayList<ParkingObservation> newObservations = TisDataReader.retrieveFreeSlots(place, lastDate, config);
 		for (ParkingObservation observation : newObservations) {
 			if (result.isEmpty() || observation.getTimestamp().after(
 					result.get(result.size() - 1)

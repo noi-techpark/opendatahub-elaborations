@@ -23,7 +23,7 @@ import it.unibz.tsmodel.domain.ParkingPlace;
  * this class is used to call the webservice of TIS to get the data about free
  * parking places in the past. For further information see
  * https://bitbucket.org/sipai/sipai-mobile/wiki/TIS%20Webservices
- * 
+ *
  * @author mreinstadler
  * @author Patrick Bertolla
  *
@@ -48,16 +48,16 @@ class TisDataReader {
 
 	/**
 	 * calls the web-service from TIS for the new {@link ParkingObservation}
-	 * @param parkingId the id of the parking place
+	 * @param place the parking place from db
 	 * @param fromDate the date from when the reader should read. Cannot be null
 	 * @param config the configuration of the application
 	 * @return the list of {@link ParkingObservation} found through tis webservice
-	 * 
+	 *
 	 */
 	//TODO: retrieve data from intime db
-	public static ArrayList<ParkingObservation> retrieveFreeSlotss(String parkingId, Date fromDate, TSModelConfig config) {
+	public static ArrayList<ParkingObservation> retrieveFreeSlots(ParkingPlace place, Date fromDate, TSModelConfig config) {
 
-		logger.info("Reading free slots of parking place "+ parkingId + " from webservice starting from " + fromDate);	
+		logger.info("Reading free slots of parking place "+ place + " from webservice starting from " + fromDate);
 		ArrayList<ParkingObservation> res = new ArrayList<ParkingObservation>();
 		if(fromDate==null){
 			logger.equals("The date to read from the TIS webservice was null");
@@ -66,7 +66,7 @@ class TisDataReader {
 		Calendar now = Calendar.getInstance();
 		int count =0;
 		StringBuilder urlStringBuilder = new StringBuilder(OCCUPIED_URL);
-		urlStringBuilder.append(parkingId);
+		urlStringBuilder.append(place.getParkingId());
 		urlStringBuilder.append("&from=");
 		urlStringBuilder.append(fromDate.getTime());
 		urlStringBuilder.append("&to=");
@@ -88,20 +88,21 @@ class TisDataReader {
 			for (Map<String,Object> singleResult : jsonResult) {
 				Timestamp currentTimestamp = new Timestamp((Long) singleResult.get("timestamp"));
 				int currentObservedValue = (Integer) singleResult.get("value");
-				ParkingObservation newObservation= new ParkingObservation(currentTimestamp,currentObservedValue, parkingId);
+				int freeSlots = place.getMaxSlots() - currentObservedValue;
+				ParkingObservation newObservation= new ParkingObservation(currentTimestamp,freeSlots, place.getParkingId());
 				res.add(newObservation);
-				count++;		
+				count++;
 			}
 			bufferedReader.close();
 
 		} catch (IOException e) {
-			logger.warn("fail to read free slots of parkingplace " + parkingId
+			logger.warn("fail to read free slots of parkingplace " + place
 					+ " from TIS webservice");
 		}
 
 
 		logger.info( "Finish reading free slots of "
-				+ parkingId + " from webservice. Found " + count + " new observations");
+				+ place + " from webservice. Found " + count + " new observations");
 		return res;
 	}
 
@@ -140,7 +141,7 @@ class TisDataReader {
 	}
 
 	/**
-	 * this method retrieves a {@link ParkingPlace} from the TIS webservice, 
+	 * this method retrieves a {@link ParkingPlace} from the TIS webservice,
 	 * adds the newly found {@link ParkingObservation} to the {@link ParkingPlace}
 	 * and persists them in the database
 	 * @param parkingid
