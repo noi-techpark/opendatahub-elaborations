@@ -57,12 +57,11 @@ public class ParkingUtil {
 			lastDate = DateUtils.addMinutes(lastDate, 5);
 		}
 		ArrayList<ParkingObservation> newObservations = TisDataReader.retrieveFreeSlots(place, lastDate, config);
+		ParkingObservation newestStored = dao.findNewestObservationsByPlace(place.getParkingId());
 		for (ParkingObservation observation : newObservations) {
-			if (result.isEmpty() || observation.getTimestamp().after(
-					result.get(result.size() - 1)
-							.getTimestamp())) {
-					dao.persist(observation);
-					result.add(observation);
+			if (newestStored == null || newestStored.getTimestamp().before(observation.getTimestamp())) {
+				dao.persist(observation);
+				result.add(observation);
 			}
 		}
 		return result;
