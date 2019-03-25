@@ -87,7 +87,7 @@ class TisDataReader {
 					.deserialize(bufferedReader);
 			for (Map<String,Object> singleResult : jsonResult) {
 				Timestamp currentTimestamp = new Timestamp((Long) singleResult.get("timestamp"));
-				int currentObservedValue = (Integer) singleResult.get("value");
+				int currentObservedValue = ((Double) singleResult.get("value")).intValue();
 				int freeSlots = place.getMaxSlots() - currentObservedValue;
 				ParkingObservation newObservation= new ParkingObservation(currentTimestamp,freeSlots, place.getParkingId());
 				res.add(newObservation);
