@@ -8,6 +8,8 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,9 @@ import it.unibz.tsmodel.domain.ParkingObservation;
 
 @Repository
 public class ParkingObservationDao {
+
+	private final Log logger = LogFactory.getLog(ParkingObservationDao.class);
+
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -52,7 +57,7 @@ public class ParkingObservationDao {
 		try{
 			singleResult = typedQuery.getSingleResult();
 		}catch(NoResultException ex) {
-			ex.printStackTrace();
+			logger.debug("No entry for station with place id "+ parkingId);
 		}
 		return singleResult;
 	}
