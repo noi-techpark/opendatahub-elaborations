@@ -14,8 +14,8 @@ import org.hibernate.annotations.GenericGenerator;
 /**
  * @author mreinstadler
  * This class represents one parking observation stored in the DB. Timestamp and parking_id are
- * unique, the observed value represents the observed free slots at that time. 
- * The timestamp is expressed in 5 minutes (0,5,10,15,20,25,...) with seconds and 
+ * unique, the observed value represents the observed free slots at that time.
+ * The timestamp is expressed in 5 minutes (0,5,10,15,20,25,...) with seconds and
  * nanoseconds zero. (This is due to guarantee an equi spaces time-series)
  */
 @Entity
@@ -30,8 +30,8 @@ public class ParkingObservation implements Observation {
 	private Timestamp timestamp= null;
 	private String parkingplace;
 
-	public ParkingObservation(){	
-	
+	public ParkingObservation(){
+
 	}
 
 	/**
@@ -51,7 +51,7 @@ public class ParkingObservation implements Observation {
 			cal.add(Calendar.MINUTE, -1);
 		this.timestamp = new Timestamp(cal.getTimeInMillis());
 		this.parkingplace = parkingId;
-		
+
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class ParkingObservation implements Observation {
 	@Override
 	public void setTimestamp(Timestamp timestamp) {
 		this.timestamp = timestamp;
-		
+
 	}
 
 	@Override
@@ -94,7 +94,7 @@ public class ParkingObservation implements Observation {
 	@Override
 	public void setObservedValue(int observedValue) {
 		this.observedValue = observedValue;
-		
+
 	}
 	/**
 	 * @return the id
@@ -109,8 +109,21 @@ public class ParkingObservation implements Observation {
 	public void setId(long id) {
 		this.id = id;
 	}
-	
-	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof ParkingObservation) {
+			ParkingObservation obs = (ParkingObservation) obj;
+			return this.timestamp.equals(obs.timestamp)&&this.parkingplace.equals(obs.parkingplace)&& this.observedValue==obs.observedValue;
+		}
+		return false;
+	}
+	@Override
+	public int hashCode() {
+		// TODO Auto-generated method stub
+		Long value = this.getTimestamp().getTime();
+		return value.intValue();
+	}
+
 	@Override
 	public String toString(){
 		String nl = System.getProperty("line.separator");
