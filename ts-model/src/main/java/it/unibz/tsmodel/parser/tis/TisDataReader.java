@@ -8,8 +8,10 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,10 +60,10 @@ class TisDataReader {
 	public static ArrayList<ParkingObservation> retrieveFreeSlots(ParkingPlace place, Date fromDate, TSModelConfig config) {
 
 		logger.info("Reading free slots of parking place "+ place + " from webservice starting from " + fromDate);
-		ArrayList<ParkingObservation> res = new ArrayList<ParkingObservation>();
+		Set<ParkingObservation> res = new HashSet<ParkingObservation>();
 		if(fromDate==null){
 			logger.equals("The date to read from the TIS webservice was null");
-			return res;
+			return new ArrayList<ParkingObservation>();
 		}
 		Calendar now = Calendar.getInstance();
 		int count =0;
@@ -103,7 +105,7 @@ class TisDataReader {
 
 		logger.info( "Finish reading free slots of "
 				+ place + " from webservice. Found " + count + " new observations");
-		return res;
+		return new ArrayList<ParkingObservation>(res);
 	}
 
 	/**
