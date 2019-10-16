@@ -3,6 +3,7 @@ pipeline {
 
     environment{
         DATABASE_PROPERTIES=credentials('parking-forecasts-db-properties')
+        ARTIFACT_NAME = 'ts-model'
     }
     stages {
         stage('Configure'){
@@ -17,16 +18,16 @@ pipeline {
 	       sh 'cd ts-model && mvn clean test' 
             }
         }
-	stage('Build'){
+	    stage('Build'){
+                steps {
+    	       sh 'cd ts-model && mvn package' 
+	        }
+    	}
+	    stage('Archive'){
             steps {
-	       sh 'cd ts-model && mvn package' 
-	    }
-	}
-	stage('Archive'){
-            steps {
-	       sh 'mkdir -p /var/builds/prod-server-elaborations/'
-       	       sh 'cp ts-model/target/ts-model.war /var/builds/prod-server-elaborations/' 
-	    }
+                sh 'cp target/${ARTIFACT_NAME}.war ${ARTIFACT_NAME}.war'
+                archiveArtifacts artifacts: "${ARTIFACT_NAME}.war", onlyIfSuccessful: true
+	        }
         }
     }
 }

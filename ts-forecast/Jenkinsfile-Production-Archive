@@ -1,22 +1,25 @@
 pipeline {
     agent any
 
+    environment{
+        ARTIFACT_NAME='parking-forecast'
+    }
     stages {
         stage('Test') {
             steps {
 	       sh 'cd ts-forecast && mvn clean test' 
             }
         }
-	stage('Build'){
+	    stage('Build'){
             steps {
-	       sh 'cd ts-forecast && mvn package' 
+	            sh 'cd ts-forecast && mvn package' 
+	        }
 	    }
-	}
-	stage('Archive'){
+	    stage('Archive'){
             steps {
-	       sh 'mkdir -p /var/builds/prod-server-elaborations/'
-	       sh 'cp ts-forecast/target/parking-forecast.war /var/builds/prod-server-elaborations/' 
-	    }
+                sh 'cp target/${ARTIFACT_NAME}.war ${ARTIFACT_NAME}.war'
+                archiveArtifacts artifacts: "${ARTIFACT_NAME}.war", onlyIfSuccessful: true
+	        }
         }
     }
 }
