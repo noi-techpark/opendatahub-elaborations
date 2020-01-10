@@ -14,7 +14,7 @@ pipeline {
     stages {
         stage('Create geometry table') {
             steps {
-                sh '''shp2pgsql ShapefileFeatureImporter/links/LinkStationsGeometries.shp elaboration.bluetoothlinks_tmp | psql -h "${DB_HOST}" -U"${DB_USER}" "${DB_NAME}"'''
+                sh '''shp2pgsql -s 4326 ShapefileFeatureImporter/links/LinkStationsGeometries.shp elaboration.bluetoothlinks_tmp | psql -h "${DB_HOST}" -U"${DB_USER}" "${DB_NAME}"'''
             }
         }
         stage('update geometries') {
