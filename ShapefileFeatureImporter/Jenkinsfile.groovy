@@ -23,7 +23,9 @@ pipeline {
             }
         }
         stage('Clean'){
+            steps {
 		        sh '''psql -h "${DB_HOST}" -U"${DB_USER}" -d "${DB_NAME}"-c "drop table elaboration.bluetoothlinks_tmp;"'''
+            }
         }
     }
 }
