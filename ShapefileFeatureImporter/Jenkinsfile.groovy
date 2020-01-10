@@ -6,9 +6,10 @@ pipeline {
         }
     }
     environment{
-        DB_HOST=
-        DB_USER=
-        DB_NAME=
+        DB_HOST= 'prod-pg-bdp.co90ybcr8iim.eu-west-1.rds.amazonaws.com'
+        DB_USER= 'bdp'
+        PGPASSWORD= credentials('bdp-core-prod-database-write-password')
+        DB_NAME= 'bdp';
     }
     stages {
         stage('Create geometry table') {
