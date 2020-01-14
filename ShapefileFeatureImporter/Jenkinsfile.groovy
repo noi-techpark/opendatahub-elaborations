@@ -21,7 +21,7 @@ pipeline {
                         try{
                             sh 'git diff HEAD~ -- ./ShapefileFeatureImporter/links|grep diff'
                         }catch(all){
-                            echo ${all}
+                            echo "${all}"
                         }
                     }
                 }
