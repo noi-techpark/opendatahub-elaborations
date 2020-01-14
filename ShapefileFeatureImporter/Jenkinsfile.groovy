@@ -18,11 +18,7 @@ pipeline {
                     def causes = currentBuild.getBuildCauses()
                     def isGithub = causes[0].toString().contains("GitHubPushCause")
                     if (isGithub){
-                        try{
-                            sh 'git diff HEAD~ -- ./ShapefileFeatureImporter/links|grep diff'
-                        }catch(all){
-                            echo "${all}"
-                        }
+                        sh 'git diff HEAD~ -- ./ShapefileFeatureImporter/links|grep diff'
                     }
                 }
             }
