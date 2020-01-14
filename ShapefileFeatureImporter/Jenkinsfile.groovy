@@ -12,6 +12,16 @@ pipeline {
         DB_NAME= 'bdp';
     }
     stages {
+        stage('Validate Trigger'){
+            steps{
+                script{
+                    def causes = currentBuild.getBuildCauses()
+                    causes.each { item ->
+                        echo "${item}"
+                    }
+                }
+            }
+        }
         stage('Create geometry table') {
             steps {
                 sh '''shp2pgsql -s 4326 ShapefileFeatureImporter/links/LinkStationsGeometries.shp elaboration.bluetoothlinks_tmp | psql -h "${DB_HOST}" -U"${DB_USER}" "${DB_NAME}"'''
