@@ -4,3 +4,4 @@ RUN apt-get update \
       && apt-get install -y --no-install-recommends \
            postgis \
            postgresql-client-11 \
+           git \
