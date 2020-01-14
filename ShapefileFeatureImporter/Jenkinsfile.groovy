@@ -16,8 +16,14 @@ pipeline {
             steps{
                 script{
                     def causes = currentBuild.getBuildCauses()
-                    if (causes.size() >0)
-                        echo "I am : "+causes[0].toString().contains("GitHubPushCause")
+                    def isGithub = causes[0].toString().contains("GitHubPushCause")
+                    if (isGithub){
+                        try{
+                            sh 'git diff HEAD~ -- ./ShapefileFeatureImporter/links|grep diff'
+                        }catch(all){
+                            echo ${all}
+                        }
+                    }
                 }
             }
         }
