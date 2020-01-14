@@ -16,9 +16,8 @@ pipeline {
             steps{
                 script{
                     def causes = currentBuild.getBuildCauses()
-                    causes.each { item ->
-                        echo "${item}"
-                    }
+                    if (causes.size() >0)
+                        echo "I am : "+causes[0].toString().contains("GitHubPushCause")
                 }
             }
         }
