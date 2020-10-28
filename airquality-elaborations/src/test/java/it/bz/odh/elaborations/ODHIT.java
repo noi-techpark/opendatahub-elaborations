@@ -3,9 +3,9 @@ package it.bz.odh.elaborations;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
-import java.text.DateFormat;
-import java.util.Date;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,8 +14,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
+import it.bz.idm.bdp.dto.DataMapDto;
+import it.bz.idm.bdp.dto.RecordDtoImpl;
+import it.bz.odh.elaborations.services.JobScheduler;
+import it.bz.odh.elaborations.services.ODHParser;
 import it.bz.odh.elaborations.services.ODHReaderClient;
-import it.bz.odh.elaborations.services.ResponseMapping;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:/META-INF/spring/applicationContext*.xml" })
@@ -25,21 +28,41 @@ public class ODHIT{
     @Autowired
     private ODHReaderClient client;
     
-    private DateFormat dateFormatter = DateFormat.getDateInstance();
+    @Autowired
+    private ODHParser parser;
+
+    @Autowired
+    private JobScheduler scheduler;
+    
     @Test
     public void testFetchStationId() {
-        ResponseMapping responseMapping = client.getActiveStationIds();
-        List<Object> values = (List<Object>) responseMapping.get("data");
-        assertNotNull(values);
-        assertFalse(values.isEmpty());
+        Set<Entry<String, Object>> latestNinjaTree = client.getLatestNinjaTree().entrySet();
+        assertNotNull(latestNinjaTree);
+        assertFalse(latestNinjaTree.isEmpty());
     }
     @Test
     public void testFetchStationData() {
-        Date now = new Date();
-        Date yesterday = new Date(now.getTime()-24*60*60*1000*31);
-        ResponseMapping responseMapping = client.getStationData(yesterday, now);
-        List<Object> values = (List<Object>) responseMapping.get("data");
+        String from = "2020-10-05T23:58:59.999";
+        String to = "2020-10-05T23:59:59.999";
+        LinkedHashMap<String, Object> responseMapping = client.getStationData("","",from,to);
+        LinkedHashMap<String, Object>values = (LinkedHashMap<String, Object>) responseMapping.get("data");
         assertNotNull(values);
         assertFalse(values.isEmpty());
+    }
+    
+    @Test
+    public void testCreateDataMap() {
+        DataMapDto<RecordDtoImpl> createDataMap = parser.createDataMap();
+        System.out.println(createDataMap.toString());
+    }
+    @Test
+    public void testCreateElaborationMap() {
+        DataMapDto<RecordDtoImpl> dataMap = parser.createNewestElaborationMap();
+        System.out.println(dataMap.toString());
+    }
+    
+    @Test
+    public void testStartElaborations() {
+       scheduler.executeElaborations();
     }
 }

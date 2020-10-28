@@ -10,8 +10,8 @@ import org.springframework.security.oauth2.client.web.reactive.function.client.S
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
-public class Config {
-    
+public class NinjaClientConfig {
+
     @Value("${ODH_BASE_URI}")
     private String baseUrl;
 
@@ -25,6 +25,9 @@ public class Config {
                 .apply(oauth2Client.oauth2Configuration())
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .codecs(configurer -> configurer
+                        .defaultCodecs()
+                        .maxInMemorySize(16 * 1024 * 1024))
                 .build();
     }
 }
