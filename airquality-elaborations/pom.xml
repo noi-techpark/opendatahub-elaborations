@@ -6,13 +6,13 @@
     <groupId>it.bz.idm.bdp</groupId>
     <artifactId>airquality-elaborations</artifactId>
     <packaging>war</packaging>
-    <version>0.4.0</version>
-    <name>Creative Industries data collector</name>
+    <version>0.1.0</version>
+    <name>Airquality elaborations for a22 data</name>
     <properties>
         <java.version>8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.version>5.2.9.RELEASE</spring.version>
-        <finalName>airquality-elaborations</finalName>
+        <finalName>ROOT</finalName>
     </properties>
     <repositories>
         <repository>
@@ -98,7 +98,7 @@
         <dependency>
             <groupId>it.bz.idm.bdp</groupId>
             <artifactId>dc-interface</artifactId>
-            <version>5.0.3</version>
+            <version>5.1.0</version>
         </dependency>
     </dependencies>
     <build>
