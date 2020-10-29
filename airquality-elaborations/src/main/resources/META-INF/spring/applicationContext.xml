@@ -11,6 +11,6 @@
 	<task:scheduled-tasks scheduler="Scheduler">
 		<task:scheduled ref="jobScheduler" method="executeElaborations" cron="0 1 * * * *" />
  	</task:scheduled-tasks>
-    <context:component-scan base-package="it.bz.odh.elaborations"/>
+    <context:component-scan base-package="it.bz.odh.elaborations,it.bz.idm.bdp"/>
     <context:property-placeholder location="classpath:META-INF/spring/*.properties" />
 </beans>
