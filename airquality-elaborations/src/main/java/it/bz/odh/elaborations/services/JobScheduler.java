@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,15 +20,15 @@ public class JobScheduler {
 
     @Autowired
     private ODHParser odhParser;
-    
+
     @Autowired
     private ElaborationService elaborationService;
-    
+
     @Autowired
     private ODHWriterClient webClient;
-    
+
     public void executeElaborations() {
-        
+
         DataMapDto<RecordDtoImpl> dataMap = odhParser.createDataMap();
         DataMapDto<RecordDtoImpl> newestElaborationMap = odhParser.createNewestElaborationMap();
 
@@ -39,26 +40,38 @@ public class JobScheduler {
                         elaborationTypeMap != null &&
                         !elaborationTypeMap.getBranch().isEmpty() && 
                         elaborationTypeMap.getBranch().get(typeMapEntry.getKey()) != null && 
-                        !elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getBranch().isEmpty())
+                        !elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getData().isEmpty())
                     data = elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getData();
-                startElaboration(stationMapEntry.getKey(),typeMapEntry.getKey(), !data.isEmpty() ? data.get(0).getValue().toString():null);
+
+                List<RecordDtoImpl> rawData = dataMap.getBranch().get(stationMapEntry.getKey()).getBranch().get(typeMapEntry.getKey()).getData();
+                Long lastElaborationDateUTC = !data.isEmpty() ? data.get(0).getTimestamp():null;
+                Long lastRawDateUTC = rawData.get(0).getTimestamp();
+                if (lastElaborationDateUTC == null || lastRawDateUTC-(3600*1000) > lastElaborationDateUTC)  //start elaborations only if there is new data of one hour
+                    startElaboration(stationMapEntry.getKey(),typeMapEntry.getKey(), lastElaborationDateUTC,lastRawDateUTC);
             }
         }
     }
 
-    private void startElaboration(String station, String type, String lastElaborationDateString) {
+    private void startElaboration(String station, String type, Long lastElaborationDateUTC, Long lastRawDateUTC) {
         List<SimpleRecordDto> stationData = null;
         try {
-            if (lastElaborationDateString!=null) {
-                stationData = odhParser.getStationData(station,type,lastElaborationDateString);
+            if (lastElaborationDateUTC != null) {
+                stationData = odhParser.getStationData(station,type,lastElaborationDateUTC);
             }
             else
                 stationData = odhParser.getStationData(station,type);
-            
-            List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(stationData,Calendar.HOUR);
-            DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
-            dto.addRecords(station, type, averageElaborations);
-            webClient.pushData(dto);
+            if (!stationData.isEmpty()) {
+                List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(stationData,Calendar.HOUR);
+                if (!averageElaborations.isEmpty()) {
+                    DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
+                    dto.addRecords(station, type, averageElaborations);
+
+                    webClient.pushData(dto);
+                    Long newOldestElaboration = DateUtils.ceiling(new Date(averageElaborations.get(averageElaborations.size()-1).getTimestamp()),Calendar.HOUR).getTime();
+                    if (newOldestElaboration <= lastRawDateUTC)
+                        startElaboration(station, type, newOldestElaboration, lastRawDateUTC);
+                }
+            }
         } catch (ParseException e) {
             e.printStackTrace();
         }

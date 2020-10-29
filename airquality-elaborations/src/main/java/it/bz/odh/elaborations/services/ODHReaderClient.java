@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 
 import javax.annotation.Resource;
 
@@ -21,13 +22,10 @@ public class ODHReaderClient{
     private static final long A_MONTH = A_DAY*31;
     @Resource(name = "ninja")
     protected WebClient ninja;
-    private DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+    private DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private DateFormat responseDateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
     
-    private String oldestRawDataElab = "2020-01-01T00:00:00.000";
-    
-    @Value("elaborations_oldestDate")
-    private String rootDate;
+    private String oldestRawDataElab = "2020-01-01T00:00:00.000+0000";
     
     public LinkedHashMap<String, Object> getStationData(String station,String type, Date from, Date to) {
         return getStationData(station, type, dateFormatter.format(from), dateFormatter.format(to));
@@ -46,30 +44,28 @@ public class ODHReaderClient{
         return ninja.get().uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600&select=mvalidtime")
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
-    public LinkedHashMap<String,Object> getStationData(String station,String type,String latestElaboration) throws ParseException {
-        long from = responseDateFormatter.parse(latestElaboration).getTime();
+    public LinkedHashMap<String,Object> getStationData(String station, String type, Long lastElaborationDateString) throws ParseException {
+        long from = lastElaborationDateString;
         long to = from + A_MONTH;
         String currentDate = dateFormatter.format(from);
         String later = dateFormatter.format(new Date(to));
         return getStationData(station, type, currentDate, later);
     }
-    public String guessOldestRawData(String station, String type) {
+    public Long guessOldestRawData(String station, String type) {
         try {
             Date oldest = dateFormatter.parse(oldestRawDataElab);
-            return recursiveOldestDateRetrieval(station, type, oldest,new Date(oldest.getTime()+A_MONTH));
+            return recursiveOldestDateRetrieval(station, type, oldest,new Date(oldest.getTime() + A_MONTH));
         } catch (ParseException e) {
             e.printStackTrace();
-        }
-        return null;
-        
+            throw new IllegalStateException(e);
+        }        
     }
-    private String recursiveOldestDateRetrieval(String station, String type, Date from, Date to) {
+    private Long recursiveOldestDateRetrieval(String station, String type, Date from, Date to) throws ParseException {
         if (from.after(new Date()))
             throw new IllegalStateException("This should not happen since only existing station types should be called");
         LinkedHashMap<String, Object> stationData = getStationData(station, type, from,to);
-        String oldestRecordDate = parseOldestRecordFromResponse(station,type,stationData);
-        
-        return oldestRecordDate!=null ? oldestRecordDate: recursiveOldestDateRetrieval(station, type,to,new Date(to.getTime() + A_MONTH));
+        String oldestRecordDateString = parseOldestRecordFromResponse(station,type,stationData);
+        return oldestRecordDateString != null ? parseDate(oldestRecordDateString).getTime(): recursiveOldestDateRetrieval(station, type,to,new Date(to.getTime() + A_MONTH));
         
     }
     private String parseOldestRecordFromResponse(String station, String type, LinkedHashMap<String, Object> stationData) {

@@ -27,8 +27,18 @@ public class ODHParser {
             DataMapDto<RecordDtoImpl> typeMap = new DataMapDto<RecordDtoImpl>();
             LinkedHashMap<String,Object> typesContainer= parseMap(station.getValue());
             LinkedHashMap<String, Object> types = parseMap(typesContainer.get("sdatatypes"));
-            for (Map.Entry<String, Object> type : types.entrySet())
-                typeMap.upsertBranch(type.getKey());
+            for (Map.Entry<String, Object> type : types.entrySet()) {
+                LinkedHashMap<String, List<LinkedHashMap<String,String>>> value = (LinkedHashMap<String, List<LinkedHashMap<String, String>>>) type.getValue();
+                String time = value.get("tmeasurements").get(0).get("mvalidtime");
+                List<RecordDtoImpl> records = new ArrayList<RecordDtoImpl>();
+                try {
+                    records.add(new SimpleRecordDto(client.parseDate(time).getTime(),0.));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    continue;
+                }
+                typeMap.getBranch().put(type.getKey(), new DataMapDto<RecordDtoImpl>(records));
+            }
             dto.getBranch().put(station.getKey(), typeMap);
         }
         return dto;
@@ -48,7 +58,12 @@ public class ODHParser {
                     String time = value.get("tmeasurements").get(0).get("mvalidtime");
                     List<RecordDtoImpl> data = new ArrayList<RecordDtoImpl>();
                     SimpleRecordDto e = new SimpleRecordDto();
-                    e.setValue(time);
+                    try {
+                        e.setTimestamp(client.parseDate(time).getTime());
+                    } catch (ParseException e1) {
+                        e1.printStackTrace();
+                        continue;
+                    }
                     data.add(e);
                     typeMap.getBranch().put(type.getKey(),new DataMapDto<RecordDtoImpl>(data));
                 }
@@ -63,16 +78,16 @@ public class ODHParser {
             return (LinkedHashMap<String, Object>) value;
         return null;
     }
-    public List<SimpleRecordDto> getStationData(String station, String type, String latestElaboration) throws ParseException {
-        LinkedHashMap<String, Object> data = client.getStationData(station, type, latestElaboration);
+    public List<SimpleRecordDto> getStationData(String station, String type, Long lastElaborationDateString) throws ParseException {
+        LinkedHashMap<String, Object> data = client.getStationData(station, type, lastElaborationDateString);
         return parseHistoryFromResponse(station,type,data);
     }
     public List<SimpleRecordDto> getStationData(String station, String type) throws ParseException {
-        String guessOldestRawData = client.guessOldestRawData(station,type);
+        Long guessOldestRawData = client.guessOldestRawData(station,type);
         LinkedHashMap<String, Object> data = client.getStationData(station, type, guessOldestRawData);
-        List<SimpleRecordDto> parsedData = parseHistoryFromResponse(station,type,data);
-        return parsedData;
+        return parseHistoryFromResponse(station,type,data);
     }
+    
     private List<SimpleRecordDto> parseHistoryFromResponse(String station, String type, LinkedHashMap<String, Object> stationData) {
         List<SimpleRecordDto> history = new ArrayList<SimpleRecordDto>();
         LinkedHashMap<String, Object> dataSet = (LinkedHashMap<String, Object>) stationData.get("data");

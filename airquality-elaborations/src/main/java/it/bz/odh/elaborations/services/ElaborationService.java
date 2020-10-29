@@ -1,6 +1,7 @@
 package it.bz.odh.elaborations.services;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.OptionalDouble;
@@ -20,12 +21,13 @@ public class ElaborationService {
     public List<SimpleRecordDto> calcAverage(List<SimpleRecordDto> stationData, int timeReference) {
         List<SimpleRecordDto> elaborations = new ArrayList<SimpleRecordDto>();
         if (stationData!= null && !stationData.isEmpty()) {
-            Long intervalStart = DateUtils.ceiling((new Date(stationData.get(0).getTimestamp())), timeReference).getTime();
+            Collections.sort(stationData);
+            Long intervalStart = DateUtils.truncate((new Date(stationData.get(0).getTimestamp())), timeReference).getTime();
             Long maxCalc = DateUtils.truncate((new Date(stationData.get(stationData.size()-1).getTimestamp())), timeReference).getTime();
 
             Long intervalEnd = intervalStart + HOUR;
             Long[] intervals = new Long[] {intervalStart,intervalEnd};
-            while (intervals[1] < maxCalc) {
+            while (intervals[1] <= maxCalc) {
                 Stream<SimpleRecordDto> filteredStream = stationData.stream().filter(x-> x.getTimestamp()>= intervals[0] && x.getTimestamp() < intervals[1]);
                 List<SimpleRecordDto> collect = filteredStream.collect(Collectors.toList());
                 OptionalDouble average = collect.stream().mapToDouble(x-> new Double(x.getValue().toString())).average();
