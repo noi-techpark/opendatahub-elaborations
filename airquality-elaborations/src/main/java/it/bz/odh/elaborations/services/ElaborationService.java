@@ -17,7 +17,7 @@ import it.bz.idm.bdp.dto.SimpleRecordDto;
 public class ElaborationService {
 
     private static final long HOUR = 1000*3600l;
-
+	private static final int MIN_AMOUNT_OF_DATA_POINTS = 30;
     public List<SimpleRecordDto> calcAverage(List<SimpleRecordDto> stationData, int timeReference) {
         List<SimpleRecordDto> elaborations = new ArrayList<SimpleRecordDto>();
         if (stationData!= null && !stationData.isEmpty()) {
@@ -28,13 +28,16 @@ public class ElaborationService {
             Long intervalEnd = intervalStart + HOUR;
             Long[] intervals = new Long[] {intervalStart,intervalEnd};
             while (intervals[1] <= maxCalc) {
-                Stream<SimpleRecordDto> filteredStream = stationData.stream().filter(x-> x.getTimestamp()>= intervals[0] && x.getTimestamp() < intervals[1]);
-                List<SimpleRecordDto> collect = filteredStream.collect(Collectors.toList());
-                OptionalDouble average = collect.stream().mapToDouble(x-> new Double(x.getValue().toString())).average();
-                if (average.isPresent())
-                    elaborations.add(new SimpleRecordDto(intervals[1],average.getAsDouble(),3600));
+                Stream<SimpleRecordDto> filteredStream = stationData.stream().filter(x-> x.getTimestamp()> intervals[0] && x.getTimestamp() <= intervals[1]);
+                List<SimpleRecordDto> recordsPerHour = filteredStream.collect(Collectors.toList());
+                if (recordsPerHour.size() >= MIN_AMOUNT_OF_DATA_POINTS) {
+	                OptionalDouble average = recordsPerHour.stream().mapToDouble(x-> new Double(x.getValue().toString())).average();
+	                if (average.isPresent())
+	                    elaborations.add(new SimpleRecordDto(intervals[1],average.getAsDouble(),3600));
+                }
                 intervals[0] += HOUR;
                 intervals[1] += HOUR;
+                
             }
         }
         return elaborations;
