@@ -25,7 +25,7 @@ pipeline {
                     echo 'origin=a22-algorab' >> .env
                     echo 'authorizationUri=https://auth.opendatahub.bz.it/auth' >> .env
                     echo 'tokenUri=https://auth.opendatahub.bz.it/auth/realms/noi/protocol/openid-connect/token' >> .env
-                    echo 'base-uri=https://share.opendatahub.bz.it/json' >> .env
+                    echo 'base-uri=https://mobility.share.opendatahub.bz.it/json' >> .env
                     echo 'clientId=odh-mobility-datacollector' >> .env
                     echo 'clientName=odh-mobility-datacollector' >> .env
                     echo 'clientSecret=${DATACOLLECTORS_CLIENT_SECRET}' >> .env
