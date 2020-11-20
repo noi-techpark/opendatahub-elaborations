@@ -19,8 +19,8 @@ public class ODHParser {
     @Autowired
     private ODHReaderClient client;
     
-    public DataMapDto<RecordDtoImpl> createDataMap() {
-        LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) ((LinkedHashMap<String, Object>) client.getLatestNinjaTree().get("data")).get("EnvironmentStation");
+    public DataMapDto<RecordDtoImpl> createDataMap(String stationtype) {
+		LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) ((LinkedHashMap<String, Object>) client.getLatestNinjaTree().get("data")).get(stationtype);
         LinkedHashMap<String,Object> stations = (LinkedHashMap<String, Object>) ninjaTree.get("stations");
         DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
         for (Map.Entry<String, Object> station : stations.entrySet()) {
@@ -43,11 +43,11 @@ public class ODHParser {
         }
         return dto;
     }
-    public DataMapDto<RecordDtoImpl> createNewestElaborationMap() {
+    public DataMapDto<RecordDtoImpl> createNewestElaborationMap(String stationtype) {
         DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
         LinkedHashMap<String, Object> dataSet = (LinkedHashMap<String, Object>) client.createNewestElaborationMap().get("data");
         if (!dataSet.isEmpty()) {
-            LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) dataSet.get("EnvironmentStation");
+            LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) dataSet.get(stationtype);
             LinkedHashMap<String,Object> stations = (LinkedHashMap<String, Object>) ninjaTree.get("stations");
             for (Map.Entry<String, Object> station : stations.entrySet()) {
                 DataMapDto<RecordDtoImpl> typeMap = new DataMapDto<RecordDtoImpl>();

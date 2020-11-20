@@ -52,17 +52,17 @@ public class ODHIT{
     
     @Test
     public void testCreateDataMap() {
-        DataMapDto<RecordDtoImpl> createDataMap = parser.createDataMap();
+        DataMapDto<RecordDtoImpl> createDataMap = parser.createDataMap("EnvironmentStation");
         System.out.println(createDataMap.toString());
     }
     @Test
     public void testCreateElaborationMap() {
-        DataMapDto<RecordDtoImpl> dataMap = parser.createNewestElaborationMap();
+        DataMapDto<RecordDtoImpl> dataMap = parser.createNewestElaborationMap("EnvironmentStation");
         System.out.println(dataMap.toString());
     }
     
     @Test
     public void testStartElaborations() {
-       scheduler.executeElaborations();
+       scheduler.executeAirqualityElaborations();
     }
 }
