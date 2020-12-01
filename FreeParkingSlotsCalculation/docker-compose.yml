@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: infrastructure/Dockerfile
+    env_file: .env
+    volumes:
+      - ./:/data
+      - ./:/usr/src/app
