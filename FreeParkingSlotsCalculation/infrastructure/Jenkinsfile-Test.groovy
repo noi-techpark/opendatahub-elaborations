@@ -1,12 +1,13 @@
 pipeline {
     agent {
         dockerfile {
-            filename 'infrastructure/Dockerfile'
+            filename 'FreeParkingSlotsCalculations/infrastructure/Dockerfile'
             additionalBuildArgs '--build-arg JENKINS_USER_ID=`id -u jenkins` --build-arg JENKINS_GROUP_ID=`id -g jenkins`'
         }
     }
 
     environment {
+        PROJECT_FOLDER="FreeParkingSlotsCalculation"
         AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AUTHENTICATION_SERVER='https://auth.opendatahub.testingmachine.eu/auth/'
@@ -22,13 +23,13 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh 'pip install --no-cache-dir -r requirements.txt -t ./src'
-                sh "cd src && zip -r ../${BUILD_BUNDLE} ."
+                sh 'cd ${PROJECT_FOLDER} && pip install --no-cache-dir -r requirements.txt -t ./src'
+                sh "cd ${PROJECT_FOLDER}/src && zip -r ../${BUILD_BUNDLE} ."
             }
         }
         stage('Upload') {
             steps {
-                s3Upload(bucket: 'it.bz.opendatahub.lambda-functions', file: '${BUILD_BUNDLE}')
+                s3Upload(bucket: 'it.bz.opendatahub.lambda-functions', file: '${PROJECT_FOLDER}/${BUILD_BUNDLE}')
             }
         }
     }
