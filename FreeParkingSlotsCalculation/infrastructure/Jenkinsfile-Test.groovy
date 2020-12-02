@@ -12,6 +12,7 @@ pipeline {
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AUTHENTICATION_SERVER='https://auth.opendatahub.testingmachine.eu/auth/'
         CLIENT_SECRET= credentials('keycloak-datacollectors-secret')
+                       credentials('keycloak-datacollectors-secret')
         ODH_SHARE_ENDPOINT='https://share.opendatahub.testingmachine.eu/'
         RAW_DATA_ENDPOINT='https://mobility.api.opendatahub.testingmachine.eu/v2'
         PROVENANCE_NAME="FreeParkingSlotsCalculation"
@@ -29,7 +30,7 @@ pipeline {
         }
         stage('Upload') {
             steps {
-                s3Upload(bucket: 'it.bz.opendatahub.lambda-functions', file: '${PROJECT_FOLDER}/${BUILD_BUNDLE}')
+                s3Upload(bucket: 'it.bz.opendatahub.lambda-functions', file: "${env.PROJECT_FOLDER}/${env.BUILD_BUNDLE}")
             }
         }
     }
