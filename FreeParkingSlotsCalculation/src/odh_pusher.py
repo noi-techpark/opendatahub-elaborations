@@ -13,7 +13,7 @@ keycloak_openid = KeycloakOpenID(server_url= os.getenv("AUTHENTICATION_SERVER"),
 
 
 class DataPusher:
-    def __init__(self)
+    def __init__(self):
         self.provenanceId = None
 
     def pushData(self,stationType,stationCode,dataType,dataPoints):
