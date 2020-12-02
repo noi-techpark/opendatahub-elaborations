@@ -13,6 +13,9 @@ keycloak_openid = KeycloakOpenID(server_url= os.getenv("AUTHENTICATION_SERVER"),
 
 
 class DataPusher:
+    def __init__(self)
+        self.provenanceId = None
+
     def pushData(self,stationType,stationCode,dataType,dataPoints):
         dataMap = self.createDataMap(stationCode,dataType,dataPoints)
         self.sendData(stationType,dataMap)
@@ -20,7 +23,7 @@ class DataPusher:
     def createDataMap(self,station,dataType,dataPoints):
         dataMap = {"name":"(default)","branch":{},"data": dataPoints}
         typeMap = {"name":"(default)","branch": {dataType:dataMap},"data":[]}
-        stationMap = {"name":"(default)","branch":{station:typeMap},"data":[]}
+        stationMap = {"name":"(default)","branch":{station:typeMap},"data":[], "provenance": self.provenanceId}
         return stationMap
 
     def sendData(self,stationType, dataMap):
@@ -36,3 +39,4 @@ class DataPusher:
         p = Provenance(None, lineage, collector, version)
         token = keycloak_openid.token("", "","client_credentials")
         r = requests.post(os.getenv("ODH_SHARE_ENDPOINT")+"/json/provenance", json= p, headers={"Authorization" : "Bearer " + token['access_token']})
+        self.provenanceId = r.text

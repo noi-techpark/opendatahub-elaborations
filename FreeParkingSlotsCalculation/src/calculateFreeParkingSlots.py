@@ -43,7 +43,6 @@ class FreeParkingSlotsCalculator:
 
     def startCalculations(self): 
         d.upsertProvenance()
-        print("upsert provenance")
         occupiedSlots = self.fetchData(self.OCCUPIED_URL)
         freeSlots = self.fetchData(self.FREE_URL)
         for station in occupiedSlots:
