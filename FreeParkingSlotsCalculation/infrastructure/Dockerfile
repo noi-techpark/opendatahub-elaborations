@@ -1,6 +1,6 @@
-ARG BUILD_BUNDLE="test.zip"
-ARG PROJECT_FOLDER="testFolder"
 FROM python:3-slim as build
+ARG BUILD_BUNDLE=test.zip
+ARG PROJECT_FOLDER=testFolder
 ENV WORK=/usr/src/app
 ARG ARTIFACT_NAME=${BUILD_BUNDLE}
 WORKDIR ${WORK}
