@@ -29,7 +29,7 @@ pipeline {
         }
         stage('Upload') {
             steps {
-                s3Upload(bucket: 'it.bz.opendatahub.lambda-functions', file: "${env.PROJECT_FOLDER}/${env.BUILD_BUNDLE}")
+                sh 'aws lambda update-function-code --function-name freeParkingLotsElaborations --zip-file fileb://${PROJECT_FOLDER}/${BUILD_BUNDLE}'
             }
         }
     }
