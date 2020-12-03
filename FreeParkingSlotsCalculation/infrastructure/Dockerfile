@@ -12,4 +12,5 @@ RUN cd "${PROJECT_FOLDER}"/src && zip -r ../"${BUILD_BUNDLE}" .
 
 FROM amazon/aws-cli:2.1.6 as deploy
 COPY --from=build ${WORK}/${ARTIFACT_NAME} .
+ENTRYPOINT ["/bin/bash"]
 CMD ["irb"]
