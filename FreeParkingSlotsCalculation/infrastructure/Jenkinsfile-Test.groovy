@@ -2,7 +2,7 @@ pipeline {
     agent {
         dockerfile {
             filename 'FreeParkingSlotsCalculation/infrastructure/Dockerfile'
-            additionalBuildArgs '--build-arg JENKINS_USER_ID=`id -u jenkins` --build-arg JENKINS_GROUP_ID=`id -g jenkins`'
+            additionalBuildArgs '--build-arg JENKINS_USER_ID=`id -u jenkins` --build-arg JENKINS_GROUP_ID=`id -g jenkins` --build-arg PROJECT_FOLDER=FreeParkingSlotsCalculation --build-arg BUILD_BUNDLE=freeParkingSlotsCalculator.zip'
         }
     }
 
