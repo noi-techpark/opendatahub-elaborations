@@ -21,12 +21,6 @@ pipeline {
     }
 
     stages {
-        stage('Build') {
-            steps {
-                sh 'cd ${PROJECT_FOLDER} && pip install --no-cache-dir -r requirements.txt -t ./src'
-                sh "cd ${PROJECT_FOLDER}/src && zip -r ../${BUILD_BUNDLE} ."
-            }
-        }
         stage('Upload') {
             steps {
                 sh 'aws lambda update-function-code --function-name freeParkingLotsElaborations --zip-file fileb://${PROJECT_FOLDER}/${BUILD_BUNDLE}'
