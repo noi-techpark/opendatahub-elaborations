@@ -1,16 +1,5 @@
-FROM python:3-slim as build
-ARG BUILD_BUNDLE=test.zip
-ARG PROJECT_FOLDER=testFolder
-ENV WORK=/usr/src/app
-ARG ARTIFACT_NAME=${BUILD_BUNDLE}
-WORKDIR ${WORK}
+FROM python:3-slim
+WORKDIR /usr/src/app
 RUN apt-get update && apt-get -y install zip
+RUN pip install awscli
 COPY . .
-
-RUN cd "${PROJECT_FOLDER}" && pip install --no-cache-dir -r requirements.txt -t ./src
-RUN cd "${PROJECT_FOLDER}"/src && zip -r ../"${BUILD_BUNDLE}" .
-
-FROM amazon/aws-cli:2.1.6 as deploy
-COPY --from=build ${WORK}/${ARTIFACT_NAME} .
-ENTRYPOINT ["/bin/bash"]
-CMD ["irb"]
