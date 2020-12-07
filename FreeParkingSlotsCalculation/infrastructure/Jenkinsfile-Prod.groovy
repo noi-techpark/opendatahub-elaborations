@@ -13,7 +13,7 @@ pipeline {
         BUILD_BUNDLE="freeParkingSlotsCalculator.zip"
 	    AUTHENTICATION_SERVER='https://auth.opendatahub.bz.it/auth/'
         CLIENT_SECRET= credentials('prod-keycloak-lambda-secret')
-        ODH_SHARE_ENDPOINT='https://share.opendatahub.bz.it/'
+        ODH_SHARE_ENDPOINT='https://mobility.share.opendatahub.bz.it/'
         RAW_DATA_ENDPOINT='https://mobility.api.opendatahub.bz.it/v2'
         PROVENANCE_NAME="FreeParkingSlotsCalculation"
         PROVENANCE_VERSION="0.1.0"
