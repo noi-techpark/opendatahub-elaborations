@@ -36,9 +36,12 @@ public class ODHReaderClient{
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
     public LinkedHashMap getLatestNinjaTree() {
-        return ninja.get()
-                .uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.600&select=mvalidtime")
-                .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
+        LinkedHashMap blockLast = ninja.get()
+			        .uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.600&select=mvalidtime")
+			        .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
+        if (blockLast==null || ((LinkedHashMap<String, Object>) blockLast.get("data")).isEmpty())
+            throw new IllegalStateException("Opendatahub returned no valid raw data to do elaborations on");
+        return blockLast;
     }
     public LinkedHashMap createNewestElaborationMap() {
         return ninja.get().uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600&select=mvalidtime")

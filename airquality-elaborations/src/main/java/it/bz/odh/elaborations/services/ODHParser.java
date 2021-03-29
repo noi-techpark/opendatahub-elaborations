@@ -20,7 +20,7 @@ public class ODHParser {
     private ODHReaderClient client;
     
     public DataMapDto<RecordDtoImpl> createDataMap(String stationtype) {
-		LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) ((LinkedHashMap<String, Object>) client.getLatestNinjaTree().get("data")).get(stationtype);
+        LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) ((LinkedHashMap<String, Object>) client.getLatestNinjaTree().get("data")).get(stationtype);
         LinkedHashMap<String,Object> stations = (LinkedHashMap<String, Object>) ninjaTree.get("stations");
         DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
         for (Map.Entry<String, Object> station : stations.entrySet()) {
