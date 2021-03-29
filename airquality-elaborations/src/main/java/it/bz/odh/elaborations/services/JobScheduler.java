@@ -45,6 +45,7 @@ public class JobScheduler {
         DataMapDto<RecordDtoImpl> newestElaborationMap = odhParser.createNewestElaborationMap(stationtype);
         logger.info("Start iteration through tree to do elaborations");
 		decideWhatToCalculate(dataMap, newestElaborationMap, AN_HOUR_IN_MS);
+		logger.info("Finished pushing elaborations");
     }
 // TODO fix before reenable
 //    @Scheduled(cron = "10 */5 * * * *")
@@ -96,7 +97,6 @@ public class JobScheduler {
             }
             else
                 stationData = odhParser.getStationData(station,type);
-            logger.info("Create elaboration map with newest elaboration timestamps");
             if (!stationData.isEmpty()) {
                 List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(stationData,Calendar.HOUR);
                 if (!averageElaborations.isEmpty()) {
