@@ -46,8 +46,8 @@ public class JobScheduler {
         logger.info("Start iteration through tree to do elaborations");
 		decideWhatToCalculate(dataMap, newestElaborationMap, AN_HOUR_IN_MS);
     }
-
-    @Scheduled(cron = "10 */5 * * * *")
+// TODO fix before reenable
+//    @Scheduled(cron = "10 */5 * * * *")
     private void executeParkingElaborations() {
 	    String stationtype = "ParkingStation";
         logger.info("Start parking elaborations");
