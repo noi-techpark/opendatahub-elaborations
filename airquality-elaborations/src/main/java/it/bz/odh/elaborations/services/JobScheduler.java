@@ -23,7 +23,9 @@ import it.bz.idm.bdp.dto.SimpleRecordDto;
 @EnableScheduling
 public class JobScheduler {
 
-    private static final int AN_HOUR_IN_MS = 3600*1000;
+    private static final int MIN_TIME_PASSED_SINCE_LAST_ELABORATION = 4*60*1000;
+
+	private static final int AN_HOUR_IN_MS = 3600*1000;
 
 	private Logger logger = LogManager.getLogger(JobScheduler.class);
 
@@ -56,7 +58,7 @@ public class JobScheduler {
         logger.info("Create elaboration map with newest elaboration timestamps");
         DataMapDto<RecordDtoImpl> newestElaborationMap = odhParser.createNewestElaborationMap(stationtype);
         logger.info("Start iteration through tree to do elaborations");
-        decideWhatToCalculate(dataMap, newestElaborationMap, 4*60*1000);
+        decideWhatToCalculate(dataMap, newestElaborationMap, MIN_TIME_PASSED_SINCE_LAST_ELABORATION);
     }
 
 	private DataMapDto<RecordDtoImpl> getRawDataMap(String stationtype) {
@@ -83,7 +85,8 @@ public class JobScheduler {
                 List<RecordDtoImpl> rawData = dataMap.getBranch().get(stationMapEntry.getKey()).getBranch().get(typeMapEntry.getKey()).getData();
                 Long lastElaborationDateUTC = !data.isEmpty() ? data.get(0).getTimestamp():null;
                 Long lastRawDateUTC = rawData.get(0).getTimestamp();
-                if (lastElaborationDateUTC == null || lastRawDateUTC - minTimePassedSinceLastElaboration > lastElaborationDateUTC)  //start elaborations only if there is new data of minTimePassedSinceLastElaboration
+                Long now = new Date().getTime();
+                if (lastElaborationDateUTC == null || now - minTimePassedSinceLastElaboration >= lastElaborationDateUTC)  //start elaborations only if there is new data of minTimePassedSinceLastElaboration
                     startElaboration(stationMapEntry.getKey(),typeMapEntry.getKey(), lastElaborationDateUTC,lastRawDateUTC);
             }
         }
