@@ -6,11 +6,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 
 import javax.annotation.Resource;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,45 +16,47 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Component
 public class ODHReaderClient{
     
-    private static final long A_DAY = 3600*24*1000l;
+    private static final String DATA_ORIGIN = "a22-algorab";
+	private static final long A_DAY = 3600*24*1000l;
     private static final long A_MONTH = A_DAY*31;
     @Resource(name = "ninja")
     protected WebClient ninja;
     private DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private DateFormat responseDateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
     
-    private String oldestRawDataElab = "2020-01-01T00:00:00.000+0000";
+    private String DEFAULT_OLDEST_DATA_ELABORATION = "2020-01-01T00:00:00.000+0000";
     
     public LinkedHashMap<String, Object> getStationData(String station,String type, Date from, Date to) {
-        return getStationData(station, type, dateFormatter.format(from), dateFormatter.format(to));
+        return getRawData(station, type, dateFormatter.format(from), dateFormatter.format(to));
     }
-    public LinkedHashMap getStationData(String station,String type,String from, String to) {
+    public LinkedHashMap getRawData(String station,String type,String from, String to) {
         return ninja.get().uri("/v2/tree/EnvironmentStation/" + type + "/" + from + "/" +  to
-                        + "?limit=-1&where=sactive.eq.true,sorigin.eq.a22-algorab,scode.eq."+station+"&select=tmeasurements")
+                        + "?limit=-1&where=sactive.eq.true,sorigin.eq." + DATA_ORIGIN + ",scode.eq."+station+"&select=tmeasurements")
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
     public LinkedHashMap getLatestNinjaTree() {
         LinkedHashMap blockLast = ninja.get()
-			        .uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.600&select=mvalidtime")
+			        .uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq." + DATA_ORIGIN
+							+ ",mperiod.eq.600&select=mvalidtime")
 			        .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
         if (blockLast==null || ((LinkedHashMap<String, Object>) blockLast.get("data")).isEmpty())
             throw new IllegalStateException("Opendatahub returned no valid raw data to do elaborations on");
         return blockLast;
     }
     public LinkedHashMap createNewestElaborationMap() {
-        return ninja.get().uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600&select=mvalidtime")
+        return ninja.get().uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq." + DATA_ORIGIN
+				+ ",mperiod.eq.3600&select=mvalidtime")
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
-    public LinkedHashMap<String,Object> getStationData(String station, String type, Long lastElaborationDateString) throws ParseException {
-        long from = lastElaborationDateString;
-        long to = from + A_MONTH;
-        String currentDate = dateFormatter.format(from);
-        String later = dateFormatter.format(new Date(to));
-        return getStationData(station, type, currentDate, later);
+    public LinkedHashMap<String,Object> getRawData(String station, String type, Long lastElaborationDateinMS) throws ParseException {
+        long aMonthLaterAsMS = lastElaborationDateinMS + A_MONTH;
+        String lastElaborationDateString = dateFormatter.format(lastElaborationDateinMS);
+        String aMonthLaterString = dateFormatter.format(new Date(aMonthLaterAsMS));
+        return getRawData(station, type, lastElaborationDateString, aMonthLaterString);
     }
     public Long guessOldestRawData(String station, String type) {
         try {
-            Date oldest = dateFormatter.parse(oldestRawDataElab);
+            Date oldest = dateFormatter.parse(DEFAULT_OLDEST_DATA_ELABORATION);
             return recursiveOldestDateRetrieval(station, type, oldest,new Date(oldest.getTime() + A_MONTH));
         } catch (ParseException e) {
             e.printStackTrace();

@@ -78,13 +78,13 @@ public class ODHParser {
             return (LinkedHashMap<String, Object>) value;
         return null;
     }
-    public List<SimpleRecordDto> getStationData(String station, String type, Long lastElaborationDateString) throws ParseException {
-        LinkedHashMap<String, Object> data = client.getStationData(station, type, lastElaborationDateString);
+    public List<SimpleRecordDto> getRawData(String station, String type, Long lastElaborationDateinMS) throws ParseException {
+        LinkedHashMap<String, Object> data = client.getRawData(station, type, lastElaborationDateinMS);
         return parseHistoryFromResponse(station,type,data);
     }
-    public List<SimpleRecordDto> getStationData(String station, String type) throws ParseException {
+    public List<SimpleRecordDto> getRawData(String station, String type) throws ParseException {
         Long guessOldestRawData = client.guessOldestRawData(station,type);
-        LinkedHashMap<String, Object> data = client.getStationData(station, type, guessOldestRawData);
+        LinkedHashMap<String, Object> data = client.getRawData(station, type, guessOldestRawData);
         return parseHistoryFromResponse(station,type,data);
     }
     

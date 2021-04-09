@@ -18,13 +18,15 @@ public class ElaborationService {
 
     private static final long HOUR = 1000*3600l;
 	private static final int MIN_AMOUNT_OF_DATA_POINTS = 30;
-    public List<SimpleRecordDto> calcAverage(List<SimpleRecordDto> stationData, int timeReference) {
+    public List<SimpleRecordDto> calcAverage(Long now, List<SimpleRecordDto> stationData, int timeReference) {
         List<SimpleRecordDto> elaborations = new ArrayList<SimpleRecordDto>();
         if (stationData!= null && !stationData.isEmpty()) {
             Collections.sort(stationData);
             Long intervalStart = DateUtils.truncate((new Date(stationData.get(0).getTimestamp())), timeReference).getTime();
-            Long maxCalc = DateUtils.truncate((new Date(stationData.get(stationData.size()-1).getTimestamp())), timeReference).getTime();
-
+            Date maxCalcDate = new Date(stationData.get(stationData.size()-1).getTimestamp());
+            if (now < maxCalcDate.getTime() + HOUR);
+            	maxCalcDate = new Date(now);
+            Long maxCalc = DateUtils.truncate(maxCalcDate, timeReference).getTime();
             Long intervalEnd = intervalStart + HOUR;
             Long[] intervals = new Long[] {intervalStart,intervalEnd};
             while (intervals[1] <= maxCalc) {

@@ -71,6 +71,7 @@ public class JobScheduler {
 	}
 
 	private void decideWhatToCalculate(DataMapDto<RecordDtoImpl> dataMap, DataMapDto<RecordDtoImpl> newestElaborationMap, int minTimePassedSinceLastElaboration) {
+        Long now = new Date().getTime();
 		for (Map.Entry<String, DataMapDto<RecordDtoImpl>> stationMapEntry : dataMap.getBranch().entrySet()) {
             for (Map.Entry<String, DataMapDto<RecordDtoImpl>> typeMapEntry : stationMapEntry.getValue().getBranch().entrySet()) {
                 List<RecordDtoImpl> data = new ArrayList<RecordDtoImpl>();
@@ -85,23 +86,22 @@ public class JobScheduler {
                 List<RecordDtoImpl> rawData = dataMap.getBranch().get(stationMapEntry.getKey()).getBranch().get(typeMapEntry.getKey()).getData();
                 Long lastElaborationDateUTC = !data.isEmpty() ? data.get(0).getTimestamp():null;
                 Long lastRawDateUTC = rawData.get(0).getTimestamp();
-                Long now = new Date().getTime();
                 if (lastElaborationDateUTC == null || now - minTimePassedSinceLastElaboration >= lastElaborationDateUTC)  //start elaborations only if there is new data of minTimePassedSinceLastElaboration
-                    startElaboration(stationMapEntry.getKey(),typeMapEntry.getKey(), lastElaborationDateUTC,lastRawDateUTC);
+                    startElaboration(stationMapEntry.getKey(),typeMapEntry.getKey(), lastElaborationDateUTC,lastRawDateUTC,now);
             }
         }
 	}
 
-    private void startElaboration(String station, String type, Long lastElaborationDateUTC, Long lastRawDateUTC) {
+    private void startElaboration(String station, String type, Long lastElaborationDateUTC, Long lastRawDateUTC, Long now) {
         List<SimpleRecordDto> stationData = null;
         try {
             if (lastElaborationDateUTC != null) {
-                stationData = odhParser.getStationData(station,type,lastElaborationDateUTC);
+                stationData = odhParser.getRawData(station,type,lastElaborationDateUTC);
             }
             else
-                stationData = odhParser.getStationData(station,type);
+                stationData = odhParser.getRawData(station,type);
             if (!stationData.isEmpty()) {
-                List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(stationData,Calendar.HOUR);
+                List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(now, stationData,Calendar.HOUR);
                 if (!averageElaborations.isEmpty()) {
                     DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
                     dto.addRecords(station, type, averageElaborations);
@@ -110,7 +110,7 @@ public class JobScheduler {
                     logger.debug("Completed sending to odh");
                     Long newOldestElaboration = DateUtils.ceiling(new Date(averageElaborations.get(averageElaborations.size()-1).getTimestamp()),Calendar.HOUR).getTime();
                     if (newOldestElaboration <= lastRawDateUTC)
-                        startElaboration(station, type, newOldestElaboration, lastRawDateUTC);
+                        startElaboration(station, type, newOldestElaboration, lastRawDateUTC, now);
                 }
             }else {
                 logger.debug("Unable to get raw data for "+station+":"+type);

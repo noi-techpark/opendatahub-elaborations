@@ -44,7 +44,7 @@ public class ODHIT{
     public void testFetchStationData() {
         String from = "2020-10-05T23:58:59.999";
         String to = "2020-10-05T23:59:59.999";
-        LinkedHashMap<String, Object> responseMapping = client.getStationData("","",from,to);
+        LinkedHashMap<String, Object> responseMapping = client.getRawData("","",from,to);
         LinkedHashMap<String, Object>values = (LinkedHashMap<String, Object>) responseMapping.get("data");
         assertNotNull(values);
         assertFalse(values.isEmpty());
