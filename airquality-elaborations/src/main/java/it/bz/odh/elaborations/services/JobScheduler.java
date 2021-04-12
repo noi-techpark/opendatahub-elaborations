@@ -93,15 +93,15 @@ public class JobScheduler {
 	}
 
     private void startElaboration(String station, String type, Long lastElaborationDateUTC, Long lastRawDateUTC, Long now) {
-        List<SimpleRecordDto> stationData = null;
+        List<SimpleRecordDto> rawData = null;
         try {
             if (lastElaborationDateUTC != null) {
-                stationData = odhParser.getRawData(station,type,lastElaborationDateUTC);
+                rawData = odhParser.getRawData(station,type,lastElaborationDateUTC);
             }
             else
-                stationData = odhParser.getRawData(station,type);
-            if (!stationData.isEmpty()) {
-                List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(now, stationData,Calendar.HOUR);
+                rawData = odhParser.getRawData(station,type);
+            if (!rawData.isEmpty()) {
+                List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(now, rawData, Calendar.HOUR);
                 if (!averageElaborations.isEmpty()) {
                     DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
                     dto.addRecords(station, type, averageElaborations);

@@ -18,19 +18,19 @@ public class ElaborationService {
 
     private static final long HOUR = 1000*3600l;
 	private static final int MIN_AMOUNT_OF_DATA_POINTS = 30;
-    public List<SimpleRecordDto> calcAverage(Long now, List<SimpleRecordDto> stationData, int timeReference) {
+    public List<SimpleRecordDto> calcAverage(Long now, List<SimpleRecordDto> rawData, int timeReference) {
         List<SimpleRecordDto> elaborations = new ArrayList<SimpleRecordDto>();
-        if (stationData!= null && !stationData.isEmpty()) {
-            Collections.sort(stationData);
-            Long intervalStart = DateUtils.truncate((new Date(stationData.get(0).getTimestamp())), timeReference).getTime();
-            Date maxCalcDate = new Date(stationData.get(stationData.size()-1).getTimestamp());
+        if (rawData!= null && !rawData.isEmpty()) {
+            Collections.sort(rawData);
+            Long intervalStart = DateUtils.truncate((new Date(rawData.get(0).getTimestamp())), timeReference).getTime();
+            Date maxCalcDate = new Date(rawData.get(rawData.size()-1).getTimestamp());
             if (now < maxCalcDate.getTime() + HOUR);
             	maxCalcDate = new Date(now);
             Long maxCalc = DateUtils.truncate(maxCalcDate, timeReference).getTime();
             Long intervalEnd = intervalStart + HOUR;
             Long[] intervals = new Long[] {intervalStart,intervalEnd};
             while (intervals[1] <= maxCalc) {
-                Stream<SimpleRecordDto> filteredStream = stationData.stream().filter(x-> x.getTimestamp()> intervals[0] && x.getTimestamp() <= intervals[1]);
+                Stream<SimpleRecordDto> filteredStream = rawData.stream().filter(x-> x.getTimestamp()> intervals[0] && x.getTimestamp() <= intervals[1]);
                 List<SimpleRecordDto> recordsPerHour = filteredStream.collect(Collectors.toList());
                 if (recordsPerHour.size() >= MIN_AMOUNT_OF_DATA_POINTS) {
 	                OptionalDouble average = recordsPerHour.stream().mapToDouble(x-> new Double(x.getValue().toString())).average();
@@ -39,7 +39,6 @@ public class ElaborationService {
                 }
                 intervals[0] += HOUR;
                 intervals[1] += HOUR;
-                
             }
         }
         return elaborations;
