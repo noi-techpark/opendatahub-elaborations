@@ -9,9 +9,9 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import it.bz.idm.bdp.dto.DataMapDto;
-import it.bz.idm.bdp.dto.RecordDtoImpl;
-import it.bz.idm.bdp.dto.SimpleRecordDto;
+import it.bz.odh.dto.DataMapDto;
+import it.bz.odh.dto.RecordDtoImpl;
+import it.bz.odh.dto.SimpleRecordDto;
 
 @Service
 public class ODHParser {

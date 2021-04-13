@@ -8,15 +8,16 @@ import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang.time.DateUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.stereotype.Service;
 
-import it.bz.idm.bdp.dto.SimpleRecordDto;
+import it.bz.odh.dto.SimpleRecordDto;
 
 @Service
 public class ElaborationService {
 
-    private static final long HOUR = 1000*3600l;
+    private static final int PERIOD = 3600;
+	private static final long HOUR = 1000*3600l;
 	private static final int MIN_AMOUNT_OF_DATA_POINTS = 30;
     public List<SimpleRecordDto> calcAverage(Long now, List<SimpleRecordDto> stationData, int timeReference) {
         List<SimpleRecordDto> elaborations = new ArrayList<SimpleRecordDto>();
@@ -35,7 +36,7 @@ public class ElaborationService {
                 if (recordsPerHour.size() >= MIN_AMOUNT_OF_DATA_POINTS) {
 	                OptionalDouble average = recordsPerHour.stream().mapToDouble(x-> new Double(x.getValue().toString())).average();
 	                if (average.isPresent())
-	                    elaborations.add(new SimpleRecordDto(intervals[1],average.getAsDouble(),3600));
+	                    elaborations.add(new SimpleRecordDto(intervals[1],average.getAsDouble(),PERIOD));
                 }
                 intervals[0] += HOUR;
                 intervals[1] += HOUR;
