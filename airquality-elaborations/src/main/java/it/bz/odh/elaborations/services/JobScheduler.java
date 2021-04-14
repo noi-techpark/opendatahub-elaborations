@@ -86,7 +86,8 @@ public class JobScheduler {
 					startElaboration(stationMapEntry.getKey(), typeMapEntry.getKey(), lastElaborationDateUTC,
 							lastRawDateUTC, now);
 				}catch(Exception e) {
-					logger.error("Something went wrong calculating: " + stationMapEntry.getKey()+"-"+typeMapEntry.getKey() );
+					logger.error("Something went wrong calculating: " + stationMapEntry.getKey()+"-"+typeMapEntry.getKey()+":"+e.getMessage());
+					e.printStackTrace();
 					continue;
 				}
 			}
@@ -109,8 +110,8 @@ public class JobScheduler {
 				try {
 					webClient.pushData(dto);
 				} catch (Exception ex) {
-					logger.warn("Failed to push data for station:" + station + " and type:" + type);
 					ex.printStackTrace();
+					throw new IllegalStateException("Failed to push data for station:" + station + " and type:" + type);
 				}
 				logger.debug("Completed sending to odh");
 				Long newOldestElaboration = DateUtils
