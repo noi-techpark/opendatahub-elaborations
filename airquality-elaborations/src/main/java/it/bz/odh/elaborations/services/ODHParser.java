@@ -9,9 +9,9 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import it.bz.odh.dto.DataMapDto;
-import it.bz.odh.dto.RecordDtoImpl;
-import it.bz.odh.dto.SimpleRecordDto;
+import it.bz.idm.bdp.dto.DataMapDto;
+import it.bz.idm.bdp.dto.RecordDtoImpl;
+import it.bz.idm.bdp.dto.SimpleRecordDto;
 
 @Service
 public class ODHParser {
@@ -109,4 +109,9 @@ public class ODHParser {
         }
         return history;
     }
+	public Long getEndOfInterval(String station, String type, Long lastRawData, String dataOrigin) {
+		LinkedHashMap<String, Object> data = client.getEndOfEmptyInterval(station, type, lastRawData, dataOrigin);
+		List<SimpleRecordDto> parsedData = parseHistoryFromResponse(station, type, data);
+		return parsedData.isEmpty() ? null : parsedData.get(0).getTimestamp();
+	}
 }

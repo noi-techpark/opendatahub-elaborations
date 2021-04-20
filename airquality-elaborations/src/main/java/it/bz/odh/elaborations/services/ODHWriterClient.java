@@ -4,10 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import it.bz.odh.dto.DataMapDto;
-import it.bz.odh.dto.ProvenanceDto;
-import it.bz.odh.dto.RecordDtoImpl;
-import it.bz.odh.json.NonBlockingJSONPusher;
+import it.bz.idm.bdp.dto.DataMapDto;
+import it.bz.idm.bdp.dto.ProvenanceDto;
+import it.bz.idm.bdp.dto.RecordDtoImpl;
+import it.bz.idm.bdp.json.NonBlockingJSONPusher;
 
 @Lazy
 @Component
@@ -33,5 +33,11 @@ public class ODHWriterClient extends NonBlockingJSONPusher{
 	@Override
 	public ProvenanceDto defineProvenance() {
 		return new ProvenanceDto(null, provenanceName, provenanceVersion, origin);
+	}
+
+	@Override
+	public <T> DataMapDto<RecordDtoImpl> mapData(T arg0) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

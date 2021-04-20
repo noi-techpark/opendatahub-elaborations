@@ -15,9 +15,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import it.bz.odh.dto.DataMapDto;
-import it.bz.odh.dto.RecordDtoImpl;
-import it.bz.odh.dto.SimpleRecordDto;
+import it.bz.idm.bdp.dto.DataMapDto;
+import it.bz.idm.bdp.dto.RecordDtoImpl;
+import it.bz.idm.bdp.dto.SimpleRecordDto;
 
 @Service
 @EnableScheduling
@@ -69,22 +69,22 @@ public class JobScheduler {
 			for (Map.Entry<String, DataMapDto<RecordDtoImpl>> typeMapEntry : stationMapEntry.getValue().getBranch()
 					.entrySet()) {
 				try {
-				List<RecordDtoImpl> data = new ArrayList<RecordDtoImpl>();
-				DataMapDto<RecordDtoImpl> elaborationTypeMap = newestElaborationMap.getBranch()
-						.get(stationMapEntry.getKey());
-				if (!newestElaborationMap.getBranch().isEmpty() && elaborationTypeMap != null
-						&& !elaborationTypeMap.getBranch().isEmpty()
-						&& elaborationTypeMap.getBranch().get(typeMapEntry.getKey()) != null
-						&& !elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getData().isEmpty())
-					data = elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getData();
+					List<RecordDtoImpl> data = new ArrayList<RecordDtoImpl>();
+					DataMapDto<RecordDtoImpl> elaborationTypeMap = newestElaborationMap.getBranch()
+							.get(stationMapEntry.getKey());
+					if (!newestElaborationMap.getBranch().isEmpty() && elaborationTypeMap != null
+							&& !elaborationTypeMap.getBranch().isEmpty()
+							&& elaborationTypeMap.getBranch().get(typeMapEntry.getKey()) != null
+							&& !elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getData().isEmpty())
+						data = elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getData();
 
-				List<RecordDtoImpl> rawData = dataMap.getBranch().get(stationMapEntry.getKey()).getBranch()
-						.get(typeMapEntry.getKey()).getData();
-				Long lastElaborationDateUTC = !data.isEmpty() ? data.get(0).getTimestamp() : null;
-				Long lastRawDateUTC = rawData.get(0).getTimestamp();
-				if (lastElaborationDateUTC == null || now - minTimePassedSinceLastElaboration >= lastElaborationDateUTC) // start
-					startElaboration(stationMapEntry.getKey(), typeMapEntry.getKey(), lastElaborationDateUTC,
-							lastRawDateUTC, now);
+					List<RecordDtoImpl> rawData = dataMap.getBranch().get(stationMapEntry.getKey()).getBranch()
+							.get(typeMapEntry.getKey()).getData();
+					Long lastElaborationDateUTC = !data.isEmpty() ? data.get(0).getTimestamp() : null;
+					Long lastRawDateUTC = rawData.get(0).getTimestamp();
+					if (lastElaborationDateUTC == null || now - minTimePassedSinceLastElaboration >= lastElaborationDateUTC) // start
+						startElaboration(stationMapEntry.getKey(), typeMapEntry.getKey(), lastElaborationDateUTC,
+								lastRawDateUTC, now);
 				}catch(Exception e) {
 					logger.error("Something went wrong calculating: " + stationMapEntry.getKey()+"-"+typeMapEntry.getKey()+":"+e.getMessage());
 					e.printStackTrace();
@@ -97,32 +97,39 @@ public class JobScheduler {
 	private void startElaboration(String station, String type, Long lastElaborationDateUTC, Long lastRawDateUTC,
 			Long now) throws ParseException {
 		List<SimpleRecordDto> stationData = null;
-		if (lastElaborationDateUTC != null) {
+		if (lastElaborationDateUTC != null)
 			stationData = odhParser.getRawData(station, type, lastElaborationDateUTC);
-		} else
+		else
 			stationData = odhParser.getRawData(station, type);
-		if (!stationData.isEmpty()) {
-			List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(now, stationData, Calendar.HOUR);
-			if (!averageElaborations.isEmpty()) {
-				DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
-				dto.addRecords(station, type, averageElaborations);
-				logger.debug("Created " + averageElaborations.size() + " elaborations for " + station + ":" + type);
-				try {
-					webClient.pushData(dto);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-					throw new IllegalStateException("Failed to push data for station:" + station + " and type:" + type);
-				}
-				logger.debug("Completed sending to odh");
-				Long newOldestElaboration = DateUtils
-						.ceiling(new Date(averageElaborations.get(averageElaborations.size() - 1).getTimestamp()),
-								Calendar.HOUR)
-						.getTime();
-				if (newOldestElaboration <= lastRawDateUTC)
-					startElaboration(station, type, newOldestElaboration, lastRawDateUTC, now);
-			}
-		} else {
-			logger.debug("Unable to get raw data for " + station + ":" + type);
+		if (stationData.size() < ElaborationService.MIN_AMOUNT_OF_DATA_POINTS && lastElaborationDateUTC != null) {
+			Long lastRawData = stationData.isEmpty()?lastElaborationDateUTC:stationData.get(stationData.size()-1).getTimestamp();
+			Long endOfNoDataInterval = odhParser.getEndOfInterval(station, type, lastRawData, null);
+			if (endOfNoDataInterval != null)
+				stationData = odhParser.getRawData(station, type, endOfNoDataInterval);
 		}
+		if (stationData.isEmpty())
+			throw new IllegalStateException("Unable to get raw data for " + station + ":" + type);
+		List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(now, stationData, Calendar.HOUR);
+		if (averageElaborations.isEmpty())
+			throw new IllegalStateException("Unable to calculate any data");
+
+		DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
+		dto.addRecords(station, type, averageElaborations);
+
+		logger.debug("Created " + averageElaborations.size() + " elaborations for " + station + ":" + type);
+		try {
+			webClient.pushData(dto);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw new IllegalStateException("Failed to push data for station:" + station + " and type:" + type);
+		}
+		logger.debug("Completed sending to odh");
+
+		Long newOldestElaboration = DateUtils
+				.ceiling(new Date(averageElaborations.get(averageElaborations.size() - 1).getTimestamp()),
+						Calendar.HOUR)
+				.getTime();
+		if (newOldestElaboration <= lastRawDateUTC)
+			startElaboration(station, type, newOldestElaboration, lastRawDateUTC, now);
 	}
 }

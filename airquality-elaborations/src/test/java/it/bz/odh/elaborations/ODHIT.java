@@ -14,8 +14,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import it.bz.odh.dto.DataMapDto;
-import it.bz.odh.dto.RecordDtoImpl;
+import it.bz.idm.bdp.dto.DataMapDto;
+import it.bz.idm.bdp.dto.RecordDtoImpl;
 import it.bz.odh.elaborations.services.JobScheduler;
 import it.bz.odh.elaborations.services.ODHParser;
 import it.bz.odh.elaborations.services.ODHReaderClient;
@@ -44,7 +44,7 @@ public class ODHIT{
     public void testFetchStationData() {
         String from = "2020-10-05T23:58:59.999";
         String to = "2020-10-05T23:59:59.999";
-        LinkedHashMap<String, Object> responseMapping = client.getRawData("","",from,to);
+        LinkedHashMap<String, Object> responseMapping = client.getRawData("","",from,to,-1, null);
         LinkedHashMap<String, Object>values = (LinkedHashMap<String, Object>) responseMapping.get("data");
         assertNotNull(values);
         assertFalse(values.isEmpty());
@@ -64,5 +64,11 @@ public class ODHIT{
     @Test
     public void testStartElaborations() {
        scheduler.executeAirqualityElaborations();
+    }
+
+    @Test
+    public void testGetNewestDataAfter() {
+        Long endOfInterval = parser.getEndOfInterval("AB2", "O3 - Ozono", 1568628108000l,"APPABZ");
+        assertNotNull(endOfInterval);
     }
 }

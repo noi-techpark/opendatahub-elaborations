@@ -26,12 +26,12 @@ public class ODHReaderClient{
     
     private String DEFAULT_OLDEST_DATA_ELABORATION = "2020-01-01T00:00:00.000+0000";
     
-    public LinkedHashMap<String, Object> getStationData(String station,String type, Date from, Date to) {
-        return getRawData(station, type, dateFormatter.format(from), dateFormatter.format(to));
+    public LinkedHashMap<String, Object> getStationData(String station,String type, Date from, Date to, Integer limit, String dataOrigin) {
+        return getRawData(station, type, dateFormatter.format(from), dateFormatter.format(to), limit, dataOrigin);
     }
-    public LinkedHashMap getRawData(String station,String type,String from, String to) {
+    public LinkedHashMap getRawData(String station,String type,String from, String to, Integer limit, String dataOrigin) {
         return ninja.get().uri("/v2/tree/EnvironmentStation/" + type + "/" + from + "/" +  to
-                        + "?limit=-1&where=sactive.eq.true,sorigin.eq." + DATA_ORIGIN + ",scode.eq."+station+"&select=tmeasurements")
+                        + "?limit=" + limit + "&where=sactive.eq.true,sorigin.eq." + (dataOrigin != null ? dataOrigin : DATA_ORIGIN) + ",scode.eq."+station+"&select=tmeasurements")
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
     public LinkedHashMap getLatestNinjaTree() {
@@ -52,7 +52,7 @@ public class ODHReaderClient{
         long aMonthLaterAsMS = lastElaborationDateinMS + A_MONTH;
         String lastElaborationDateString = dateFormatter.format(lastElaborationDateinMS);
         String aMonthLaterString = dateFormatter.format(new Date(aMonthLaterAsMS));
-        return getRawData(station, type, lastElaborationDateString, aMonthLaterString);
+        return getRawData(station, type, lastElaborationDateString, aMonthLaterString,-1, null);
     }
     public Long guessOldestRawData(String station, String type) {
         try {
@@ -66,7 +66,7 @@ public class ODHReaderClient{
     private Long recursiveOldestDateRetrieval(String station, String type, Date from, Date to) throws ParseException {
         if (from.after(new Date()))
             throw new IllegalStateException("This should not happen since only existing station types should be called");
-        LinkedHashMap<String, Object> stationData = getStationData(station, type, from,to);
+        LinkedHashMap<String, Object> stationData = getStationData(station, type, from,to,-1, null);
         String oldestRecordDateString = parseOldestRecordFromResponse(station,type,stationData);
         return oldestRecordDateString != null ? parseDate(oldestRecordDateString).getTime(): recursiveOldestDateRetrieval(station, type,to,new Date(to.getTime() + A_MONTH));
         
@@ -86,5 +86,10 @@ public class ODHReaderClient{
     public Date parseDate(String date) throws ParseException {
         return responseDateFormatter.parse(date);
     }
+	public LinkedHashMap<String, Object> getEndOfEmptyInterval(String station, String type, Long lastRawData, String dataOrigin) {
+		Date from = new Date(lastRawData+1);
+		Date to = new Date(lastRawData + 1000l*3600l*24l*365l*100l);
+		return getStationData(station, type, from, to, 1, dataOrigin);
+	}
     
 }
