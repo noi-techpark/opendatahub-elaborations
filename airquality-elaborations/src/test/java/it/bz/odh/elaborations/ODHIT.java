@@ -68,7 +68,7 @@ public class ODHIT{
 
     @Test
     public void testGetNewestDataAfter() {
-        Long endOfInterval = parser.getEndOfInterval("AB2", "O3 - Ozono", 1568628108000l,"APPABZ");
+        Long endOfInterval = parser.getEndOfInterval("AUGEG4_AIRQ04", "CO2_raw", 1601992800000l,null);
         assertNotNull(endOfInterval);
     }
 }

@@ -101,18 +101,19 @@ public class JobScheduler {
             stationData = odhParser.getRawData(station, type, lastElaborationDateUTC);
         else
             stationData = odhParser.getRawData(station, type);
-        if (stationData.size() < ElaborationService.MIN_AMOUNT_OF_DATA_POINTS && lastElaborationDateUTC != null) {
-            Long lastRawData = stationData.isEmpty()?lastElaborationDateUTC:stationData.get(stationData.size()-1).getTimestamp();
-            Long endOfNoDataInterval = odhParser.getEndOfInterval(station, type, lastRawData, null);
-            if (endOfNoDataInterval != null)
-                stationData = odhParser.getRawData(station, type, endOfNoDataInterval);
-        }
         if (stationData.isEmpty())
             throw new IllegalStateException("Unable to get raw data for " + station + ":" + type);
         List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(now, stationData, Calendar.HOUR);
-        if (averageElaborations.isEmpty())
+        if (averageElaborations.isEmpty() && stationData.get(stationData.size()-1).getTimestamp() < lastRawDateUTC) {
+            Long lastRawData = stationData.isEmpty()?lastElaborationDateUTC:stationData.get(stationData.size()-1).getTimestamp();
+            Long endOfNoDataInterval = odhParser.getEndOfInterval(station, type, lastRawData, null);
+            if (endOfNoDataInterval != null) {
+                stationData = odhParser.getRawData(station, type, endOfNoDataInterval);
+                averageElaborations = elaborationService.calcAverage(now, stationData, Calendar.HOUR);
+            }
+        }
+        if (averageElaborations.isEmpty() )
             throw new IllegalStateException("Unable to calculate any data");
-
         DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
         dto.addRecords(station, type, averageElaborations);
 
