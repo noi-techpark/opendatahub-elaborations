@@ -18,7 +18,7 @@ public class ElaborationService {
 
     private static final int PERIOD = 3600;
     private static final long HOUR = 1000*3600l;
-    public static final int MIN_AMOUNT_OF_DATA_POINTS = 30;
+    public static final int MIN_AMOUNT_OF_DATA_POINTS = 16;
     public List<SimpleRecordDto> calcAverage(Long now, List<SimpleRecordDto> rawData, int timeReference) {
         List<SimpleRecordDto> elaborations = new ArrayList<SimpleRecordDto>();
         if (rawData!= null && !rawData.isEmpty()) {
