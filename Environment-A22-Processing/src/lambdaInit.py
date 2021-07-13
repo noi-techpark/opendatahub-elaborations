@@ -1,6 +1,6 @@
-from dataProcessor import DataProcessor
+from dataprocessor.DataProcessor import Processor
 
-f = DataProcessor()
+f = Processor()
 
 def handleLambdaCall(event,arguments):
-    f.startCalculations()
+    f.calc_by_station()
