@@ -24,7 +24,6 @@ class DataPusher:
         r = requests.post(endpoint, json=data_map, headers={"Authorization" : "Bearer " + self.token['access_token']})
         if (r.status_code != 201):
             print("Status code not 201 but " + str(r.status_code))
-            print(endpoint)
             print(data_map)
     
     def upsert_provenance(self):

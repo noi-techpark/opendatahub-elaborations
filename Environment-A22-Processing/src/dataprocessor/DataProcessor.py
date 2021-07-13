@@ -8,7 +8,7 @@ from ODHPusher import DataPusher
 import json
 import numpy as np
 
-DEFAULT_START_CALC = "2021-07-01 00:00:00.000+0000"
+DEFAULT_START_CALC = "2016-01-01 00:00:00.000+0000"
 NO2 = "NO2-Alphasense"
 NO = "NO-Alphasense"
 O3 = "O3"
@@ -27,25 +27,26 @@ class Processor:
         time_map = fetcher.get_newest_data_timestamps()
         for s_id in time_map:
             start = datetime.datetime.now(timezone.utc)
-            end = datetime.datetime.now(timezone.utc)
             for t_id in time_map[s_id]:
                 state_map = time_map[s_id][t_id]
-                """end_time = state_map.get('raw')"""
+                end_time = state_map.get('raw')
                 start_time = datetime.datetime.strptime(state_map.get('processed',DEFAULT_START_CALC),"%Y-%m-%d %H:%M:%S.%f%z")
                 if (start > start_time):
                     start = start_time
-            history = fetcher.get_raw_history(s_id,start,end)
+            print(start)
+            print(end_time)
+            history = fetcher.get_raw_history(s_id,start,end_time)
             elaborations = self.calc(history,s_id)
             pusher.send_data("EnvironmentStation",elaborations)
     def calc(self, history,station_id):
-        station_map ={ station_id:{"branch":{}}}
+        station_map ={"branch":{ station_id:{"branch":{},"data":[],"name":"default"}}}
         for time in  history:
             elabs = self.calc_single_time(history[time], station_id, time)
             if elabs != None:
                 for type_id in elabs:
-                    type_data = station_map[station_id]["branch"].get(type_id)
+                    type_data = station_map['branch'][station_id]["branch"].get(type_id)
                     if type_data == None: 
-                        station_map[station_id]["branch"][type_id] = {"data":[elabs[type_id]]}
+                        station_map['branch'][station_id]["branch"][type_id] = {"data":[elabs[type_id]],"branch":{},"name":"default"}
                     else:
                         type_data["data"].append(elabs[type_id])
         return station_map
@@ -79,9 +80,9 @@ class Processor:
                     float(parameters["d"]) * np.power(float(data[RH]),0.54)
                     + float(parameters["e"]) * np.power(float(data[T_INT]),1.2))
                 else:
-                    print("Conditions were not met to do calculation for: "+type_id+" on this dataset:")
+                    print("Conditions were not met to do calculation for: " + type_id + " at " + time + " on this dataset:")
                     print(data)
                 if processed_value != None:
-                    data_point_map[type_id] = DataPoint(time,processed_value,3600)
+                    data_point_map[type_id+"_processed"] = DataPoint(datetime.datetime.strptime(time,"%Y-%m-%d %H:%M:%S.%f%z").timestamp() * 1000,processed_value,3600)
                     processed_value = None
             return data_point_map
