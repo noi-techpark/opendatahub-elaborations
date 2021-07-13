@@ -10,6 +10,7 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AWS_DEFAULT_REGION="eu-west-1"
+        FUNCTION_NAME="a22DataProcessing"
         BUILD_BUNDLE="dataprocessing.zip"
 	    AUTHENTICATION_SERVER='https://auth.opendatahub.testingmachine.eu/auth/'
         CLIENT_SECRET= credentials('test-keycloak-lambda-secret')
@@ -29,9 +30,9 @@ pipeline {
         }
         stage('Upload') {
             steps {
-                sh """aws lambda update-function-configuration --function-name a22DataProcessing \
+                sh """aws lambda update-function-configuration --function-name ${FUNCTION_NAME} \
 		        --environment Variables={AUTHENTICATION_SERVER=${AUTHENTICATION_SERVER},CLIENT_SECRET=${CLIENT_SECRET},ODH_SHARE_ENDPOINT=${ODH_SHARE_ENDPOINT},RAW_DATA_ENDPOINT=${RAW_DATA_ENDPOINT},PROVENANCE_NAME=${PROVENANCE_NAME},PROVENANCE_VERSION=${PROVENANCE_VERSION},PROVENANCE_LINEAGE=${PROVENANCE_LINEAGE}} """
-                sh 'aws lambda update-function-code --function-name freeParkingLotsElaborations --zip-file fileb://${PROJECT_FOLDER}/${BUILD_BUNDLE}'
+                sh 'aws lambda update-function-code --function-name ${FUNCTION_NAME} --zip-file fileb://${PROJECT_FOLDER}/${BUILD_BUNDLE}'
             }
         }
     }
