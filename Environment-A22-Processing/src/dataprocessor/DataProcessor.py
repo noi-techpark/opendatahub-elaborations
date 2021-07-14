@@ -24,17 +24,15 @@ pusher = DataPusher()
 class Processor:
     def calc_by_station(self):
         time_map = fetcher.get_newest_data_timestamps()
+        start = datetime.datetime.strptime(DEFAULT_START_CALC,"%Y-%m-%d %H:%M:%S.%f%z")
         for s_id in time_map:
-            start = datetime.datetime.now(timezone.utc)
             for t_id in time_map[s_id]:
                 state_map = time_map[s_id][t_id]
-                end_time = state_map.get('raw')
+                end_time = datetime.datetime.strptime(state_map.get('raw'),"%Y-%m-%d %H:%M:%S.%f%z")
                 start_time = datetime.datetime.strptime(state_map.get('processed',DEFAULT_START_CALC),"%Y-%m-%d %H:%M:%S.%f%z")
-                if (start > start_time):
+                if (start_time != None and start < start_time):
                     start = start_time
-            print(start)
-            print(end_time)
-            history = fetcher.get_raw_history(s_id,start,end_time)
+            history = fetcher.get_raw_history(s_id,start,end_time+datetime.timedelta(0,3))
             elaborations = self.calc(history,s_id)
             pusher.send_data("EnvironmentStation",elaborations)
     def calc(self, history,station_id):
