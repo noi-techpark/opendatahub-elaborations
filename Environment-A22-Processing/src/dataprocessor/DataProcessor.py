@@ -1,4 +1,3 @@
-from numpy.lib.function_base import append
 import datetime
 from datetime import timezone
 from model.Dtos import DataPoint
