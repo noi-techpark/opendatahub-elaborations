@@ -1,4 +1,4 @@
-from keycloak import KeycloakOpenID
+from keycloak.keycloak_openid import KeycloakOpenID
 import os
 
 # Configure client
