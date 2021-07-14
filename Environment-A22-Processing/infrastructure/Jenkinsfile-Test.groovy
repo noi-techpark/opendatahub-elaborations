@@ -13,7 +13,7 @@ pipeline {
         FUNCTION_NAME="a22DataProcessing"
         BUILD_BUNDLE="dataprocessing.zip"
 	    AUTHENTICATION_SERVER='https://auth.opendatahub.testingmachine.eu/auth/'
-        CLIENT_SECRET= credentials('test-keycloak-lambda-secret')
+        CLIENT_SECRET= credentials('test-keycloak-lambda-environmentprocessing-a22-secret')
         ODH_SHARE_ENDPOINT='https://share.opendatahub.testingmachine.eu/'
         RAW_DATA_ENDPOINT='https://mobility.api.opendatahub.testingmachine.eu/v2'
         PROVENANCE_NAME="dataprocessing-a22-environment"

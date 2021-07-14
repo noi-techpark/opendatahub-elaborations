@@ -13,7 +13,7 @@ class TestFetch(unittest.TestCase):
         data = odh_client.get_newest_data_timestamps()
 
     def test_get_raw_history(self):
-        data = odh_client.get_raw_history('AUGEG4_AIRQ06','CO2','2021-06-06 00:00:00.000+0000','2021-06-06 10:00:00.000+0000')
+        data = odh_client.get_raw_history('AUGEG4_AIRQ06','2021-06-06 00:00:00.000+0000','2021-06-06 10:00:00.000+0000')
 
 if __name__ == '__main__':
     unittest.main()
