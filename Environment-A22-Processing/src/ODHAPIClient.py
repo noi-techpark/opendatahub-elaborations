@@ -13,6 +13,8 @@ class DataFetcher:
         return stationMap
 
     def fetch_data(self, endpoint):
+        print(endpoint)
+        print(self.token)
         r = requests.get(os.getenv("ODH_API_ENDPOINT") + endpoint,headers={"Authorization" : "Bearer " + self.token['access_token']})
         if (r.status_code != 200):
             print("Status code not 200 but " + str(r.status_code))
