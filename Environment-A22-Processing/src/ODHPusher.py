@@ -1,4 +1,3 @@
-from keycloak import KeycloakOpenID
 import requests
 import os
 from model.Dtos import Provenance
