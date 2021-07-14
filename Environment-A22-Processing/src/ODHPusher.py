@@ -1,21 +1,13 @@
 from keycloak import KeycloakOpenID
 import requests
-import json
 import os
 from model.Dtos import Provenance
-
-# Configure client
-keycloak_openid = KeycloakOpenID(server_url= os.getenv("AUTHENTICATION_SERVER"),
-                    client_id="odh-a22-dataprocessor",
-                    realm_name="noi",
-                    client_secret_key=os.getenv("CLIENT_SECRET"),
-                    verify=True)
-
+from ODHKeyCloakClient import KeycloakClient
 
 class DataPusher:
     def __init__(self):
         self.provenance_id = None
-        self.token = keycloak_openid.token("", "","client_credentials")
+        self.token = KeycloakClient.getDefaultInstance().token("", "","client_credentials")
         self.upsert_provenance()
 
     def send_data(self,station_type, data_map):

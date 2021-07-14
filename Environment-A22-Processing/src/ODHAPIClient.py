@@ -1,20 +1,10 @@
-from keycloak import KeycloakOpenID
 import requests
-import json
 import os
-from model.Dtos import DataPoint,Provenance
-
-# Configure client
-keycloak_openid = KeycloakOpenID(server_url= os.getenv("AUTHENTICATION_SERVER"),
-                    client_id="odh-a22-dataprocessor",
-                    realm_name="noi",
-                    client_secret_key=os.getenv("CLIENT_SECRET"),
-                    verify=True)
-
+from ODHKeyCloakClient import KeycloakClient
 
 class DataFetcher:
     def __init__(self):
-        self.token = keycloak_openid.token("", "","client_credentials")
+        self.token = KeycloakClient.getDefaultInstance().token("", "","client_credentials")
 
     def create_data_map(self,station,dataType,dataPoints):
         dataMap = {"name":"(default)","branch":{},"data": dataPoints}
