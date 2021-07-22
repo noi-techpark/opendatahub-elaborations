@@ -80,9 +80,9 @@ class Processor:
                     log.warn("Conditions were not met to do calculation for station: " 
                     + station_id + " type:" + type_id + " at " + time + " on this dataset:")
                     log.warn(data)
-                if processed_value < 0:
-                    processed_value = 0
                 if processed_value != None:
+                    if processed_value < 0:
+                        processed_value = 0
                     data_point_map[type_id+"_processed"] = DataPoint(datetime.datetime.strptime(time,"%Y-%m-%d %H:%M:%S.%f%z").timestamp() * 1000,processed_value,3600)
                     processed_value = None
             return data_point_map
