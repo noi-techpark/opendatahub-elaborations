@@ -1,24 +1,24 @@
 pipeline {
     agent {
         dockerfile {
-            filename 'FreeParkingSlotsCalculation/infrastructure/Dockerfile'
+            filename 'Environment-A22-Processing/infrastructure/Dockerfile'
         }
     }
 
     environment {
-        PROJECT_FOLDER="FreeParkingSlotsCalculation"
+        PROJECT_FOLDER="Environment-A22-Processing"
         AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
         AWS_DEFAULT_REGION="eu-west-1"
-        BUILD_BUNDLE="freeParkingSlotsCalculator.zip"
+        FUNCTION_NAME="a22DataProcessing-prod"
+        BUILD_BUNDLE="dataprocessing.zip"
 	    AUTHENTICATION_SERVER='https://auth.opendatahub.bz.it/auth/'
-        CLIENT_SECRET= credentials('prod-keycloak-lambda-secret')
+        CLIENT_SECRET= credentials('prod-keycloak-lambda-environmentprocessing-a22-secret')
         ODH_SHARE_ENDPOINT='https://mobility.share.opendatahub.bz.it/'
         RAW_DATA_ENDPOINT='https://mobility.api.opendatahub.bz.it/v2'
-        PROVENANCE_NAME="FreeParkingSlotsCalculation"
+        PROVENANCE_NAME="dataprocessing-a22-environment"
         PROVENANCE_VERSION="0.1.0"
         PROVENANCE_LINEAGE="NOI"
-        FUNCTION_NAME="freeParkingLotsElaborations-prod"
     }
 
     stages {
