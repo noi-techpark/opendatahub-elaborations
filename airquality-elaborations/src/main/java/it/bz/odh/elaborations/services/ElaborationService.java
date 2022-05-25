@@ -25,7 +25,7 @@ public class ElaborationService {
             Collections.sort(rawData);
             Long intervalStart = DateUtils.truncate((new Date(rawData.get(0).getTimestamp())), timeReference).getTime();
             Date maxCalcDate = new Date(rawData.get(rawData.size()-1).getTimestamp());
-            if (now < maxCalcDate.getTime() + HOUR);
+            if (now < maxCalcDate.getTime() + HOUR)
                 maxCalcDate = new Date(now);
             Long maxCalc = DateUtils.truncate(maxCalcDate, timeReference).getTime();
             Long intervalEnd = intervalStart + HOUR;

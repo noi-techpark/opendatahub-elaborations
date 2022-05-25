@@ -22,41 +22,41 @@ public class ODHParser {
     public DataMapDto<RecordDtoImpl> createDataMap(String stationtype) {
         LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) ((LinkedHashMap<String, Object>) client.getLatestNinjaTree().get("data")).get(stationtype);
         LinkedHashMap<String,Object> stations = (LinkedHashMap<String, Object>) ninjaTree.get("stations");
-        DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
+        DataMapDto<RecordDtoImpl> dto = new DataMapDto<>();
         for (Map.Entry<String, Object> station : stations.entrySet()) {
-            DataMapDto<RecordDtoImpl> typeMap = new DataMapDto<RecordDtoImpl>();
+            DataMapDto<RecordDtoImpl> typeMap = new DataMapDto<>();
             LinkedHashMap<String,Object> typesContainer= parseMap(station.getValue());
             LinkedHashMap<String, Object> types = parseMap(typesContainer.get("sdatatypes"));
             for (Map.Entry<String, Object> type : types.entrySet()) {
                 LinkedHashMap<String, List<LinkedHashMap<String,String>>> value = (LinkedHashMap<String, List<LinkedHashMap<String, String>>>) type.getValue();
                 String time = value.get("tmeasurements").get(0).get("mvalidtime");
-                List<RecordDtoImpl> records = new ArrayList<RecordDtoImpl>();
+                List<RecordDtoImpl> records = new ArrayList<>();
                 try {
                     records.add(new SimpleRecordDto(client.parseDate(time).getTime(),0.));
                 } catch (ParseException e) {
                     e.printStackTrace();
                     continue;
                 }
-                typeMap.getBranch().put(type.getKey(), new DataMapDto<RecordDtoImpl>(records));
+                typeMap.getBranch().put(type.getKey(), new DataMapDto<>(records));
             }
             dto.getBranch().put(station.getKey(), typeMap);
         }
         return dto;
     }
     public DataMapDto<RecordDtoImpl> createNewestElaborationMap(String stationtype) {
-        DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
+        DataMapDto<RecordDtoImpl> dto = new DataMapDto<>();
         LinkedHashMap<String, Object> dataSet = (LinkedHashMap<String, Object>) client.createNewestElaborationMap().get("data");
         if (!dataSet.isEmpty()) {
             LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) dataSet.get(stationtype);
             LinkedHashMap<String,Object> stations = (LinkedHashMap<String, Object>) ninjaTree.get("stations");
             for (Map.Entry<String, Object> station : stations.entrySet()) {
-                DataMapDto<RecordDtoImpl> typeMap = new DataMapDto<RecordDtoImpl>();
+                DataMapDto<RecordDtoImpl> typeMap = new DataMapDto<>();
                 LinkedHashMap<String,Object> typesContainer= parseMap(station.getValue());
                 LinkedHashMap<String, Object> types = parseMap(typesContainer.get("sdatatypes"));
                 for (Map.Entry<String, Object> type : types.entrySet()) {
                     LinkedHashMap<String, List<LinkedHashMap<String,String>>> value = (LinkedHashMap<String, List<LinkedHashMap<String, String>>>) type.getValue();
                     String time = value.get("tmeasurements").get(0).get("mvalidtime");
-                    List<RecordDtoImpl> data = new ArrayList<RecordDtoImpl>();
+                    List<RecordDtoImpl> data = new ArrayList<>();
                     SimpleRecordDto e = new SimpleRecordDto();
                     try {
                         e.setTimestamp(client.parseDate(time).getTime());
@@ -65,7 +65,7 @@ public class ODHParser {
                         continue;
                     }
                     data.add(e);
-                    typeMap.getBranch().put(type.getKey(),new DataMapDto<RecordDtoImpl>(data));
+                    typeMap.getBranch().put(type.getKey(),new DataMapDto<>(data));
                 }
                 dto.getBranch().put(station.getKey(), typeMap);
             }
@@ -89,7 +89,7 @@ public class ODHParser {
     }
     
     private List<SimpleRecordDto> parseHistoryFromResponse(String station, String type, LinkedHashMap<String, Object> stationData) {
-        List<SimpleRecordDto> history = new ArrayList<SimpleRecordDto>();
+        List<SimpleRecordDto> history = new ArrayList<>();
         LinkedHashMap<String, Object> dataSet = (LinkedHashMap<String, Object>) stationData.get("data");
         if (!dataSet.isEmpty()) {
             LinkedHashMap<String,Object> ninjaTree = (LinkedHashMap<String, Object>) dataSet.get("EnvironmentStation");

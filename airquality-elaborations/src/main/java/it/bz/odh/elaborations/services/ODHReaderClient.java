@@ -48,7 +48,7 @@ public class ODHReaderClient{
 				+ ",mperiod.eq.3600&select=mvalidtime")
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
-    public LinkedHashMap<String,Object> getRawData(String station, String type, Long lastElaborationDateinMS) throws ParseException {
+    public LinkedHashMap<String,Object> getRawData(String station, String type, Long lastElaborationDateinMS) {
         long aMonthLaterAsMS = lastElaborationDateinMS + A_MONTH;
         String lastElaborationDateString = dateFormatter.format(lastElaborationDateinMS);
         String aMonthLaterString = dateFormatter.format(new Date(aMonthLaterAsMS));

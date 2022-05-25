@@ -69,7 +69,7 @@ public class JobScheduler {
             for (Map.Entry<String, DataMapDto<RecordDtoImpl>> typeMapEntry : stationMapEntry.getValue().getBranch()
                     .entrySet()) {
                 try {
-                    List<RecordDtoImpl> data = new ArrayList<RecordDtoImpl>();
+                    List<RecordDtoImpl> data = new ArrayList<>();
                     DataMapDto<RecordDtoImpl> elaborationTypeMap = newestElaborationMap.getBranch()
                             .get(stationMapEntry.getKey());
                     if (!newestElaborationMap.getBranch().isEmpty() && elaborationTypeMap != null
@@ -88,7 +88,6 @@ public class JobScheduler {
                 }catch(Exception e) {
                     logger.error("Something went wrong calculating: " + stationMapEntry.getKey()+"-"+typeMapEntry.getKey()+":"+e.getMessage());
                     e.printStackTrace();
-                    continue;
                 }
             }
         }
@@ -114,7 +113,7 @@ public class JobScheduler {
         }
         if (averageElaborations.isEmpty() )
             throw new IllegalStateException("Unable to calculate any data");
-        DataMapDto<RecordDtoImpl> dto = new DataMapDto<RecordDtoImpl>();
+        DataMapDto<RecordDtoImpl> dto = new DataMapDto<>();
         dto.addRecords(station, type, averageElaborations);
 
         logger.debug("Created " + averageElaborations.size() + " elaborations for " + station + ":" + type);
