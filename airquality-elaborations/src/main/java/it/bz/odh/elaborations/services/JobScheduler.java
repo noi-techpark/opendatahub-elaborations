@@ -36,7 +36,7 @@ public class JobScheduler {
     @Autowired
     private ODHWriterClient webClient;
 
-    @Scheduled(cron = "30 5 * * * *")
+    @Scheduled(cron = "${SCHEDULER_CRON:30 5 * * * *}")
     public void executeAirqualityElaborations() {
         logger.info("Start retrieving data");
         String stationtype = "EnvironmentStation";

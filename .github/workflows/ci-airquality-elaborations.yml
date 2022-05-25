@@ -55,13 +55,13 @@ jobs:
           X_tokenUri: ${{ env.KEYCLOAK_URL }}/auth/realms/noi/protocol/openid-connect/token
           X_clientId: odh-mobility-datacollector
           X_clientName: odh-mobility-datacollector
-          X_clientSecret: ${{ secrets.DATACOLLECTORS_CLIENT_SECRET_TEST }}
+          X_clientSecret: ${{ secrets.WRITER_CLIENT_SECRET_TEST }}
           X_scope: openid
           X_BASE_URI: https://mobility.share.opendatahub.testingmachine.eu/json
 
           # Open Data Hub API v2 Connectivity (ninja)
           X_NINJA_CLIENT: odh-mobility-airquality-elaboration
-          X_NINJA_SECRET: ${{ secrets.ELABORATIONS_CLIENT_SECRET_TEST }}
+          X_NINJA_SECRET: ${{ secrets.NINJA_CLIENT_SECRET_TEST }}
           X_ODH_BASE_URI: https://mobility.api.opendatahub.testingmachine.eu/
 
           # Data collector recognition
@@ -73,6 +73,8 @@ jobs:
           # Logging
           X_LOG_LEVEL: info
           X_LOG_STYLE: json
+
+          X_SCHEDULER_CRON: "30 5 * * * *"
 
       - name: Build project
         uses: noi-techpark/github-actions/maven-build@v2

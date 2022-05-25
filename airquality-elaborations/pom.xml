@@ -11,7 +11,7 @@
 	<properties>
 		<java.version>8</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<spring.version>5.2.13.RELEASE</spring.version>
+		<spring.version>5.3.20</spring.version>
 		<log4j.version>2.17.2</log4j.version>
 		<finalName>ROOT</finalName>
 	</properties>
@@ -79,6 +79,20 @@
 			<groupId>it.bz.idm.bdp</groupId>
 			<artifactId>dc-interface</artifactId>
 			<version>7.4.0</version>
+		</dependency>
+		<!-- This is to fix a "Cannot be cast to javax.servlet.Filter" severe error -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>4.0.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<!-- embedded tomcat for development, provided: not included in the final jar/war -->
+		<dependency>
+			<groupId>com.github.jsimone</groupId>
+			<artifactId>webapp-runner-main</artifactId>
+			<version>9.0.27.0</version>
+			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 	<build>
