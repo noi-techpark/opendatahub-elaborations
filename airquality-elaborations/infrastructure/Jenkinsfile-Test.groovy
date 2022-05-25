@@ -16,22 +16,6 @@ pipeline {
             steps {
                 sh """
                     cd ${PROJECT_FOLDER}
-                    echo 'COMPOSE_PROJECT_NAME=${PROJECT}' > .env
-                    echo 'DOCKER_IMAGE=${DOCKER_IMAGE}' >> .env
-                    echo 'DOCKER_TAG=${DOCKER_TAG}' >> .env
-                    echo 'LOG_LEVEL=debug' >> .env
-                    echo 'ARTIFACT_NAME=${ARTIFACT_NAME}' >> .env
-                    echo 'origin=a22-algorab' >> .env
-                    echo 'authorizationUri=https://auth.opendatahub.testingmachine.eu/auth' >> .env
-                    echo 'tokenUri=https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token' >> .env 
-                    echo 'BASE_URI=https://share.opendatahub.testingmachine.eu/json' >> .env
-                    echo 'clientId=odh-mobility-datacollector' >> .env
-                    echo 'clientName=odh-mobility-datacollector' >> .env
-                    echo 'clientSecret=${DATACOLLECTORS_CLIENT_SECRET}' >> .env
-                    echo 'NINJA_CLIENT=odh-mobility-airquality-elaboration' >> .env
-                    echo 'NINJA_SECRET=${ELABORATIONS_CLIENT_SECRET}' >> .env
-                    echo 'ODH_BASE_URI=https://mobility.api.opendatahub.testingmachine.eu/' >> .env
-                    echo 'scope=openid' >> .env 
                     echo 'stationtype=EnvironmentStation' >> .env 
                     echo -n 'provenance_version=' >> .env
                     xmlstarlet sel -N pom=http://maven.apache.org/POM/4.0.0 -t -v '/pom:project/pom:version' pom.xml >> .env

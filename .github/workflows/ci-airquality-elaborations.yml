@@ -49,7 +49,6 @@ jobs:
           X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
           X_JAVA_OPTIONS: -Xms128m -Xmx512m
-          X_SERVER_PORT: 1007
 
           # Open Data Hub Writer Connectivity
           X_authorizationUri: ${{ env.KEYCLOAK_URL }}/auth
@@ -60,25 +59,20 @@ jobs:
           X_scope: openid
           X_BASE_URI: https://mobility.share.opendatahub.testingmachine.eu/json
 
-          # Logging
-          X_LOG_LEVEL: info
-          X_LOG_STYLE: json
+          # Open Data Hub API v2 Connectivity (ninja)
+          X_NINJA_CLIENT: odh-mobility-airquality-elaboration
+          X_NINJA_SECRET: ${{ secrets.ELABORATIONS_CLIENT_SECRET_TEST }}
+          X_ODH_BASE_URI: https://mobility.api.opendatahub.testingmachine.eu/
+
+          # Data collector recognition
+          X_origin: a22-algorab
+          X_stationtype: EnvironmentStation
           X_provenance_name: ${{ env.PROJECT_NAME }}
           X_provenance_version: ${{ github.sha }}
 
-          X_SCHEDULER_FIXED_RATE: 3540000
-          X_SCHEDULER_POOL_SIZE: 10
-
-          X_encryption_key: ${{ secrets.VEHICLETRAFFIC_BLUETOOTH_ENCRYPTION_KEY }}
-
-      - name: Retrieve secret files and decode it to a file
-        env:
-          STORED_CREDENTIALS_BASE64: ${{ secrets.VEHICLETRAFFIC_BLUETOOTH_STORED_CREDENTIAL_B64 }}
-          GOOGLE_SECRET_BASE64: ${{ secrets.VEHICLETRAFFIC_BLUETOOTH_GOOGLE_SECRET_B64 }}
-        run: |
-          echo $STORED_CREDENTIALS_BASE64 | base64 -i --decode > data-collectors/vehicletraffic-bluetooth/src/main/resources/META-INF/credentials/StoredCredential
-          echo $GOOGLE_SECRET_BASE64 | base64 -i --decode > data-collectors/vehicletraffic-bluetooth/src/main/resources/META-INF/spring/client_secret.json
-          echo $GOOGLE_SECRET_BASE64 | base64 -i --decode > data-collectors/vehicletraffic-bluetooth/src/test/resources/META-INF/spring/client_secret.json
+          # Logging
+          X_LOG_LEVEL: info
+          X_LOG_STYLE: json
 
       - name: Build project
         uses: noi-techpark/github-actions/maven-build@v2
