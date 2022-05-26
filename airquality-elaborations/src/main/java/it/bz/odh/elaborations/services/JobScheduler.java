@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,7 +25,7 @@ public class JobScheduler {
 
     private static final int AN_HOUR_IN_MS = 3600*1000;
 
-    private Logger logger = LogManager.getLogger(JobScheduler.class);
+    private Logger logger = LoggerFactory.getLogger(JobScheduler.class);
 
     @Autowired
     private ODHParser odhParser;

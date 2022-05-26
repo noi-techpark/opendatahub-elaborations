@@ -20,7 +20,7 @@ public class ElaborationService {
     private static final long HOUR = 1000*3600l;
     public static final int MIN_AMOUNT_OF_DATA_POINTS = 16;
     public List<SimpleRecordDto> calcAverage(Long now, List<SimpleRecordDto> rawData, int timeReference) {
-        List<SimpleRecordDto> elaborations = new ArrayList<SimpleRecordDto>();
+        List<SimpleRecordDto> elaborations = new ArrayList<>();
         if (rawData!= null && !rawData.isEmpty()) {
             Collections.sort(rawData);
             Long intervalStart = DateUtils.truncate((new Date(rawData.get(0).getTimestamp())), timeReference).getTime();
