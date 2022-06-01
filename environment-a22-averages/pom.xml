@@ -4,10 +4,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>it.bz.odh</groupId>
-	<artifactId>airquality-elaborations</artifactId>
+	<artifactId>odh-mobility-el-environment-a22-averages</artifactId>
 	<packaging>war</packaging>
 	<version>0.2.0</version>
-	<name>Airquality elaborations for a22 data</name>
+	<name>Air quality elaborations for a22 data</name>
 	<properties>
 		<java.version>8</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
