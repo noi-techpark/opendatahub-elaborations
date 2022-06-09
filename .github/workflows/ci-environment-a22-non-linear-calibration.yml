@@ -1,0 +1,26 @@
+name: CI/CD environment-a22-non-linear-calibration
+
+on:
+  push:
+    paths:
+      - "./environment-a22-non-linear-calibration/**"
+      - ".github/workflows/ci-environment-a22-non-linear-calibration.yml"
+      - "!*.md"
+  
+
+env:
+  WORKING_DIRECTORY: environment-a22-non-linear-calibration
+  PROJECT_NAME: odh-mobility-el-environment-a22-non-linear-calibration
+  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-mobility-el-environment-a22-averages
+  DOCKER_TAG: ${{ github.sha }}
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Test code
+        uses: noi-techpark/github-actions/pip-test@v2
+        with:
+          working-directory: ${{ env.WORKING_DIRECTORY }}
