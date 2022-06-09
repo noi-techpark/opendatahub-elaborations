@@ -1,5 +1,4 @@
 import datetime
-from datetime import timezone
 from model.Dtos import DataPoint
 from ODHAPIClient import DataFetcher
 from ODHPusher import DataPusher
@@ -68,14 +67,20 @@ class Processor:
                     )
                 elif ((type_id == PM10 or type_id == PM25) and all (tid in data for tid in (RH,PM10,T_INT))
                         and not (data[T_INT] >= 20 and data[PM10]>100) and not(data[T_INT] < 20 and data[RH]>97)):
-                    processed_value = float(parameters["a"]) + float(parameters["b"]) * np.power(float(value),0.7) 
-                    + float(parameters["c"]) * np.power(float(data[RH]),0.75)
-                    + float(parameters["d"]) * np.power(float(data[T_INT]),0.3)
+                    processed_value = (
+                        float(parameters["a"])
+                        + float(parameters["b"]) * np.power(float(value),0.7)
+                        + float(parameters["c"]) * np.power(float(data[RH]),0.75)
+                        + float(parameters["d"]) * np.power(float(data[T_INT]),0.3)
+                    )
                 elif (type_id == O3 and all (t_id in data for t_id in (RH,T_INT,NO2))):
-                    processed_value = (float(parameters["a"]) + float(parameters["b"]) * np.power(float(value), 0.44) 
-                    + float(parameters["c"]) * np.power(float(data[NO2]),0.58) + 
-                    float(parameters["d"]) * np.power(float(data[RH]),0.54)
-                    + float(parameters["e"]) * np.power(float(data[T_INT]),1.2))
+                    processed_value = (
+                        float(parameters["a"])
+                        + float(parameters["b"]) * np.power(float(value), 0.44)
+                        + float(parameters["c"]) * np.power(float(data[NO2]),0.58)
+                        + float(parameters["d"]) * np.power(float(data[RH]),0.54)
+                        + float(parameters["e"]) * np.power(float(data[T_INT]),1.2)
+                    )
                 else:
                     log.warn("Conditions were not met to do calculation for station: " 
                     + station_id + " type:" + type_id + " at " + time + " on this dataset:")
