@@ -32,7 +32,7 @@ class Processor:
                 state_map = time_map[s_id][t_id]
                 end_time = datetime.datetime.strptime(state_map.get('raw'),"%Y-%m-%d %H:%M:%S.%f%z")
                 start_time = datetime.datetime.strptime(state_map.get('processed',DEFAULT_START_CALC),"%Y-%m-%d %H:%M:%S.%f%z")
-                if (start_time != None and start < start_time):
+                if (start_time and start < start_time):
                     start = start_time
             history = fetcher.get_raw_history(s_id,start,end_time+datetime.timedelta(0,3))
             elaborations = self.calc(history,s_id)
