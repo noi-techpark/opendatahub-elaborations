@@ -3,7 +3,7 @@ name: CI/CD environment-a22-non-linear-calibration
 on:
   push:
     paths:
-      - "./environment-a22-non-linear-calibration/**"
+      - "environment-a22-non-linear-calibration/**"
       - ".github/workflows/ci-environment-a22-non-linear-calibration.yml"
       - "!*.md"
   
