@@ -55,15 +55,15 @@ jobs:
       - name: Update AWS Lambda Function Configuration
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
-          LAMBDA_ENV_VARS: >-
-            {
-              AUTHENTICATION_SERVER=https://auth.opendatahub.testingmachine.eu/auth/,
-              CLIENT_SECRET=${{ secrets.NINJA_CLIENT_SECRET_TEST }},
-              ODH_SHARE_ENDPOINT=https://share.opendatahub.testingmachine.eu/,
-              RAW_DATA_ENDPOINT=https://mobility.api.opendatahub.testingmachine.eu/v2,
-              PROVENANCE_NAME=${{ env.PROJECT_NAME }},
-              PROVENANCE_VERSION=${{ github.sha }},
-              PROVENANCE_LINEAGE=NOI
+          LAMBDA_ENV_VARS: |
+            { \
+              AUTHENTICATION_SERVER=https://auth.opendatahub.testingmachine.eu/auth/, \
+              CLIENT_SECRET=${{ secrets.NINJA_CLIENT_SECRET_TEST }}, \
+              ODH_SHARE_ENDPOINT=https://share.opendatahub.testingmachine.eu/, \
+              RAW_DATA_ENDPOINT=https://mobility.api.opendatahub.testingmachine.eu/v2, \
+              PROVENANCE_NAME=${{ env.PROJECT_NAME }}, \
+              PROVENANCE_VERSION=${{ github.sha }}, \
+              PROVENANCE_LINEAGE=NOI \
             }
 
         run: |
