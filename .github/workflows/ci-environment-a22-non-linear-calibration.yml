@@ -7,7 +7,6 @@ on:
       - ".github/workflows/ci-environment-a22-non-linear-calibration.yml"
       - "!*.md"
 
-
 env:
   WORKING_DIRECTORY: environment-a22-non-linear-calibration
   PROJECT_NAME: odh-mobility-el-environment-a22-non-linear-calibration
@@ -33,45 +32,22 @@ jobs:
     needs: test
     concurrency: deploy-test-environment-a22-non-linear-calibration
     env:
-      KEYCLOAK_URL: https://auth.opendatahub.testingmachine.eu
+      LAMBDA_AUTHENTICATION_SERVER: https://auth.opendatahub.testingmachine.eu/auth/
+      LAMBDA_CLIENT_SECRET: ${{ secrets.NINJA_CLIENT_SECRET_TEST }}
+      LAMBDA_ODH_SHARE_ENDPOINT: https://share.opendatahub.testingmachine.eu/
+      LAMBDA_RAW_DATA_ENDPOINT: https://mobility.api.opendatahub.testingmachine.eu/v2
+      LAMBDA_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
+      LAMBDA_PROVENANCE_VERSION: ${{ github.sha }}
+      LAMBDA_PROVENANCE_LINEAGE: NOI
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
 
-      - name: Build and create ZIP Archive
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
-          pip install --no-cache-dir -r requirements.txt -t .
-          zip -r ${{ env.LAMBDA_FUNCTION_NAME }}.zip .
-        shell: bash
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Configure and sync this function with AWS LAMBDA
+        uses: noi-techpark/github-actions/aws-lambda-sync@v2
         with:
-          aws-access-key-id: ${{ secrets.AWS_LAMBDA_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_LAMBDA_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Update AWS Lambda Function Configuration
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        env:
-          LAMBDA_AUTHENTICATION_SERVER: https://auth.opendatahub.testingmachine.eu/auth/
-          LAMBDA_CLIENT_SECRET: ${{ secrets.NINJA_CLIENT_SECRET_TEST }}
-          LAMBDA_ODH_SHARE_ENDPOINT: https://share.opendatahub.testingmachine.eu/
-          LAMBDA_RAW_DATA_ENDPOINT: https://mobility.api.opendatahub.testingmachine.eu/v2
-          LAMBDA_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
-          LAMBDA_PROVENANCE_VERSION: ${{ github.sha }}
-          LAMBDA_PROVENANCE_LINEAGE: NOI
-        run: |
-          aws lambda update-function-configuration \
-            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --environment Variables=$(./env_to_simple_json.py)
-        shell: bash
-
-      - name: Update AWS Lambda Function Code
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
-          aws lambda update-function-code \
-            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --zip-file fileb://${{ env.LAMBDA_FUNCTION_NAME }}.zip
-        shell: bash
+          working-directory: ${{ env.WORKING_DIRECTORY }}
+          access-key-id: ${{ secrets.AWS_LAMBDA_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.AWS_LAMBDA_SECRET_ACCESS_KEY }}
+          region: ${{ env.AWS_REGION }}
+          lambda-function-name: ${{ env.LAMBDA_FUNCTION_NAME }}
