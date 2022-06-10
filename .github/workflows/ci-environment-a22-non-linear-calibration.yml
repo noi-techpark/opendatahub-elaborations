@@ -42,7 +42,7 @@ jobs:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
           pip install --no-cache-dir -r requirements.txt -t .
-          zip -r "../${{ env.LAMBDA_FUNCTION_NAME }}.zip" .
+          zip -r ${{ env.LAMBDA_FUNCTION_NAME }}.zip .
         shell: bash
 
       - name: Configure AWS credentials
