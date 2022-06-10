@@ -4,13 +4,15 @@ import os
 
 env_keys = list(dict(os.environ).keys())
 
-prefix = str(os.environ.get("INPUT_ENVIRONMENT-VARIABLE-PREFIX", "X_"))
+prefix = "LAMBDA_"
 output = []
 
 
+print("{", end="")
 for key in env_keys:
     if key.startswith(prefix):
-        output.append(f"{key.split(prefix, 1)[1]}={os.environ.get(key)}")
+        print(f"{key.split(prefix, 1)[1]}={os.environ.get(key)}", end="")
+print("}", end="")
 
-if output:
-    print(f'{{{",".join(output)}}}')
+# if output:
+#     print(f'{{{",".join(output)}}}')
