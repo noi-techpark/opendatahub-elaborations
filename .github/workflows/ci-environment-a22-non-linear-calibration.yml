@@ -55,21 +55,17 @@ jobs:
       - name: Update AWS Lambda Function Configuration
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
-          LAMBDA_ENV_VARS: |
-            { \
-              AUTHENTICATION_SERVER=https://auth.opendatahub.testingmachine.eu/auth/, \
-              CLIENT_SECRET=${{ secrets.NINJA_CLIENT_SECRET_TEST }}, \
-              ODH_SHARE_ENDPOINT=https://share.opendatahub.testingmachine.eu/, \
-              RAW_DATA_ENDPOINT=https://mobility.api.opendatahub.testingmachine.eu/v2, \
-              PROVENANCE_NAME=${{ env.PROJECT_NAME }}, \
-              PROVENANCE_VERSION=${{ github.sha }}, \
-              PROVENANCE_LINEAGE=NOI \
-            }
-
+          LAMBDA_AUTHENTICATION_SERVER: https://auth.opendatahub.testingmachine.eu/auth/
+          LAMBDA_CLIENT_SECRET: ${{ secrets.NINJA_CLIENT_SECRET_TEST }}
+          LAMBDA_ODH_SHARE_ENDPOINT: https://share.opendatahub.testingmachine.eu/
+          LAMBDA_RAW_DATA_ENDPOINT: https://mobility.api.opendatahub.testingmachine.eu/v2
+          LAMBDA_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
+          LAMBDA_PROVENANCE_VERSION: ${{ github.sha }}
+          LAMBDA_PROVENANCE_LINEAGE: NOI
         run: |
           aws lambda update-function-configuration \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --environment Variables=${{ env.LAMBDA_ENV_VARS }}
+            --environment Variables=$(./env_to_simple_json.py)
         shell: bash
 
       - name: Update AWS Lambda Function Code
