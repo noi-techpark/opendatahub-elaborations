@@ -73,5 +73,5 @@ jobs:
         run: |
           aws lambda update-function-code \
             --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
-            --zip-file fileb://${{ env.LAMBDA_FUNCTION_NAME }}
+            --zip-file fileb://${{ env.LAMBDA_FUNCTION_NAME }}.zip
         shell: bash
