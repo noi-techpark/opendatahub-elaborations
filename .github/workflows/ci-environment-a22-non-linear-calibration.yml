@@ -70,8 +70,8 @@ jobs:
 
       - name: Update AWS Lambda Function Code
         working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: >
-          aws lambda update-function-code
-            --function-name ${{ env.LAMBDA_FUNCTION_NAME }}
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.LAMBDA_FUNCTION_NAME }} \
             --zip-file fileb://${{ env.LAMBDA_FUNCTION_NAME }}
         shell: bash
