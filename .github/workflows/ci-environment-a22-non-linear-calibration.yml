@@ -9,8 +9,7 @@ on:
 
 env:
   WORKING_DIRECTORY: environment-a22-non-linear-calibration
-  FUNCTION_NAME: a22DataProcessing
-  AWS_REGION : "eu-west-1"
+  AWS_REGION: eu-west-1
   LAMBDA_PROVENANCE_NAME: odh-mobility-el-environment-a22-non-linear-calibration
   LAMBDA_PROVENANCE_VERSION: ${{ github.sha }}
   LAMBDA_PROVENANCE_LINEAGE: NOI
@@ -37,6 +36,29 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs: test
     concurrency: deploy-test-environment-a22-non-linear-calibration
+    env:
+      FUNCTION_NAME: a22DataProcessing
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Configure and sync this function with AWS LAMBDA
+        uses: noi-techpark/github-actions/aws-lambda-sync@v2
+        with:
+          working-directory: ${{ env.WORKING_DIRECTORY }}
+          lambda-function-name: ${{ env.FUNCTION_NAME }}
+          access-key-id: ${{ secrets.AWS_LAMBDA_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.AWS_LAMBDA_SECRET_ACCESS_KEY }}
+          region: ${{ env.AWS_REGION }}
+
+  # Deploy Prod
+  deploy-prod-environment-a22-non-linear-calibration:
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/prod'
+    needs: test
+    concurrency: deploy-prod-environment-a22-non-linear-calibration
+    env:
+      FUNCTION_NAME: a22DataProcessing-prod
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
