@@ -55,7 +55,7 @@ jobs:
       - name: Update AWS Lambda Function Configuration
         working-directory: ${{ env.WORKING_DIRECTORY }}
         env:
-          LAMBDA_ENV_VARS: |-
+          LAMBDA_ENV_VARS: >-
             {
               AUTHENTICATION_SERVER=https://auth.opendatahub.testingmachine.eu/auth/,
               CLIENT_SECRET=${{ secrets.NINJA_CLIENT_SECRET_TEST }},
