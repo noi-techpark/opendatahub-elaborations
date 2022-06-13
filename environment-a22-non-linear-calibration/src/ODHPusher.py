@@ -14,13 +14,13 @@ class DataPusher:
 
     def send_data(self,station_type, data_map):
         data_map["provenance"]= self.provenance_id
-        endpoint = os.getenv("ODH_SHARE_ENDPOINT")+"/json/pushRecords/" + station_type
+        endpoint = os.getenv("ODH_MOBILITY_API_WRITER")+"/json/pushRecords/" + station_type
         log.debug("Data send to writer: " + str(data_map))
         r = requests.post(endpoint, json=data_map, headers={"Authorization" : "Bearer " + self.token['access_token']})
         if (r.status_code != 201):
             log.warn("Status code not 201 but " + str(r.status_code))
             log.warn(data_map)
-    
+
     def upsert_provenance(self):
         collector = os.getenv("PROVENANCE_NAME")
         log.debug("Provenance name: " + collector)
@@ -29,5 +29,5 @@ class DataPusher:
         lineage = os.getenv("PROVENANCE_LINEAGE")
         log.debug("Provenance lineage: " + lineage)
         p = Provenance(None, lineage, collector, version)
-        r = requests.post(os.getenv("ODH_SHARE_ENDPOINT")+"/json/provenance", json= p, headers={"Authorization" : "Bearer " + self.token['access_token']})
+        r = requests.post(os.getenv("ODH_MOBILITY_API_WRITER")+"/json/provenance", json= p, headers={"Authorization" : "Bearer " + self.token['access_token']})
         self.provenance_id = r.text
