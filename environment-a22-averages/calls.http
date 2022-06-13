@@ -1,0 +1,21 @@
+
+@host=https://mobility.api.opendatahub.testingmachine.eu/v2
+
+### GET AN ACCESS TOKEN
+# @name login
+POST https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+&grant_type=bearer
+&client_id={{$dotenv NINJA_CLIENT}}
+&client_secret={{$dotenv NINJA_SECRET}}
+
+@token = {{login.response.body.access_token}}
+
+###
+{{host}}/tree/EnvironmentStation/NO-Alphasense_raw/2022-05-26T12/2022-06-26T12
+?limit=-1
+&where=sactive.eq.true,sorigin.eq.a22-algorab,scode.eq."AUGEG4_AIRQ01"
+&select=tmeasurements
+
+Authorization: Bearer {{token}}

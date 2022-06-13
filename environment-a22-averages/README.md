@@ -1,11 +1,14 @@
-# Airquality elaborations
+# A22 environment: Hourly Averages
 
-ToDo: Description of the project.
+This project was formerly called "Airquality elaborations".
 
+The original raw environmental data comes from the data collector
+[environment-a22], gets aggregated by this elaboration in hourly averages.
 
 **Table of contents**
 
-- [Airquality elaborations](#airquality-elaborations)
+- [A22 environment: Hourly Averages](#a22-environment-hourly-averages)
+	- [Data Flow](#data-flow)
 	- [Getting started](#getting-started)
 		- [Prerequisites](#prerequisites)
 		- [Source code](#source-code)
@@ -17,6 +20,15 @@ ToDo: Description of the project.
 		- [Boilerplate](#boilerplate)
 		- [Documentation](#documentation)
 		- [License](#license)
+
+## Data Flow
+
+The flow is this:
+```
+a22-algorab                                      (original source)
+    --> environment-a22                          (per minute with gaps; period = 60 seconds)
+    --> environment-a22-averages                 (hourly; period = 3600 seconds)
+```
 
 ## Getting started
 
