@@ -1,7 +1,8 @@
 # A22 environment: Non-linear calibration
 
 The goal of this AWS Lambda Function is to fetch hourly environmental data from
-the Open Data Hub, process it and send it back.
+the Open Data Hub, process it and send it back. For a in-depth description refer
+to the chapter [Details about the implementation](#details-about-the-implementation).
 
 ## Data Flow
 
