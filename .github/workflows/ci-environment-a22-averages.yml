@@ -3,10 +3,9 @@ name: CI/CD environment-a22-averages
 on:
   push:
     paths:
-      - "./environment-a22-averages/**"
+      - "environment-a22-averages/**"
       - ".github/workflows/ci-environment-a22-averages.yml"
       - "!*.md"
-  
 
 env:
   WORKING_DIRECTORY: environment-a22-averages
