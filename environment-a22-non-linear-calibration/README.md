@@ -1,4 +1,4 @@
-# A22 environment data processing
+# A22 environment: Non-linear calibration
 
 The goal of this AWS Lambda Function is to fetch hourly environmental data from
 the Open Data Hub, process it and send it back.
@@ -52,6 +52,12 @@ Roles`:
 1) For `odh-mobility-v2`, assign role `BDP_BLC`
 2) For `odh-mobility-writer`, assign role `ROLE_ADMIN`
 
+## Details about the implementation
+
+Please refer to the PDF [BrennerLEC_Final_Report_220125_DC14.pdf] (Italian only)
+for details. It is a deliverable of the [BrennerLEC] project. Chapter 3.4
+describes the calibration curves.
+
 ## Information
 [Open Data Hub - Site](https://opendatahub.com)
 
@@ -80,3 +86,5 @@ Version 3 license. See the [LICENSE](../LICENSE) file for more information.
 [environment-a22-non-linear-calibration]: .
 [Github Action Yaml]: ../.github/workflows/ci-environment-a22-non-linear-calibration.yml
 [Getting Started]: https://github.com/noi-techpark/odh-docs/wiki/Contributor-Guidelines:-Getting-started
+[BrennerLEC_Final_Report_220125_DC14.pdf]: documentation/BrennerLEC_Final_Report_220125_DC14.pdf
+[BrennerLEC]: https://brennerlec.life/
