@@ -5,9 +5,9 @@ ecdsa==0.14.1
 idna==2.10
 pyasn1==0.4.8
 python-jose==3.2.0
-python-keycloak==0.23.0
+python-keycloak==0.25.0
 pytz==2020.4
-requests==2.25.0
+requests==2.26.0
 rsa==4.6
 six==1.15.0
 urllib3==1.26.2

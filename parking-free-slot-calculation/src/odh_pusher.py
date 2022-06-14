@@ -1,16 +1,16 @@
 from keycloak import KeycloakOpenID
 import requests
-import json
 import os
-from model.Dtos import DataPoint,Provenance
+from model.Dtos import Provenance
 
 # Configure client
-keycloak_openid = KeycloakOpenID(server_url= os.getenv("AUTHENTICATION_SERVER"),
-                    client_id="odh-elaborations-lambda",
-                    realm_name="noi",
-                    client_secret_key=os.getenv("CLIENT_SECRET"),
-                    verify=True)
-
+keycloak_openid = KeycloakOpenID(
+    server_url= os.getenv("AUTHENTICATION_SERVER"),
+    client_id="odh-a22-dataprocessor",
+    realm_name="noi",
+    client_secret_key=os.getenv("CLIENT_SECRET"),
+    verify=True
+)
 
 class DataPusher:
     def __init__(self):
