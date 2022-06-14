@@ -3,7 +3,6 @@ import datetime
 from datetime import timezone
 from model.Dtos import DataPoint
 from odh_pusher import DataPusher
-import json
 import os
 
 
@@ -14,11 +13,11 @@ class FreeParkingSlotsCalculator:
     FREE_URL = "/flat/ParkingStation,ParkingSensor/free/latest?limit=-1&where=sactive.eq.true&select=mvalidtime,tname,scode,stype,mperiod"
 
     def fetchData(self, url):
-        r = requests.get(os.getenv("RAW_DATA_ENDPOINT") + url)
+        r = requests.get(os.getenv("ODH_MOBILITY_API_NINJA") + url)
         return r.json()['data'];
 
     def getHistoryData(self, stationcode, period, fromTime):
-        fromDate = fromTime.strftime("%Y-%m-%d") 
+        fromDate = fromTime.strftime("%Y-%m-%d")
         toDate = (fromTime+datetime.timedelta(weeks=+4)).strftime("%Y-%m-%d")
         #print("Interval:"+fromDate+"-"+toDate)
         fetchUrl = "/flat/ParkingStation,ParkingSensor/occupied/"+fromDate+"/"+toDate+"?limit=-1&where=scode.eq.\""+stationcode+"\",mperiod.eq." + str(period) + "&select=tmeasurements"
@@ -41,7 +40,7 @@ class FreeParkingSlotsCalculator:
             later = fromDate + datetime.timedelta(weeks=+4)
             self.calculateFreeParkingLots(stationType, station, period, capacity, later, newestRawDataTimestamp)
 
-    def startCalculations(self): 
+    def startCalculations(self):
         d.upsertProvenance()
         occupiedSlots = self.fetchData(self.OCCUPIED_URL)
         freeSlots = self.fetchData(self.FREE_URL)
@@ -64,7 +63,7 @@ class FreeParkingSlotsCalculator:
                 self.calculateFreeParkingLots(station['stype'],sId,station['mperiod'],capacity,lastElaborationTimestamp,newestRawDataTimestamp)
             except KeyError as e:
                 print(repr(e))
-                print("Raw data is missing for station:"+sId) 
+                print("Raw data is missing for station:"+sId)
                 continue
-    
-        
+
+
