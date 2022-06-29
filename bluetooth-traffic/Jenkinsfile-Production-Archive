@@ -1,0 +1,49 @@
+pipeline {
+    agent {
+        dockerfile {
+            filename 'docker/dockerfile-java'
+            additionalBuildArgs '--build-arg JENKINS_USER_ID=`id -u jenkins` --build-arg JENKINS_GROUP_ID=`id -g jenkins`'
+        }
+    }
+    environment{
+        BLUETOOTH_TRAFFIC_ELABORATION_PROPS=credentials('bluetoothtrafficelaboration-prod.properties')
+        DB_URL='prod-pg-bdp.co90ybcr8iim.eu-west-1.rds.amazonaws.com'
+        PGPASSWORD=credentials('bdp-core-prod-database-write-password')
+        BDP_USER_NAME='bdp'
+        ARTIFACT_NAME='bluetoothtrafficelaboration'
+    }
+    stages {
+        stage('import deltafunction'){
+            steps{
+                sh 'psql -h ${DB_URL} -U ${BDP_USER_NAME} bdp < deltart.sql'
+            }
+        }
+        stage('Configure'){
+            steps{
+                sh 'sed -i -e "s/<\\/settings>$//g\" ~/.m2/settings.xml'
+                sh 'echo "    <servers>" >> ~/.m2/settings.xml'
+                sh 'echo "        ${TESTSERVER_TOMCAT_CREDENTIALS}" >> ~/.m2/settings.xml'
+                sh 'echo "    </servers>" >> ~/.m2/settings.xml'
+                sh 'echo "</settings>" >> ~/.m2/settings.xml'
+
+                sh 'cat "${BLUETOOTH_TRAFFIC_ELABORATION_PROPS}" > src/main/resources/app.properties'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn clean test verify'
+            }
+        }
+        stage('Build'){
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Archive') {
+            steps{
+                sh 'cp target/${ARTIFACT_NAME}.war ${ARTIFACT_NAME}.war'
+                archiveArtifacts artifacts: "${ARTIFACT_NAME}.war", onlyIfSuccessful: true
+            }
+        }
+    }
+}
