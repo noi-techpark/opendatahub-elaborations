@@ -34,88 +34,78 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.github.cdimascio.dotenv.Dotenv;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author Davide Montesin <d@vide.bz>
  */
-public class BluetoothTrafficElaborationServlet extends HttpServlet
-{
-   private static final String JDBC_CONNECTION_STRING = "JDBC_CONNECTION_STRING";
-   private static final String JDBC_CONNECTION_DRIVER = "JDBC_CONNECTION_DRIVER";
-   
-   DatabaseHelper              databaseHelper;
+public class BluetoothTrafficElaborationServlet extends HttpServlet {
+	Logger LOG = LoggerFactory.getLogger(BluetoothTrafficElaborationServlet.class);
 
-   TaskThread                  taskThread;
+	private static final String JDBC_CONNECTION_STRING = "JDBC_CONNECTION_STRING";
+	private static final String JDBC_CONNECTION_DRIVER = "JDBC_CONNECTION_DRIVER";
 
-   @Override
-   public void init(ServletConfig config) throws ServletException
-   {
-      try
-      {
-         super.init(config);
-         this.databaseHelper = createDatabaseHelper();
-         this.taskThread = new TaskThread(this.databaseHelper);
-         this.taskThread.start();
-      }
-      catch (Exception exxx)
-      {
-         throw new ServletException(exxx);
-      }
+	DatabaseHelper databaseHelper;
 
-   }
-   
-   static DatabaseHelper createDatabaseHelper() throws FileNotFoundException, IOException, ClassNotFoundException
-   {
-       URL resource = BluetoothTrafficElaborationServlet.class.getClassLoader().getResource("app.properties");   
-       Properties props = new Properties();
-       props.load(new FileInputStream(resource.getFile()));
-       String jdbcUrl = props.getProperty("jdbc.connectionString");
-       DatabaseHelper result = new DatabaseHelper(jdbcUrl);
-       return result;
-   }
+	TaskThread taskThread;
 
-   @Override
-   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
-   {
-      try
-      {
-         ElaborationsInfo elaborationsInfo = new ElaborationsInfo();
-         elaborationsInfo.taskThreadAlive = this.taskThread.isAlive();
-         synchronized (this.taskThread.exclusiveLock)
-         {
-            elaborationsInfo.tashThreadRunning = !this.taskThread.sleeping;
-            elaborationsInfo.sleepingUntil = this.taskThread.sleepingUntil;
-         }
+	@Override
+	public void init(ServletConfig config) throws ServletException {
+		try {
+			super.init(config);
+			this.databaseHelper = createDatabaseHelper();
+			this.taskThread = new TaskThread(this.databaseHelper);
+			this.taskThread.start();
+		} catch (Exception exxx) {
+			throw new ServletException(exxx);
+		}
 
-         elaborationsInfo.tasks.addAll(this.databaseHelper.newSelectTaskInfo());
+	}
 
-         ObjectMapper mapper = new ObjectMapper();
-         mapper.setVisibility(mapper.getVisibilityChecker().withFieldVisibility(Visibility.NON_PRIVATE));
-         StringWriter sw = new StringWriter();
-         mapper.writeValue(sw, elaborationsInfo);
-         resp.getWriter().write(sw.toString());
-      }
-      catch (Exception exxx)
-      {
-         throw new ServletException(exxx);
-      }
-   }
+	static DatabaseHelper createDatabaseHelper() throws  IOException, ClassNotFoundException  {
+		Dotenv dotenv = Dotenv.load();
+		String jdbcUrl =  dotenv.get("JDBC_URL");
+		DatabaseHelper result = new DatabaseHelper(jdbcUrl);
+		return result;
+	}
 
-   @Override
-   public void destroy()
-   {
-      super.destroy();
-      this.taskThread.interrupt();
-      try
-      {
-         this.taskThread.join();
-      }
-      catch (InterruptedException e)
-      {
-         // TODO should never happens: notify crashbox or throw a RuntimeException
-         e.printStackTrace();
-      }
-   }
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		try {
+			ElaborationsInfo elaborationsInfo = new ElaborationsInfo();
+			elaborationsInfo.taskThreadAlive = this.taskThread.isAlive();
+			synchronized (this.taskThread.exclusiveLock) {
+				elaborationsInfo.tashThreadRunning = !this.taskThread.sleeping;
+				elaborationsInfo.sleepingUntil = this.taskThread.sleepingUntil;
+			}
+
+			elaborationsInfo.tasks.addAll(this.databaseHelper.newSelectTaskInfo());
+
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.setVisibility(mapper.getVisibilityChecker().withFieldVisibility(Visibility.NON_PRIVATE));
+			StringWriter sw = new StringWriter();
+			mapper.writeValue(sw, elaborationsInfo);
+			resp.getWriter().write(sw.toString());
+		} catch (Exception exxx) {
+			throw new ServletException(exxx);
+		}
+	}
+
+	@Override
+	public void destroy() {
+		super.destroy();
+		this.taskThread.interrupt();
+		try {
+			this.taskThread.join();
+		} catch (InterruptedException e) {
+			// TODO should never happens: notify crashbox or throw a RuntimeException
+			e.printStackTrace();
+		}
+	}
 }

@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,10 +22,9 @@ public class ElaborationIT {
 	private final Properties props = new Properties();
 	private DatabaseHelper databaseHelper;
 	@Before
-	public void setup() throws FileNotFoundException, IOException, ClassNotFoundException {
-		  URL resource = getClass().getClassLoader().getResource("app.properties");
-		  props.load(new FileInputStream(resource.getFile()));
-		  String jdbcUrl = props.getProperty("jdbc.connectionString");
+	public void setup() throws IOException, ClassNotFoundException {
+		Dotenv dotenv = Dotenv.load();
+		String jdbcUrl =  dotenv.get("JDBC_URL");
 		  databaseHelper = new DatabaseHelper(jdbcUrl);
 
 	}
