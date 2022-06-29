@@ -1,0 +1,49 @@
+pipeline {
+    agent {
+        dockerfile {
+            filename 'docker/dockerfile-java'
+            additionalBuildArgs '--build-arg JENKINS_USER_ID=`id -u jenkins` --build-arg JENKINS_GROUP_ID=`id -g jenkins`'
+        }
+    }
+    environment{
+        BLUETOOTH_TRAFFIC_ELABORATION_PROPS=credentials('bluetoothtrafficelaboration.properties')
+        TESTSERVER_TOMCAT_ENDPOINT=credentials('testserver-tomcat8-url')
+        TESTSERVER_TOMCAT_CREDENTIALS=credentials('testserver-tomcat8-credentials')
+        DB_URL='test-pg-bdp.co90ybcr8iim.eu-west-1.rds.amazonaws.com'
+        PGPASSWORD=credentials('bdp-core-test-database-write-password')
+        BDP_USER_NAME='bdp'
+    }
+    stages {
+        stage('import deltafunction'){
+            steps{
+                sh 'psql -h ${DB_URL} -U ${BDP_USER_NAME} bdp < deltart.sql'
+            }
+        }
+        stage('Configure'){
+            steps{
+                sh 'sed -i -e "s/<\\/settings>$//g\" ~/.m2/settings.xml'
+                sh 'echo "    <servers>" >> ~/.m2/settings.xml'
+                sh 'echo "        ${TESTSERVER_TOMCAT_CREDENTIALS}" >> ~/.m2/settings.xml'
+                sh 'echo "    </servers>" >> ~/.m2/settings.xml'
+                sh 'echo "</settings>" >> ~/.m2/settings.xml'
+
+                sh 'cat "${BLUETOOTH_TRAFFIC_ELABORATION_PROPS}" > src/main/resources/app.properties'
+            }
+        }
+        stage('Test') {
+            steps {
+                sh 'mvn clean test verify'
+            }
+        }
+        stage('Build'){
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('Deploy') {
+            steps{
+                sh 'mvn -B -U tomcat:redeploy -Dmaven.tomcat.url=${TESTSERVER_TOMCAT_ENDPOINT} -Dmaven.tomcat.server=testServer'
+            }
+        }
+    }
+}

@@ -1,0 +1,74 @@
+/*
+
+BluetoothTrafficElaboration: various elaborations of traffic data
+
+Copyright (C) 2017 IDM Südtirol - Alto Adige - Italy
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*/
+/*
+   Author: Davide Montesin <d@vide.bz>
+*/
+
+/* table layout 
+*/
+table {
+   border-collapse: collapse;
+   width:100%;
+}
+
+table, th, td {
+   border: 1px solid black;
+}
+
+td {
+   padding: 4px;
+}
+
+/* status layout 
+*/
+td.DONE {
+   background-color: #00FF00;
+}
+
+td.FAIL {
+   background-color: #FF6666;
+}
+
+td.PREV-FAIL {
+   background-color: yellow;
+}
+
+tr.RUNNING {
+   animation-name: running;
+   animation-duration: 1s;
+   animation-iteration-count: infinite;
+}
+
+@keyframes running {
+    0%   {background-color: #CCCCCC;}
+    50%  {background-color: #FFFFFF;}
+    100%   {background-color: #CCCCCC;}
+}
+
+.alive > .dead, .dead > .alive
+{
+   display:none;
+}
+
+.running > .sleeping, .sleeping > .running
+{
+   display:none;
+}
