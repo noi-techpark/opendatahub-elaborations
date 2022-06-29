@@ -30,6 +30,9 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.idmsuedtirol.bluetoothtrafficelaboration.DatabaseHelper.ConnectionReady;
@@ -37,63 +40,58 @@ import com.idmsuedtirol.bluetoothtrafficelaboration.DatabaseHelper.ConnectionRea
 /**
  * @author Davide Montesin <d@vide.bz>
  */
-public class ElaborationCreateBluetoothLhv
-{
-   static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+public class ElaborationCreateBluetoothLhv {
 
-   static String doElaboration(DatabaseHelper databaseHelper, final String args) throws SQLException, IOException
-   {
-      final ArrayList<Station> activeStations = databaseHelper.newSelectBluetoothStations();
+	private static Logger LOG = LoggerFactory.getLogger(ElaborationCreateBluetoothLhv.class);
 
-      String result = databaseHelper.newConnection(new ConnectionReady<String>()
-      {
-         @Override
-         public String connected(Connection conn) throws SQLException, IOException
-         {
-            StringBuilder result = new StringBuilder("[");
-            String[] sqlNames = new String[] { "elaboration_create_bluetooth_hv.sql",
-                  "elaboration_create_bluetooth_lv.sql" };
-            for (String sqlName : sqlNames)
-            {
-               String sql = DatabaseHelper.readResource(this.getClass(), sqlName);
-               PreparedStatement ps = conn.prepareStatement(sql);
-               for (int s = 0; s < activeStations.size(); s++)
-               {
-                  Station station = activeStations.get(s);
-                  result.append(String.format("%s{ id:%3d, name:%-14s",
-                                              s == 0 ? "" : " ",
-                                              station.id,
-                                              "'" + StringEscapeUtils.escapeEcmaScript(station.stationcode) + "'"));
-                  ps.setInt(1, Integer.parseInt(args));
-                  ps.setInt(2, station.id);
-                  ResultSet rs = ps.executeQuery();
-                  if (rs.next())
-                  {
-                     Timestamp window_start = rs.getTimestamp(2);
-                     Timestamp window_end = rs.getTimestamp(3);
-                     result.append(String.format(", window_start:'%s', window_end:'%s'",
-                                                 SDF.format(window_start),
-                                                 SDF.format(window_end)));
-                     Array array = rs.getArray(1);
-                     Integer[] counters = (Integer[]) array.getArray();
-                     result.append(String.format(", log:{analyzed: %4d, ins:%4d, upd:%4d, del:%4d}}",
-                                                 counters[3],
-                                                 counters[2],
-                                                 counters[1],
-                                                 counters[0]));
-                  }
-                  else
-                  {
-                     result.append("}");
-                  }
-                  result.append(s < activeStations.size() - 1 ? ",\n" : "");
-               }
-               result.append(" \n");
-            }
-            conn.commit();
-            return result.toString() + "]";
-         }
-      });
-      return result;
-   }
+	static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+	static String doElaboration(DatabaseHelper databaseHelper, final String args) throws SQLException, IOException {
+		LOG.debug("Do create elaboration with args: " + args);
+		final ArrayList<Station> activeStations = databaseHelper.newSelectBluetoothStations();
+
+		String result = databaseHelper.newConnection(new ConnectionReady<String>() {
+			@Override
+			public String connected(Connection conn) throws SQLException, IOException {
+				StringBuilder result = new StringBuilder("[");
+				String[] sqlNames = new String[] { "elaboration_create_bluetooth_hv.sql",
+						"elaboration_create_bluetooth_lv.sql" };
+				for (String sqlName : sqlNames) {
+					String sql = DatabaseHelper.readResource(this.getClass(), sqlName);
+					PreparedStatement ps = conn.prepareStatement(sql);
+					for (int s = 0; s < activeStations.size(); s++) {
+						Station station = activeStations.get(s);
+						result.append(String.format("%s{ id:%3d, name:%-14s",
+								s == 0 ? "" : " ",
+								station.id,
+								"'" + StringEscapeUtils.escapeEcmaScript(station.stationcode) + "'"));
+						ps.setInt(1, Integer.parseInt(args));
+						ps.setInt(2, station.id);
+						ResultSet rs = ps.executeQuery();
+						if (rs.next()) {
+							Timestamp window_start = rs.getTimestamp(2);
+							Timestamp window_end = rs.getTimestamp(3);
+							result.append(String.format(", window_start:'%s', window_end:'%s'",
+									SDF.format(window_start),
+									SDF.format(window_end)));
+							Array array = rs.getArray(1);
+							Integer[] counters = (Integer[]) array.getArray();
+							result.append(String.format(", log:{analyzed: %4d, ins:%4d, upd:%4d, del:%4d}}",
+									counters[3],
+									counters[2],
+									counters[1],
+									counters[0]));
+						} else {
+							result.append("}");
+						}
+						result.append(s < activeStations.size() - 1 ? ",\n" : "");
+					}
+					result.append(" \n");
+				}
+				conn.commit();
+				return result.toString() + "]";
+			}
+		});
+		return result;
+	}
 }
