@@ -30,6 +30,7 @@ jobs:
 
       - name: Test with Maven
         run: mvn -B -U clean compile test
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
   # Deploy Test
   # deploy-test-bluetooth-traffic:
