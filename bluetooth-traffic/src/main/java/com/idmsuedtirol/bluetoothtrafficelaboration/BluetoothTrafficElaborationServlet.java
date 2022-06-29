@@ -58,6 +58,7 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 
 	@Override
 	public void init(ServletConfig config) throws ServletException {
+		LOG.info("Servlet initialization");
 		try {
 			super.init(config);
 			this.databaseHelper = createDatabaseHelper();
@@ -70,9 +71,9 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 
 	}
 
-	static DatabaseHelper createDatabaseHelper() throws  IOException, ClassNotFoundException  {
+	static DatabaseHelper createDatabaseHelper() throws IOException, ClassNotFoundException {
 		Dotenv dotenv = Dotenv.load();
-		String jdbcUrl =  dotenv.get("JDBC_URL");
+		String jdbcUrl = dotenv.get("JDBC_URL");
 		DatabaseHelper result = new DatabaseHelper(jdbcUrl);
 		return result;
 	}
