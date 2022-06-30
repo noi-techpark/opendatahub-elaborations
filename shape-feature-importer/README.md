@@ -8,7 +8,7 @@ To execute the importer from your machine follow these steps:
  - Fill .env with the database password like `DB_PWD=your_password`
  - `docker-compose up`
 
-Note: After the first time, its runs faster, because the images are already loaded.
+Note: After the first time, its runs faster, because the images are already loaded. You can then simply do `docker-compose up` without the first two steps.
 
 ## Structure
 The shapefile got created with QGIS and needs to contain these attributes for each feature:
