@@ -1,0 +1,11 @@
+version: "3.4"
+
+services:
+  importer:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+      args:
+        PGPASSWORD: ${DB_PWD}
+    env_file:
+      - .env
