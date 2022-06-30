@@ -14,7 +14,7 @@ env:
   PGPASSWORD: ${{ secrets.DB_PWD_PROD }}
 
 jobs:
-  test:
+  import:
     runs-on: ubuntu-20.04
 
     steps:
