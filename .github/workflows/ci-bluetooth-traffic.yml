@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Import delta function into psql db
-        run: psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp -p ${{ env.DP_PSWD }} < deltart.sql
+        run: psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp -p ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
 
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
@@ -107,7 +107,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Import delta function into psql db
-        run: psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp -p ${{ env.DP_PSWD }} < deltart.sql
+        run: psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp -p ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
 
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
