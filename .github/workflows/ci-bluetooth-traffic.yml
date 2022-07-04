@@ -32,7 +32,7 @@ jobs:
         run: mvn -B -U clean compile test
         working-directory: ${{ env.WORKING_DIRECTORY }}
 
-  Deploy Test
+  # Deploy Test
   deploy-test-bluetooth-traffic:
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/main'
