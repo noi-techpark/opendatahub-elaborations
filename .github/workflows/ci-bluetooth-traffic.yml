@@ -13,7 +13,7 @@ env:
   DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-mobility-el-bluetooth-traffic
   DOCKER_TAG: ${{ github.sha }}
   JAVA_VERSION: '8'
-  PGPASSWORD: : ${{ secrets.DB_PWD_PROD }}
+  PGPASSWORD: ${{ secrets.DB_PWD_PROD }}
 
 
 
