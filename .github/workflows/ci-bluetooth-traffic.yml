@@ -58,7 +58,7 @@ jobs:
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
           db-host: ${{ env.DB_URL }}
           db-password: ${{ env.DB_PSWD }}
-          db-query: < bluetooth-traffic/deltart.sql
+          db-query: < ./bluetooth-traffic/deltart.sql
 
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
