@@ -59,9 +59,9 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_KEY_TEST }}
           ssh-user: ${{ secrets.SSH_USER_TEST }}
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
-          db_host: ${{ env.DB_URL }}
-          db_password: ${{ env.DB_PSWD }}
-          db_query: < bluetooth-traffic/deltart.sql
+          db-host: ${{ env.DB_URL }}
+          db-password: ${{ env.DB_PSWD }}
+          db-query: < bluetooth-traffic/deltart.sql
 
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
