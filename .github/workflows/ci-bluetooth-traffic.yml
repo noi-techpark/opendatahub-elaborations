@@ -47,19 +47,16 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v2
 
-      # - name: Import delta function into psql db
-      #   run: psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
-
+      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
       - name: Import delta function into psql
         uses: noi-techpark/github-actions/psql-over-ssh@v2
         with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
           ssh-private-key: ${{ secrets.SSH_KEY_TEST }}
           ssh-user: ${{ secrets.SSH_USER_TEST }}
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
           db-host: ${{ env.DB_URL }}
-          db-password: ${{ env.DB_PSWD }}
-          db-query: < deltart.sql
+          db-password: ${{ env.DB_PWD }}
+          db-query: < bluetooth-traffic/deltart.sql
 
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
