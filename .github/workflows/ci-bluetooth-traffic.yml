@@ -57,6 +57,8 @@ jobs:
         uses: noi-techpark/github-actions/psql-over-ssh@v2
         with:
           ssh-private-key: ${{ secrets.SSH_KEY_TEST }}
+          ssh-user: ${{ secrets.SSH_USER_TEST }}
+          ssh-host: ${{ secrets.SSH_HOST_TEST }}
           db_host: ${{ env.DB_URL }}
           db_password: ${{ env.DB_PSWD }}
           db_query: < bluetooth-traffic/deltart.sql
