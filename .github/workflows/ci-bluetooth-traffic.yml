@@ -56,11 +56,9 @@ jobs:
       - name: Import delta function into psql db
         uses: noi-techpark/github-actions/psql-over-ssh@v2
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          build-command: 'mvn -B -DskipTests -DfinalName=ROOT clean package'
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.SSH_KEY_TEST }}
           db_host: ${{ env.DB_URL }}
-          db_password: ${{ env.DP_PSWD }}
+          db_password: ${{ env.DB_PSWD }}
           db_query: < bluetooth-traffic/deltart.sql
 
       - name: Create .env file
