@@ -63,6 +63,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_KEY_TEST }}
           ssh-user: ${{ secrets.SSH_USER_TEST }}
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
+          ssh-setup: false
           db-host: ${{ env.DB_URL }}
           db-password: ${{ env.DB_PWD }}
           db-query: < /tmp/deltart.sql
