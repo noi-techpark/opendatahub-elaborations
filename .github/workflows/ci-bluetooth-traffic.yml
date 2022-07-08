@@ -53,7 +53,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
           local-path: bluetooth-traffic/deltart.sql
-          remote-path: /tmp/
+          remote-path: /home/noi-techpark-bot
 
       #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
       - name: Import delta function into psql
@@ -64,7 +64,7 @@ jobs:
           ssh-setup: false
           db-host: ${{ env.DB_URL }}
           db-password: ${{ env.DB_PWD }}
-          db-query: < /tmp/deltart.sql
+          db-query: < /home/noi-techpark-bot/deltart.sql
 
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
