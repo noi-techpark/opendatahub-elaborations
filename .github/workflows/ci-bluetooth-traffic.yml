@@ -108,6 +108,7 @@ jobs:
           docker-username: "noi-techpark-bot"
           docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           project-name: ${{ env.PROJECT_NAME }}
+          ssh-setup: false
 
   # Deploy Prod
   deploy-prod-bluetooth-traffic:
