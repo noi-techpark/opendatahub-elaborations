@@ -1,12 +1,12 @@
 -- -----------------------------------------------------------------------------------
--- 
+--
 -- intimev2.deltart()
 -- function to perform a DELete/upDAte/inseRT into the measurementhistory table
 --
 -- Note that the schema for table measurementhistory is NOT explicitly given,
 -- so a session that uses this function needs to have the correct search_path, e.g.
 --
---     set search_path = intime, public;
+--     set search_path = intimev2, public;
 --
 -- This makes it possible to keep a copy of part of that table in another schema
 -- for testing purposes, simply by setting the search path to that debug schema.
@@ -21,10 +21,10 @@ create or replace function intimev2.deltart
     p_maxts       timestamp without time zone,
     p_station_id  bigint,
     p_type_id     bigint,
-    p_period      bigint, 
+    p_period      bigint,
     p_extkey      boolean            default false,
     p_epsilon     double precision   default 0.0
-) 
+)
 returns
     int[]
 as
@@ -46,11 +46,11 @@ $$
 
         if (p_extkey) then
 
-            -- ----------------------------------------------------------------------------------------- -- 
+            -- ----------------------------------------------------------------------------------------- --
             -- case 1/2: key = (station_id, type_id, period, double_value) -> insert or delete                  --
-            -- ----------------------------------------------------------------------------------------- -- 
+            -- ----------------------------------------------------------------------------------------- --
 
-            create temporary table tt ( 
+            create temporary table tt (
                 timestamp  timestamp without time zone,
                 double_value      double precision,
                 station_id bigint,
@@ -65,8 +65,8 @@ $$
                 foreach ele in array p_arr loop
 
                     insert into tt
-                        (timestamp, double_value, station_id, type_id, period) 
-                        values (ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period); 
+                        (timestamp, double_value, station_id, type_id, period)
+                        values (ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
 
                     if (ele.station_id != p_station_id or ele.type_id != p_type_id or ele.period != p_period) then
                         drop table tt;
@@ -85,11 +85,11 @@ $$
                           t1.station_id = ele.station_id and
                           abs(t1.double_value - ele.double_value) <= p_epsilon;
 
-                    if (cnt = 0) then 
+                    if (cnt = 0) then
 
                         insert into measurementhistory
-                        (created_on, timestamp, double_value, station_id, type_id, period) 
-                        values (ele.created_on, ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period); 
+                        (created_on, timestamp, double_value, station_id, type_id, period)
+                        values (ele.created_on, ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
                         ret[3] := ret[3] + 1;
 
                     end if;
@@ -123,18 +123,18 @@ $$
                           t1.station_id = rec.station_id;
 
                     ret[1] := ret[1] + 1;
- 
+
                 end if;
-        
+
             end loop;
 
         else
 
-            -- ----------------------------------------------------------------------------------------- -- 
+            -- ----------------------------------------------------------------------------------------- --
             -- case 2/2: key = (station_id, type_id, period) -> insert, update or delete                 --
-            -- ----------------------------------------------------------------------------------------- -- 
+            -- ----------------------------------------------------------------------------------------- --
 
-            create temporary table tt ( 
+            create temporary table tt (
                 timestamp  timestamp without time zone,
                 double_value      double precision,
                 station_id bigint,
@@ -149,8 +149,8 @@ $$
                 foreach ele in array p_arr loop
 
                     insert into tt
-                        (timestamp, double_value, station_id, type_id, period) 
-                        values (ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period); 
+                        (timestamp, double_value, station_id, type_id, period)
+                        values (ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
 
                     if (ele.station_id != p_station_id or ele.type_id != p_type_id or ele.period != p_period) then
                         drop table tt;
@@ -168,11 +168,11 @@ $$
                           t1.period     = ele.period     and
                           t1.station_id = ele.station_id;
 
-                    if (not found) then 
+                    if (not found) then
 
                         insert into measurementhistory
-                        (created_on, timestamp, double_value, station_id, type_id, period) 
-                        values (ele.created_on, ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period); 
+                        (created_on, timestamp, double_value, station_id, type_id, period)
+                        values (ele.created_on, ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
                         ret[3] := ret[3] + 1;
 
                     elsif (abs(val - ele.double_value) > p_epsilon) then
@@ -215,9 +215,9 @@ $$
                           t1.station_id = rec.station_id;
 
                     ret[1] := ret[1] + 1;
- 
+
                 end if;
-        
+
             end loop;
 
         end if;

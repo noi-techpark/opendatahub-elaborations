@@ -30,9 +30,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.commons.io.IOUtils;
 
 import com.idmsuedtirol.bluetoothtrafficelaboration.ElaborationsInfo.TaskInfo;
@@ -42,9 +39,7 @@ import com.idmsuedtirol.bluetoothtrafficelaboration.ElaborationsInfo.TaskInfo;
  */
 public class DatabaseHelper {
 
-	private Logger LOG = LoggerFactory.getLogger(DatabaseHelper.class);
-
-	final private String jdbcUrl;
+	private final String jdbcUrl;
 
 	String schedulerTaskSql;
 

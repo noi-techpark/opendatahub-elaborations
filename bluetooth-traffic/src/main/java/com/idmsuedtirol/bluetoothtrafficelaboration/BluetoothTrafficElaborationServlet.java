@@ -21,12 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package com.idmsuedtirol.bluetoothtrafficelaboration;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.net.URL;
-import java.util.Properties;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -47,10 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class BluetoothTrafficElaborationServlet extends HttpServlet {
 
-	private Logger LOG = LoggerFactory.getLogger(BluetoothTrafficElaborationServlet.class);
-
-	private static final String JDBC_CONNECTION_STRING = "JDBC_CONNECTION_STRING";
-	private static final String JDBC_CONNECTION_DRIVER = "JDBC_CONNECTION_DRIVER";
+	private static final Logger LOG = LoggerFactory.getLogger(BluetoothTrafficElaborationServlet.class);
 
 	DatabaseHelper databaseHelper;
 
