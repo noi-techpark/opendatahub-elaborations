@@ -1,6 +1,5 @@
 # Pollution connector
 
-[[_TOC_]]
 
 This project contain the code for the PollutionConnect for the OpenDataHub.
 
@@ -8,7 +7,7 @@ The TrafficData is periodically pulled from the A22 collection and the pollution
 
 ## Project Structure
 
-![project structure](/documentation/Architecture.png)
+![project structure](/pollution/documentation/Architecture.png)
 
 
 **Components**:
@@ -21,7 +20,7 @@ The TrafficData is periodically pulled from the A22 collection and the pollution
 
 ### Batch computation sequence
 
-![sequence diagram](/documentation/SequenceDiagram.png)
+![sequence diagram](/pollution/documentation/SequenceDiagram.png)
 
 1. First the scheduler starts the execution of a new `Pollution Computation Task`.
 2. Then the task will first, download the list of available TrafficSensor stations. A GET request to the `/v2/flat,node/TrafficSensor` endpoint will be used.
