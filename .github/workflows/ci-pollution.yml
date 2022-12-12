@@ -1,43 +1,42 @@
-name: CI/CD environment-a22-averages
+name: CI/CD pollution
 
 on:
   push:
     paths:
-      - "environment-a22-averages/**"
-      - ".github/workflows/ci-environment-a22-averages.yml"
+      - "pollution/**"
+      - ".github/workflows/ci-pollution.yml"
       - "!*.md"
 
 env:
-  WORKING_DIRECTORY: environment-a22-averages
-  PROJECT_NAME: odh-mobility-el-environment-a22-averages
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-mobility-el-environment-a22-averages
+  WORKING_DIRECTORY: pollution
+  PROJECT_NAME: odh-mobility-el-pollution
+  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-mobility-el-pollution
   DOCKER_TAG: ${{ github.sha }}
-  JAVA_VERSION: '8'
 
 jobs:
   test:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: noi-techpark/github-actions/checkout@v2
       - name: Test code
-        uses: noi-techpark/github-actions/maven-test@v2
+        uses: noi-techpark/github-actions/pip-test@v2
         with:
-          java-version: ${{ env.JAVA_VERSION }}
           working-directory: ${{ env.WORKING_DIRECTORY }}
-          test-command: 'mvn -B -U clean compile test'
+          test-command: |
+            echo "WARNING: NO TESTS FOUND!"
 
   # Deploy Test
-  deploy-test-environment-a22-averages:
+  deploy-test-pollution:
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/main'
     needs: test
-    concurrency: deploy-test-environment-a22-averages
+    concurrency: deploy-test-pollution
     env:
       KEYCLOAK_URL: https://auth.opendatahub.testingmachine.eu
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: noi-techpark/github-actions/checkout@v2
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
         with:
@@ -47,7 +46,6 @@ jobs:
           X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
           X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
-          X_JAVA_OPTIONS: -Xms128m -Xmx512m
 
           # Open Data Hub Writer Connectivity
           X_authorizationUri: ${{ env.KEYCLOAK_URL }}/auth
@@ -64,7 +62,7 @@ jobs:
           X_ODH_BASE_URI: https://mobility.api.opendatahub.testingmachine.eu/
 
           # Data collector recognition
-          X_origin: a22-algorab
+          X_origin: a22-pollutant-elaboration
           X_stationtype: EnvironmentStation
           X_provenance_name: ${{ env.PROJECT_NAME }}
           X_provenance_version: ${{ github.sha }}
@@ -72,15 +70,6 @@ jobs:
           # Logging
           X_LOG_LEVEL: info
           X_LOG_STYLE: json
-
-          X_SCHEDULER_CRON: "30 5 * * * *"
-
-      - name: Build project
-        uses: noi-techpark/github-actions/maven-build@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-          java-version: ${{ env.JAVA_VERSION }}
-          build-command: 'mvn -B -DskipTests -DfinalName=ROOT clean package'
 
       - name: Build and push images
         uses: noi-techpark/github-actions/docker-build-and-push@v2
@@ -100,16 +89,16 @@ jobs:
           project-name: ${{ env.PROJECT_NAME }}
 
   # Deploy Prod
-  deploy-prod-environment-a22-averages:
+  deploy-prod-pollution:
     runs-on: ubuntu-20.04
     if: github.ref == 'refs/heads/prod'
     needs: test
-    concurrency: deploy-prod-environment-a22-averages
+    concurrency: deploy-prod-pollution
     env:
       KEYCLOAK_URL: https://auth.opendatahub.com
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: noi-techpark/github-actions/checkout@v2
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
         with:
@@ -119,7 +108,6 @@ jobs:
           X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
           X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
-          X_JAVA_OPTIONS: -Xms128m -Xmx512m
 
           # Open Data Hub Writer Connectivity
           X_authorizationUri: ${{ env.KEYCLOAK_URL }}/auth
@@ -146,13 +134,6 @@ jobs:
           X_LOG_STYLE: json
 
           X_SCHEDULER_CRON: "30 5 * * * *"
-
-      - name: Build project
-        uses: noi-techpark/github-actions/maven-build@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-          java-version: ${{ env.JAVA_VERSION }}
-          build-command: 'mvn -B -DskipTests -DfinalName=ROOT clean package'
 
       - name: Build and push images
         uses: noi-techpark/github-actions/docker-build-and-push@v2
