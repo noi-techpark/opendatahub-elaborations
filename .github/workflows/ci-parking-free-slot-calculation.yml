@@ -60,7 +60,7 @@ jobs:
     concurrency: deploy-prod-parking-free-slot-calculation
     env:
       FUNCTION_NAME: freeParkingLotsElaborations-prod
-      LAMBDA_AUTHENTICATION_SERVER: https://auth.opendatahub.bz.it/auth/
+      LAMBDA_AUTHENTICATION_SERVER: https://auth.opendatahub.com/auth/
       LAMBDA_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_PROD }}
       LAMBDA_ODH_MOBILITY_API_WRITER: https://mobility.share.opendatahub.bz.it/
       LAMBDA_ODH_MOBILITY_API_NINJA: https://mobility.api.opendatahub.bz.it/v2

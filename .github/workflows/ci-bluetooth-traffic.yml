@@ -40,7 +40,7 @@ jobs:
     concurrency: deploy-test-bluetooth-traffic
     env:
       DB_URL: ${{ secrets.DB_URL_TEST }}
-      DB_USR: ${{ secrets.DB_USR_TEST }}
+      DB_USER: ${{ secrets.DB_USER_TEST }}
       DB_PWD: ${{ secrets.DB_PWD_TEST }}
 
     steps:
@@ -76,7 +76,7 @@ jobs:
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
           X_JAVA_OPTIONS: -Xms128m -Xmx512m
 
-          X_JDBC_URL: jdbc:postgresql:// ${{ env.DB_URL }}/bdp?user=${{ env.DB_USR }}&password=${{ env.DP_PSWD }}
+          X_JDBC_URL: jdbc:postgresql://${{ env.DB_URL }}/bdp?user=${{ env.DB_USER }}&password=${{ env.DB_PWD }}
 
           # Logging
           X_LOG_LEVEL: info
@@ -115,7 +115,7 @@ jobs:
     concurrency: deploy-prod-bluetooth-traffic
     env:
       DB_URL: ${{ secrets.DB_URL_PROD }}
-      DB_USR: ${{ secrets.DB_USR_PROD }}
+      DB_USER: ${{ secrets.DB_USER_PROD }}
       DB_PWD: ${{ secrets.DB_PWD_PROD }}
 
     steps:
@@ -151,7 +151,7 @@ jobs:
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
           X_JAVA_OPTIONS: -Xms128m -Xmx512m
 
-          X_JDBC_URL: jdbc:postgresql:// ${{ env.DB_URL }}/bdp?user=${{ env.DB_USR }}&password=${{ env.DP_PSWD }}
+          X_JDBC_URL: jdbc:postgresql://${{ env.DB_URL }}/bdp?user=${{ env.DB_USER }}&password=${{ env.DB_PWD }}
 
           # Logging
           X_LOG_LEVEL: info
