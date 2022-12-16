@@ -4,14 +4,18 @@ import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
 
+from redis.client import Redis
+
+from pollution_connector.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
 from pollution_connector.celery_configuration.celery_app import app
 from pollution_connector.connector.collector import ConnectorCollector
 from pollution_connector.data_model.common import Provenance
 from pollution_connector.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
-from pollution_connector.data_model.traffic import TrafficMeasureCollection, TrafficSensorStation, TrafficMeasure
+from pollution_connector.data_model.traffic import TrafficMeasureCollection, TrafficSensorStation
 from pollution_connector.pollution_computation_model.pollution_computation_model import PollutionComputationModel
 from pollution_connector.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE, \
-    PROVENANCE_NAME, PROVENANCE_VERSION
+    PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_HOST, \
+    COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB
 
 logger = logging.getLogger("pollution_connector.tasks.pollution_computation")
 
@@ -35,15 +39,23 @@ def compute_pollution_data(min_from_date: Optional[datetime] = None,
     if max_to_date is None:
         max_to_date = datetime.now(tz=DEFAULT_TIMEZONE)
 
+    checkpoint_cache = None
+    if COMPUTATION_CHECKPOINT_REDIS_HOST:
+        logger.info("Enabled checkpoint cache")
+        checkpoint_cache = ComputationCheckpointCache(Redis(host=COMPUTATION_CHECKPOINT_REDIS_HOST, port=COMPUTATION_CHECKPOINT_REDIS_PORT, db=COMPUTATION_CHECKPOINT_REDIS_DB))
+    else:
+        logger.info("Checkpoint cache disabled")
+
     collector_connector = ConnectorCollector.build_from_env()
     provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION)
-    manager = PollutionComputationManager(collector_connector, provenance)
+    manager = PollutionComputationManager(collector_connector, provenance, checkpoint_cache)
     manager.run_computation_and_upload_results(min_from_date, max_to_date)
 
 
 class PollutionComputationManager:
 
-    def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance):
+    def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance, checkpoint_cache: Optional[ComputationCheckpointCache] = None):
+        self._checkpoint_cache = checkpoint_cache
         self._connector_collector = connector_collector
         self._provenance = provenance
         self._create_data_types = True
@@ -75,42 +87,42 @@ class PollutionComputationManager:
             latest_pollution_measures.sort(key=lambda x: x.valid_time)
             return latest_pollution_measures[0]
 
+    def _get_starting_date_for_station(self, traffic_station: TrafficSensorStation, min_from_date: datetime) -> datetime:
+        latest_pollution_measure = self._get_latest_pollution_measure(traffic_station)
+        if latest_pollution_measure is None:
+            if self._checkpoint_cache is not None:
+                checkpoint = self._checkpoint_cache.get(ComputationCheckpoint.get_id_for_station(traffic_station))
+                if checkpoint is not None:
+                    from_date = checkpoint.checkpoint_dt
+                else:
+                    from_date = min_from_date  # If there isn't any latest pollution measure available, the min_from_date is used as starting date for the batch
+            else:
+                from_date = min_from_date  # If there isn't any latest pollution measure available, the min_from_date is used as starting date for the batch
+        else:
+            from_date = latest_pollution_measure.valid_time
+
+        if from_date.tzinfo is None:
+            from_date = DEFAULT_TIMEZONE.localize(from_date)
+
+        if from_date.microsecond:
+            from_date = from_date.replace(microsecond=0)
+
+        return from_date
+
     def _download_traffic_data(self,
-                               min_from_date: datetime,
-                               max_to_date: datetime
+                               from_date: datetime,
+                               to_date: datetime,
+                               traffic_station: TrafficSensorStation
                                ) -> TrafficMeasureCollection:
         """
-        Download traffic data measures. As starting date for the batch is used the latest pollution measure available
-        on the ODH, if there isn't any, the min_from_date is used.
+        Download traffic data measures in the given interval.
 
-        :param min_from_date: Traffic measures before this date are discarded if there isn't any latest pollution measure available.
-        :param max_to_date: Traffic measure after this date are discarded.
+        :param from_date: Traffic measures before this date are discarded if there isn't any latest pollution measure available.
+        :param to_date: Traffic measure after this date are discarded.
         :return: The resulting TrafficMeasureCollection containing the traffic data.
         """
-        traffic_measures: List[TrafficMeasure] = []
-        for traffic_station in self._traffic_stations_from_cache():
-            latest_pollution_measure = self._get_latest_pollution_measure(traffic_station)
-            if latest_pollution_measure is None:
-                from_date = min_from_date  # If there isn't any latest pollution measure available, the min_from_date is used as starting date for the batch
-            else:
-                from_date = latest_pollution_measure.valid_time
 
-            if from_date.tzinfo is None:
-                from_date = DEFAULT_TIMEZONE.localize(from_date)
-
-            if from_date.microsecond:
-                from_date = from_date.replace(microsecond=0)
-
-            if max_to_date.tzinfo is None:
-                max_to_date = DEFAULT_TIMEZONE.localize(max_to_date)
-
-            if max_to_date > from_date:
-                try:
-                    traffic_measures.extend(self._connector_collector.traffic.get_measures(from_date=from_date, to_date=max_to_date, station=traffic_station))
-                except Exception as e:  # If there is an error log it and go to the next station
-                    logger.exception(f"Exception in getting data for traffic station [{traffic_station}] from ODH", exc_info=e)
-
-        return TrafficMeasureCollection(measures=traffic_measures)
+        return TrafficMeasureCollection(measures=self._connector_collector.traffic.get_measures(from_date=from_date, to_date=to_date, station=traffic_station))
 
     @staticmethod
     def _compute_pollution_data(traffic_data: TrafficMeasureCollection) -> List[PollutionEntry]:
@@ -139,6 +151,46 @@ class PollutionComputationManager:
 
         self._connector_collector.pollution.post_measures(pollution_data.measures)
 
+    def _run_computation_for_station(self,
+                                     traffic_station: TrafficSensorStation,
+                                     min_from_date: datetime,
+                                     max_to_date: datetime):
+
+        start_date = self._get_starting_date_for_station(traffic_station, min_from_date)
+        to_date = start_date
+
+        while start_date < max_to_date:
+            to_date = to_date + timedelta(days=30)
+            if to_date > max_to_date:
+                to_date = max_to_date
+
+            logger.info(f"Computing pollution data for station [{traffic_station}] in interval [{start_date.isoformat()} - {to_date.isoformat()}]")
+
+            traffic_data = []
+            try:
+                traffic_data = self._download_traffic_data(start_date, to_date, traffic_station)
+            except Exception as e:
+                logger.exception(
+                    f"Unable to download traffic data for station [{traffic_station}] in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]",
+                    exc_info=e)
+
+            if traffic_data:
+                try:
+                    pollution_entries = self._compute_pollution_data(traffic_data)
+                    self._upload_pollution_data(pollution_entries)
+                except Exception as e:
+                    logger.exception(f"Unable to compute data from station [{traffic_station}] in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
+
+                if self._checkpoint_cache is not None:
+                    self._checkpoint_cache.set(
+                        ComputationCheckpoint(
+                            station_code=traffic_station.code,
+                            checkpoint_dt=to_date
+                        )
+                    )
+
+            start_date = to_date
+
     def run_computation_and_upload_results(self,
                                            min_from_date: datetime,
                                            max_to_date: datetime
@@ -159,22 +211,8 @@ class PollutionComputationManager:
 
         computation_start_dt = datetime.now()
 
-        start_date = min_from_date
-        to_date = start_date
-
-        while start_date < max_to_date:
-            to_date = to_date + timedelta(days=30)
-            if to_date > max_to_date:
-                to_date = max_to_date
-
-            logger.info(f"computing computation for interval [{start_date.isoformat()}] - [{to_date.isoformat()}]")
-            traffic_data = self._download_traffic_data(start_date, to_date)
-            pollution_entries = self._compute_pollution_data(traffic_data)
-            self._upload_pollution_data(pollution_entries)
-
-            logger.info(f"Computed [{len(pollution_entries)}] for interval [{start_date.isoformat()}] - [{to_date.isoformat()}]")
-
-            start_date = to_date
+        for traffic_station in self._traffic_stations_from_cache():
+            self._run_computation_for_station(traffic_station, min_from_date, max_to_date)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
