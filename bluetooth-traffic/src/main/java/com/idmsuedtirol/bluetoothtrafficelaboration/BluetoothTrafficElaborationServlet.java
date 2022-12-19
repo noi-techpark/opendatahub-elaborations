@@ -58,7 +58,7 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 			this.taskThread = new TaskThread(this.databaseHelper);
 			this.taskThread.start();
 		} catch (Exception exxx) {
-			LOG.error("Servlet initialization failed: ", exxx.getMessage());
+			LOG.error("Servlet initialization failed: ", exxx.getStackTrace());
 			throw new ServletException(exxx);
 		}
 
