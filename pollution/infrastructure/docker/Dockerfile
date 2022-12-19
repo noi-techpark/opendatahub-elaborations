@@ -4,7 +4,7 @@ FROM python:3.8.13-slim-bullseye
 COPY requirements.txt ./
 COPY src/ ./
 
-USER python
+# USER python
 
 RUN pip install --no-cache-dir -r requirements.txt
 
