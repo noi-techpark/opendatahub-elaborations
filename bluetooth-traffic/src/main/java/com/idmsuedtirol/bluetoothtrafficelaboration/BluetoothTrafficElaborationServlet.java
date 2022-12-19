@@ -65,8 +65,8 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 	}
 
 	static DatabaseHelper createDatabaseHelper() throws IOException, ClassNotFoundException {
-		Dotenv dotenv = Dotenv.load();
-		String jdbcUrl = dotenv.get("JDBC_URL");
+		System.getenv("JDBC_URL");
+		String jdbcUrl = System.getenv("JDBC_URL");
 		DatabaseHelper result = new DatabaseHelper(jdbcUrl);
 		return result;
 	}
