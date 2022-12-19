@@ -58,7 +58,7 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 			this.taskThread = new TaskThread(this.databaseHelper);
 			this.taskThread.start();
 		} catch (Exception exxx) {
-			LOG.error("Servlet initialization failed: ", exxx.getStackTrace());
+			LOG.error("Servlet initialization failed: {}", exxx.getMessage());
 			throw new ServletException(exxx);
 		}
 
@@ -89,7 +89,7 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 			mapper.writeValue(sw, elaborationsInfo);
 			resp.getWriter().write(sw.toString());
 		} catch (Exception exxx) {
-			LOG.error("Getting data failed: ", exxx.getMessage());
+			LOG.error("Getting data failed: {}", exxx.getMessage());
 			throw new ServletException(exxx);
 		}
 	}
@@ -102,7 +102,7 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 			this.taskThread.join();
 		} catch (InterruptedException e) {
 			// TODO should never happens: notify crashbox or throw a RuntimeException
-			LOG.error("Destroy failed: ", e.getMessage());
+			LOG.error("Destroy failed: {}", e.getMessage());
 			e.printStackTrace();
 		}
 	}
