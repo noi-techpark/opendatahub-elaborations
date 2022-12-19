@@ -33,8 +33,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -65,6 +63,7 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 	}
 
 	static DatabaseHelper createDatabaseHelper() throws IOException, ClassNotFoundException {
+		// docker-compose loads .env vars to environment
 		System.getenv("JDBC_URL");
 		String jdbcUrl = System.getenv("JDBC_URL");
 		DatabaseHelper result = new DatabaseHelper(jdbcUrl);
