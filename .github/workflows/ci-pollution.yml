@@ -70,6 +70,8 @@ jobs:
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
 
+          X_ODH_MINIMUM_STARTING_DATE : "2022-01-01"
+
 
       - name: Build and push images
         uses: noi-techpark/github-actions/docker-build-and-push@v2
