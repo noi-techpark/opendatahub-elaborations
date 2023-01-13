@@ -70,7 +70,7 @@ jobs:
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
 
-          X_ODH_MINIMUM_STARTING_DATE : "2022-01-01"
+          X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
 
 
       - name: Build and push images
