@@ -33,8 +33,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.cdimascio.dotenv.Dotenv;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -58,15 +56,16 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 			this.taskThread = new TaskThread(this.databaseHelper);
 			this.taskThread.start();
 		} catch (Exception exxx) {
-			LOG.error("Servlet initialization failed: ", exxx.getMessage());
+			LOG.error("Servlet initialization failed: {}", exxx.getMessage());
 			throw new ServletException(exxx);
 		}
 
 	}
 
 	static DatabaseHelper createDatabaseHelper() throws IOException, ClassNotFoundException {
-		Dotenv dotenv = Dotenv.load();
-		String jdbcUrl = dotenv.get("JDBC_URL");
+		// docker-compose loads .env vars to environment
+		System.getenv("JDBC_URL");
+		String jdbcUrl = System.getenv("JDBC_URL");
 		DatabaseHelper result = new DatabaseHelper(jdbcUrl);
 		return result;
 	}
@@ -89,7 +88,7 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 			mapper.writeValue(sw, elaborationsInfo);
 			resp.getWriter().write(sw.toString());
 		} catch (Exception exxx) {
-			LOG.error("Getting data failed: ", exxx.getMessage());
+			LOG.error("Getting data failed: {}", exxx.getMessage());
 			throw new ServletException(exxx);
 		}
 	}
@@ -102,7 +101,7 @@ public class BluetoothTrafficElaborationServlet extends HttpServlet {
 			this.taskThread.join();
 		} catch (InterruptedException e) {
 			// TODO should never happens: notify crashbox or throw a RuntimeException
-			LOG.error("Destroy failed: ", e.getMessage());
+			LOG.error("Destroy failed: {}", e.getMessage());
 			e.printStackTrace();
 		}
 	}

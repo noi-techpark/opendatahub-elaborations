@@ -98,7 +98,7 @@ public class TaskThread extends Thread {
 	}
 
 	private void executeElaborations() throws SQLException, IOException {
-		// TODO log start of elaborations
+		LOG.info("Start elaboration...");
 		ArrayList<TaskInfo> tasks = this.databaseHelper.newSelectTaskInfo();
 		boolean someTaskFail = false;
 		for (int i = 0; i < tasks.size(); i++) {
@@ -172,6 +172,8 @@ public class TaskThread extends Thread {
 				return new int[] { nr_insert, nr_update };
 			}
 		});
+
+		LOG.info("Elaboration done.");
 	}
 
 	@Override

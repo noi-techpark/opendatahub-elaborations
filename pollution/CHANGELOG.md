@@ -4,6 +4,14 @@
 
 ## Version 0.*
 
+### 0.1.1
+
+:rocket: New features:
+* Updated pollution computation model, now the km data is loaded from station metadata
+* Improved task execution time by:
+  * Added smarter logic for computing the starting date for a station batch
+  * Added computation checkpoints
+
 ### 0.1.0
 
 :rocket: New features:

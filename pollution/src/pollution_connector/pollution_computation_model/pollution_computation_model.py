@@ -1,6 +1,7 @@
 from __future__ import absolute_import, annotations
 
 import datetime
+import json
 import logging
 from typing import List, Iterable, Dict
 
@@ -34,6 +35,15 @@ class PollutionComputationModel:
         """
         temp = []
         for entry in traffic_entries:
+
+            km = None
+            if "a22_metadata" in entry.station.metadata:
+                try:
+                    meta: dict = json.loads(entry.station.metadata["a22_metadata"])
+                    km = meta.get("metro")
+                except Exception as e:
+                    logger.warning(f"Unable to parse the KM data for station [{entry.station.code}], error [{e}]")
+
             temp.append({
                 "date": entry.valid_time.date().isoformat(),
                 "time": entry.valid_time.time().isoformat(),
@@ -43,7 +53,8 @@ class PollutionComputationModel:
                 "Category": entry.vehicle_class.value,
                 "Transits": entry.nr_of_vehicles,
                 "Speed": entry.average_speed,
-                "Period": entry.period
+                "Period": entry.period,
+                "KM": km
             })
 
         return pd.DataFrame(temp)
