@@ -70,6 +70,10 @@ jobs:
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
 
+          X_COMPUTATION_CHECKPOINT_REDIS_HOST: redis://pollution-connector-redis
+          X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
+          X_COMPUTATION_CHECKPOINT_REDIS_DB: 3
+
           X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
 
 
