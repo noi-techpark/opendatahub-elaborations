@@ -15,7 +15,7 @@ from pollution_connector.data_model.traffic import TrafficMeasureCollection, Tra
 from pollution_connector.pollution_computation_model.pollution_computation_model import PollutionComputationModel
 from pollution_connector.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE, \
     PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_HOST, \
-    COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB
+    COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB, ODH_COMPUTATION_BATCH_SIZE
 
 logger = logging.getLogger("pollution_connector.tasks.pollution_computation")
 
@@ -160,7 +160,7 @@ class PollutionComputationManager:
         to_date = start_date
 
         while start_date < max_to_date:
-            to_date = to_date + timedelta(days=30)
+            to_date = to_date + timedelta(days=ODH_COMPUTATION_BATCH_SIZE)
             if to_date > max_to_date:
                 to_date = max_to_date
 

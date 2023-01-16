@@ -31,6 +31,7 @@ ODH_CLIENT_SECRET = os.getenv("ODH_CLIENT_SECRET")
 ODH_GRANT_TYPE = os.getenv("ODH_GRANT_TYPE", "password").split(";")
 ODH_PAGINATION_SIZE = int(os.getenv("ODH_PAGINATION_SIZE", 200))
 ODH_MAX_POST_BATCH_SIZE = int(os.getenv("ODH_MAX_POST_BATCH_SIZE")) if os.getenv("ODH_MAX_POST_BATCH_SIZE") else None
+ODH_COMPUTATION_BATCH_SIZE = int(os.getenv("ODH_COMPUTATION_BATCH_SIZE", 30))
 ODH_MINIMUM_STARTING_DATE = dateutil.parser.parse(os.getenv("ODH_MINIMUM_STARTING_DATE", "2018-01-01"))
 
 # General
