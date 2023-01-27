@@ -51,9 +51,9 @@ pre_new_values as
    select *,
        row_number() over (partition by station_id, type_id, period order by timestamp desc, double_value) rownr
   from measurementhistory
-  join bluetoot_types
-    on measurementhistory.type_id = bluetoot_types.b_type_id
- where timestamp >= now()::date - '1 day'::interval -- search last values between now and the day before only
+  -- optimization to enable index usage
+  where type_id in (19, 13, 14, 21, 20, 918, 54, 5968, 5969)
+   and timestamp >= now()::date - '1 day'::interval -- search last values between now and the day before only
 )
 ,
 new_values as
