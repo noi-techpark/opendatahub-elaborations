@@ -146,7 +146,6 @@ select m.time_window_start, m.value_step, count(s.id)
      and s.double_value < m.value_step + 30
   group by m.time_window_start, m.value_step
 ),
-,
 min_max_value_max_count as (
 select *,
        (select max(count)
