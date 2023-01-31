@@ -139,16 +139,13 @@ select *,
 ,
 min_max_value_series_count as
 (
-select *,
-       (select count(*)
-          from samples
-         where samples.time_window_start = min_max_value_series.time_window_start
-           and value_step <= samples.double_value
-           and samples.double_value < value_step + 30)
-       count
-  from min_max_value_series
-)
-,
+select m.time_window_start, m.value_step, count(s.id)
+  from min_max_value_series m
+  left outer join samples s on s.time_window_start = m.time_window_start
+     and m.value_step <= s.double_value
+     and s.double_value < m.value_step + 30
+  group by m.time_window_start, m.value_step
+),
 min_max_value_max_count as (
 select *,
        (select max(count)

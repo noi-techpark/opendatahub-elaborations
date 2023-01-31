@@ -11,8 +11,8 @@ services:
       - .env
     networks:
       - pollution
-    cpus: "0.5"
-    mem_limit: 4096m
+    cpus: "0.6"
+    mem_limit: 8192m
 
 
   scheduler:
