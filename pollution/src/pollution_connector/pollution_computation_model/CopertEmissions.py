@@ -35,23 +35,21 @@ def copert_emissions(traffic_df):
     adt = traffic_df
     # Eliminazione delle stazioni presenti in black list
     adt = adt[~adt.Station.isin(blacklist)]
-    # aggiunta valori di chilometrica al df di input
+    # aggiunta valori di chilometrica al df di input se non è presente
     adt = pd.merge(adt, km, on='Station', how='left')
+    # trasformazione valore chilometrica da metri a chilometri
+    adt['KM'] = adt['KM'].astype(float).div(1000)
+    # se non è presente il valore di chilometrica, allora prendilo da file 'km.csv'
+    # se km == nan, allora pendenza = 0
     adt['KM'] = adt['KM'].fillna(adt['km'])
     adt.drop('km', axis=1, inplace=True)
     adt.rename(columns={'KM': 'km'}, inplace=True)
-    adt = adt[adt['km'].notna()]
-    # geometria dei tratti di competenza delle stazioni di misura:
-    # calcolo della lunghezza dei tratti di competenza delle stazioni di misura e pendenza media.
-    if 'RoadSlope' in copert:
-        station_geometry = RoadGeometry(adt, geometry, copert)
-        # Unione dei metadati delle stazioni di misura (RoadSlope, RoadLength) con i
-        # dati dei passaggi.
-        adt = pd.merge(adt, station_geometry[['Station', 'Lane', 'start', 'end', 'RoadSlope', 'RoadLength']], on=['Station', 'Lane'])
-        # Roadslope è solo per i mezzi pesanti, per gli altri inserisco NaN
-        # Questo perché nei coefficienti di COPERT la pendenza della strada non è
-        # definita per le altre categorie di veicolo e quindi il successivo merge non
-        # può funzionare.
+    adt['KM'] = adt['km'].astype(float).round()
+    # assegnazione valore di pendenza ad ogni stazione, basato su chilometrica più vicina
+    if ('RoadSlope' in copert) and ('RoadSlope' in geometry):
+        adt = pd.merge(adt, geometry[['KM', 'RoadSlope']], on='KM')
+        adt.loc[(adt['Lane'] == 1) | (adt['Lane'] == 2), 'RoadSlope'] = -1 * adt['RoadSlope']
+        # Roadslope è solo per i mezzi pesanti, per gli altri inserisco NaN.
         # Seleziona le categorie per le quali non è definita la RoadSlope in copert
         df = pd.DataFrame(copert, columns=['Category', 'RoadSlope'])
         df = df[df['RoadSlope'].isnull()].drop_duplicates()
@@ -63,8 +61,11 @@ def copert_emissions(traffic_df):
     # ------------------------------------------------------------------------------
     # 2. CALCOLO FATTORI DI EMISSIONE, EMISSIONI PER KM, EMISSIONI TOTALI
     # ------------------------------------------------------------------------------
-    # Selezione dei coefficienti di COPERT da utilizzare.
-    if 'RoadSlope' in copert:
+    # Selezione dei coefficienti di COPERT da utilizzare
+    if ('RoadSlope' in copert) and ('RoadSlope' in geometry):
+        emission = pd.merge(emission, copert, on=['Location', 'Category', 'Fuel', 'ID_Euro', 'RoadSlope'])
+    elif ('RoadSlope' in copert) and ('RoadSlope' not in geometry):
+        copert = copert[(copert['RoadSlope'] == 0) | (copert['RoadSlope'].isnull())]
         emission = pd.merge(emission, copert, on=['Location', 'Category', 'Fuel', 'ID_Euro', 'RoadSlope'])
     else:
         emission = pd.merge(emission, copert, on=['Location', 'Category', 'Fuel', 'ID_Euro'])
@@ -78,69 +79,15 @@ def copert_emissions(traffic_df):
     emission['E'] = emission['EF'] * emission['Total_Transits']
     # Emissioni totali [g/km] alle stazioni di misura.
     emission_agg = emission.groupby(
-        ['date', 'time', 'Period', 'Location', 'Station', 'Lane', 'Category', 'km', 'RoadLength', 'Pollutant']).agg(
+        ['date', 'time', 'Period', 'Location', 'Station', 'Lane', 'Category', 'km', 'Pollutant']).agg(
         {'Total_Transits': sum, 'E': sum}).reset_index()
     # Emissioni totali [g] sui tratti di strada associati alle stazioni.
     # I valori sono arrotondati all'intero, la precisione al grammo è più che
     # sufficiente)
-    # emission_agg['total_E_[g]'] = (emission_agg['E'] * emission_agg['RoadLength']).astype(int)
     # Arrotondamento all'intero del numero di transiti
-    emission_agg['Total_Transits'] = emission_agg['Total_Transits'].astype(int)
+    emission_agg['Total_Transits'] = emission_agg['Total_Transits'].round().astype(int)
     # ------------------------------------------------------------------------------
     # 3. ESPORTAZIONE RISULTATI
     # ------------------------------------------------------------------------------
-    # Seleziona solo le colonne utili e salva in csv i risultati
+    # Ritorna solo le colonne utili
     return emission_agg[['date', 'time', 'Period', 'Location', 'Station', 'Lane', 'Category', 'km', 'Pollutant', 'Total_Transits', 'E']]
-
-
-# Definizione dei tratti di competenza per ogni stazione, calcolo di lunghezza e pendenza media per ogni tratto.
-def RoadGeometry(data, geom, copert_df):
-    # seleziona dai dati in input le chilometriche delle stazioni attive
-    dfin = data[['Station', 'Lane', 'km']].drop_duplicates()
-    # calcolo dei tratti di competenza delle singole stazioni. Il tratto di
-    # competenza serve per estendere l'informazione relativa all'emissione
-    # puntuale. Alcune stazioni possono trasmettere i dati solo su alcune
-    # corsie. Per questo il calcolo dei tratti di competenza va fatto lungo
-    # la singola corsia. Il calcolo restituisce, per ogni stazione e corsia
-    # attiva, lunghezza e pendenza media del tratto di competenza.
-    output = []
-    for lane in dfin.loc[:, 'Lane'].unique():
-        station = dfin[dfin['Lane'] == lane].sort_values(by=['km'])
-        # calcolo chilometrica di inizio e fine dei tratti.
-        start = []
-        end = []
-        for i in range(len(station)):
-            if i == 0:
-                start.append(min(geom['km']))
-            else:
-                start.append(round((station['km'].iloc[i] + station['km'].iloc[i - 1]) / 2))
-                end.append(round((station['km'].iloc[i] + station['km'].iloc[i - 1]) / 2))
-        end.append(max(geom['km']))
-        station = station.assign(start=start)
-        station = station.assign(end=end)
-        # calcolo lunghezza dei tratti
-        station = station.assign(RoadLength=station['end'] - station['start'])
-        # calcolo della quota nei punti di inizio e fine dei tratti
-        geom.columns = geom.columns.str.replace('km', 'start')
-        station = pd.merge(station, geom, on=['start'])
-        geom.columns = geom.columns.str.replace('start', 'end')
-        station = pd.merge(station, geom, on=['end'])
-        geom.columns = geom.columns.str.replace('end', 'km')
-        # calcolo della pendenza media sui singoli tratti
-        station['pendenza'] = (station['quota_y'] - station['quota_x']) / (station['RoadLength'] * 1000)
-        # dato che il calcolo della pendenza segue la direzione della
-        # progressione della chilometrica, la pendenza nelle corsia con
-        # direzione opposta va invertita
-        station.loc[(station['Lane'] == 1) | (station['Lane'] == 2), 'pendenza'] = -1 * station['pendenza']
-        # Arrotondamento delle pendenze ai valori che si trovano nel database
-        # di COPERT. Altrimenti, nel merge con i coefficienti di COPERT, i dati
-        # relativi ai tratti di strada con pendenza non riconosciuta vengono
-        # persi
-        RSvalue = pd.Series(copert_df['RoadSlope'].unique()).dropna()
-        station['RoadSlope'] = pd.Series(RSvalue.values, RSvalue.values).reindex(station['pendenza'].values, method='nearest').reset_index(drop=True)
-        # lista con valori di lunghezza e pendenza calcolati per singola corsia
-        output.append(station[['Station', 'Lane', 'km', 'start', 'end', 'RoadLength', 'RoadSlope']])
-    # dataframe di output con la geometria di tutti i tratti
-    dfout = pd.concat(output)
-    dfout.sort_values(by=['km', 'Lane'], inplace=True)
-    return dfout

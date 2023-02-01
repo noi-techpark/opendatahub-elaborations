@@ -4,6 +4,11 @@
 
 ## Version 0.*
 
+### 0.1.2
+
+:rocket: New features:
+* Updated pollution computation model, fixed KM metadata management
+
 ### 0.1.1
 
 :rocket: New features:
