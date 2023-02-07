@@ -125,7 +125,7 @@ jobs:
           
           X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.com
           X_ODH_BASE_WRITER_URL: https://mobility.share.opendatahub.com
-          X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.com
+          X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.com/auth
           X_ODH_CLIENT_ID: odh-a22-dataprocessor
           X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_PROD }}
           X_ODH_GRANT_TYPE: client_credentials
