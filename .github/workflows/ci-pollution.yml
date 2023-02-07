@@ -60,8 +60,6 @@ jobs:
           X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.testingmachine.eu
           X_ODH_BASE_WRITER_URL: https://share.opendatahub.testingmachine.eu
           X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.testingmachine.eu/auth/
-          # X_ODH_USERNAME: ""
-          # X_ODH_PASSWORD: ""
           X_ODH_CLIENT_ID: odh-a22-dataprocessor
           X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_TEST }}
           X_ODH_GRANT_TYPE: client_credentials
@@ -96,65 +94,66 @@ jobs:
           project-name: ${{ env.PROJECT_NAME }}
 
   # Deploy Prod
-  # deploy-prod-pollution:
-  #   runs-on: ubuntu-20.04
-  #   if: github.ref == 'refs/heads/prod'
-  #   needs: test
-  #   concurrency: deploy-prod-pollution
-  #   env:
-  #     KEYCLOAK_URL: https://auth.opendatahub.com
-  #   steps:
-  #     - name: Checkout source code
-  #       uses: noi-techpark/github-actions/checkout@v2
-  #     - name: Create .env file
-  #       uses: noi-techpark/github-actions/env-file@v2
-  #       with:
-  #         working-directory: ${{ env.WORKING_DIRECTORY }}
-  #       env:
-  #         # General deployment options
-  #         X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
-  #         X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
-  #         X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
+  deploy-prod-pollution:
+    runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/prod'
+    needs: test
+    concurrency: deploy-prod-pollution
+    env:
+      KEYCLOAK_URL: https://auth.opendatahub.com
+    steps:
+      - name: Checkout source code
+        uses: noi-techpark/github-actions/checkout@v2
+      - name: Create .env file
+        uses: noi-techpark/github-actions/env-file@v2
+        with:
+          working-directory: ${{ env.WORKING_DIRECTORY }}
+        env:
+          X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
+          X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
+          X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
-  #         # Open Data Hub Writer Connectivity
-  #         X_authorizationUri: ${{ env.KEYCLOAK_URL }}/auth
-  #         X_tokenUri: ${{ env.KEYCLOAK_URL }}/auth/realms/noi/protocol/openid-connect/token
-  #         X_clientId: odh-mobility-datacollector
-  #         X_clientName: odh-mobility-datacollector
-  #         X_clientSecret: ${{ secrets.WRITER_CLIENT_SECRET_PROD }}
-  #         X_scope: openid
-  #         X_BASE_URI: https://mobility.share.opendatahub.bz.it/json
+          X_LOG_LEVEL: INFO
+          X_LOG_LEVEL_LIBS: INFO
 
-  #         # Open Data Hub API v2 Connectivity (ninja)
-  #         X_NINJA_CLIENT: odh-mobility-elaborations
-  #         X_NINJA_SECRET: ${{ secrets.NINJA_CLIENT_SECRET_PROD }}
-  #         X_ODH_BASE_URI: https://mobility.api.opendatahub.bz.it/
+          X_CELERY_BROKER_URL: redis://pollution-connector-redis:6379/1
+          X_CELERY_BACKEND_URL: redis://pollution-connector-redis:6379/2
+          X_CELERY_RESULT_EXPIRATION_SECONDS: "604800"
+          
+          X_POLLUTION_TASK_SCHEDULING_MINUTE: "0"
+          X_POLLUTION_TASK_SCHEDULING_HOUR: "*"
+          
+          X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.com
+          X_ODH_BASE_WRITER_URL: https://share.opendatahub.com
+          X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.com
+          X_ODH_CLIENT_ID: odh-a22-dataprocessor
+          X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_PROD }}
+          X_ODH_GRANT_TYPE: client_credentials
+          X_ODH_PAGINATION_SIZE: 10000
+          X_ODH_MAX_POST_BATCH_SIZE: 10000
+          X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
+          X_PROVENANCE_VERSION: ${{ github.sha }}
 
-  #         # Data collector recognition
-  #         X_origin: a22-algorab
-  #         X_stationtype: EnvironmentStation
-  #         X_provenance_name: ${{ env.PROJECT_NAME }}
-  #         X_provenance_version: ${{ github.sha }}
+          X_ODH_COMPUTATION_BATCH_SIZE: 7
+          X_COMPUTATION_CHECKPOINT_REDIS_HOST: pollution-connector-redis
+          X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
+          X_COMPUTATION_CHECKPOINT_REDIS_DB: 3
 
-  #         # Logging
-  #         X_LOG_LEVEL: info
-  #         X_LOG_STYLE: json
+          X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
 
-  #         X_SCHEDULER_CRON: "30 5 * * * *"
+      - name: Build and push images
+        uses: noi-techpark/github-actions/docker-build-and-push@v2
+        with:
+          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
+          docker-username: ${{ github.actor }}
+          docker-password: ${{ secrets.GITHUB_TOKEN }}
 
-  #     - name: Build and push images
-  #       uses: noi-techpark/github-actions/docker-build-and-push@v2
-  #       with:
-  #         working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
-  #         docker-username: ${{ github.actor }}
-  #         docker-password: ${{ secrets.GITHUB_TOKEN }}
-
-  #     - name: Deploy application
-  #       uses: noi-techpark/github-actions/docker-deploy@v2
-  #       with:
-  #         working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
-  #         hosts: 'prod'
-  #         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-  #         docker-username: 'noi-techpark-bot'
-  #         docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-  #         project-name: ${{ env.PROJECT_NAME }}
+      - name: Deploy application
+        uses: noi-techpark/github-actions/docker-deploy@v2
+        with:
+          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
+          hosts: 'prod'
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          docker-username: 'noi-techpark-bot'
+          docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          project-name: ${{ env.PROJECT_NAME }}
