@@ -1,4 +1,4 @@
-version: "2.2"
+version: "3.4"
     
 
 services:
@@ -11,9 +11,6 @@ services:
       - .env
     networks:
       - pollution
-    cpus: "0.6"
-    mem_limit: 8192m
-
 
   scheduler:
     container_name: "pollution-connector-scheduler"

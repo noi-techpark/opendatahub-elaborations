@@ -91,6 +91,39 @@ cd src
 python -m pollution_connector.main -h
 ```
 
+### Run historical import
+
+To run a historical import, like we need to do for the Open Data Hub, some additional actions are needed.  
+Typically you will deploy the application with Github Actions and that sets up the normal environment with the scheduler etc.
+So when the application is deployed you quickly need to stop all docker containers before they write data to the Open Data Hub.
+```sh
+docker-compose down
+```
+If data ahs already been written, please delete it manually from the database, to make sure that all historical data can be imported correctly.
+
+You also need to delete all created volumes, to make sure that it starts from the historical date and not from the last timestamp saved in the celery database.
+```
+docker volume rm odh-mobility-el-pollution_pollution-connector-redis odh-mobility-el-pollution_pollution-connector-scheduler
+```
+
+Now start redis and the worker job
+```
+docker-compose up -d redis
+docker-compose run -d --rm worker python -m pollution_connector.main
+```
+
+Then you can see the logs with
+```
+docker logs -f --tail 500 odh-mobility-el-pollution_worker_run_1
+```
+
+The historical import can take between 12 hours to several days, depending in the server cpu/ram and data amount.  
+When the historical import is done, you can stop everything and start the normal scheduler
+```
+docker-compose down
+docker-compose up -d
+``` 
+
 ### List of environmental variables
 
 | Name                              | Required | Description                                                                                                                                                                                                             | Default                       |
