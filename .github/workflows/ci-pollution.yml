@@ -54,7 +54,7 @@ jobs:
           X_CELERY_BACKEND_URL: redis://pollution-connector-redis:6379/2
           X_CELERY_RESULT_EXPIRATION_SECONDS: "604800"
           
-          X_POLLUTION_TASK_SCHEDULING_MINUTE: "0"
+          X_POLLUTION_TASK_SCHEDULING_MINUTE: "*/10"
           X_POLLUTION_TASK_SCHEDULING_HOUR: "*"
           
           X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.testingmachine.eu
@@ -120,7 +120,7 @@ jobs:
           X_CELERY_BACKEND_URL: redis://pollution-connector-redis:6379/2
           X_CELERY_RESULT_EXPIRATION_SECONDS: "604800"
           
-          X_POLLUTION_TASK_SCHEDULING_MINUTE: "0"
+          X_POLLUTION_TASK_SCHEDULING_MINUTE: "*/10"
           X_POLLUTION_TASK_SCHEDULING_HOUR: "*"
           
           X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.com
