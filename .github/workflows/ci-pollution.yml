@@ -73,7 +73,9 @@ jobs:
           X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
           X_COMPUTATION_CHECKPOINT_REDIS_DB: 3
 
-          X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
+          # use 2018 for first import, otherwise a more recent date
+          # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
+          X_ODH_MINIMUM_STARTING_DATE : "2023-02-01"
 
 
       - name: Build and push images
@@ -139,7 +141,10 @@ jobs:
           X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
           X_COMPUTATION_CHECKPOINT_REDIS_DB: 3
 
-          X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
+          # use 2018 for first import, otherwise a more recent date
+          # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
+          X_ODH_MINIMUM_STARTING_DATE : "2023-02-01"
+
 
       - name: Build and push images
         uses: noi-techpark/github-actions/docker-build-and-push@v2
