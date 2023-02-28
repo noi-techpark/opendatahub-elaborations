@@ -2,6 +2,13 @@ version: "3.8"
 
 services:
   app:
-    build:
-      context: ./
-      dockerfile: infrastructure/Dockerfile
+    image: python:3-slim
+    volumes:
+      - ./:/code
+    working_dir: /code
+    tty: true
+    env_file:
+      - .env
+    entrypoint: >
+      sh -c "pip install -r requirements.txt && 
+             python src/main.py"
