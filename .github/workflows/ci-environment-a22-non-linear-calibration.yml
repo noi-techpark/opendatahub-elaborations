@@ -104,7 +104,7 @@ jobs:
           X_PROVENANCE_VERSION: ${{ github.sha }}
           # run job every n seconds
           X_JOB_SCHEDULE_SEC: 120
-          X_LOG_LEVEL: DEBUG
+          X_LOG_LEVEL: INFO
 
       - name: Build and push images
         uses: noi-techpark/github-actions/docker-build-and-push@v2
