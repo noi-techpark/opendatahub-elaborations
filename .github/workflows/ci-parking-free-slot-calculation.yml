@@ -99,7 +99,7 @@ jobs:
           X_AUTHENTICATION_SERVER: https://auth.opendatahub.com/auth/
           X_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_PROD }}
           X_ODH_MOBILITY_API_NINJA: https://mobility.api.opendatahub.com/v2
-          X_ODH_MOBILITY_API_WRITER: https://share.opendatahub.com/
+          X_ODH_MOBILITY_API_WRITER: 	https://mobility.share.opendatahub.bz.it/
           X_PROVENANCE_LINEAGE: NOI
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
