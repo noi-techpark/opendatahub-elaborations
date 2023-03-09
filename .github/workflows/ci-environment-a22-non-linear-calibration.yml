@@ -54,7 +54,7 @@ jobs:
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
           # run job every n seconds
-          X_JOB_SCHEDULE_SEC: 120
+          X_JOB_SCHEDULE_SEC: 3600
           X_LOG_LEVEL: INFO
 
       - name: Build and push images
@@ -103,7 +103,7 @@ jobs:
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
           # run job every n seconds
-          X_JOB_SCHEDULE_SEC: 120
+          X_JOB_SCHEDULE_SEC: 3600
           X_LOG_LEVEL: INFO
 
       - name: Build and push images
