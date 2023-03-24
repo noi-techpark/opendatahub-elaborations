@@ -5,8 +5,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.PostConstruct;
-
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -35,35 +33,14 @@ public class S3FileUtil {
 
     private Logger logger = LoggerFactory.getLogger(S3FileUtil.class);
 
-    @Value("${aws.access-key}")
-    private String accessKey;
+    @Value("${aws.access-key-id}")
+    private String accessKeyId;
 
     @Value("${aws.bucket-name}")
     private String bucketName;
 
     @Value("${aws.access-secret-key}")
     private String accessSecretKey;
-
-    private AmazonS3 amazonS3;
-
-    private TransferManager transferManager;
-
-    @PostConstruct
-    public void postConstruct() {
-
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(accessKey, accessSecretKey);
-
-        amazonS3 = AmazonS3ClientBuilder
-                .standard()
-                .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-                .withRegion(Regions.EU_WEST_1)
-                .build();
-
-        transferManager = TransferManagerBuilder.standard()
-                .withS3Client(amazonS3)
-                // .withMultipartUploadThreshold((long) (5 * 1024 * 1025))
-                .build();
-    }
 
     /**
      * Uploads a fileInputStream to a S3 bucket
@@ -78,12 +55,25 @@ public class S3FileUtil {
      */
     public void uploadFile(InputStream fileInputStream, String fileName, int contentLength)
             throws AmazonServiceException, AmazonClientException, InterruptedException {
+
         logger.info("upload of file: {} to S3", fileName);
+
+        BasicAWSCredentials awsCreds = new BasicAWSCredentials(accessKeyId, accessSecretKey);
+
+        AmazonS3 amazonS3 = AmazonS3ClientBuilder
+                .standard()
+                .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+                .withRegion(Regions.EU_WEST_1)
+                .build();
+
+        TransferManager transferManager = TransferManagerBuilder.standard()
+                .withS3Client(amazonS3)
+                .build();
+
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.setContentLength(contentLength);
 
-        Upload upload = transferManager.upload(bucketName, fileName, fileInputStream, objectMetadata);
-        // upload.waitForCompletion();
+        transferManager.upload(bucketName, fileName, fileInputStream, objectMetadata);
 
         logger.info("upload of file: {} to S3 done", fileName);
     }
