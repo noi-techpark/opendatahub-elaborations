@@ -1,9 +1,6 @@
-package it.bz.odh.spreadsheets.utils;
+package com.opendatahub.utils;
 
 import java.io.InputStream;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -12,14 +9,9 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.s3.transfer.TransferManager;
 import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
-import com.amazonaws.services.s3.transfer.Upload;
-
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,32 +68,6 @@ public class S3FileUtil {
         transferManager.upload(bucketName, fileName, fileInputStream, objectMetadata);
 
         logger.info("upload of file: {} to S3 done", fileName);
-    }
-
-    /**
-     * Returns the object list of a S3 bucket in form of a map with key: objectname
-     * and value: lastModifiedDate
-     *
-     * @return a map of the objects
-     */
-    public Map getObjectListing() {
-        logger.info("Getting S3 object list");
-        Map objectListing = new HashMap<String, Date>();
-
-        ListObjectsV2Request listRequest = new ListObjectsV2Request().withBucketName(bucketName);
-
-        ListObjectsV2Result result;
-        do {
-            result = amazonS3.listObjectsV2(listRequest);
-
-            for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
-                objectListing.put(objectSummary.getKey(), objectSummary.getLastModified());
-            }
-            listRequest.setContinuationToken(result.getNextContinuationToken());
-        } while (result.isTruncated());
-
-        logger.info("Getting S3 object list done");
-        return objectListing;
     }
 
 }
