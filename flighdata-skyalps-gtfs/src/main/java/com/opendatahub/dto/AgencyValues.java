@@ -1,12 +1,12 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.io.Serializable;
 import java.lang.String;
 import java.net.URL;
 
 import org.springframework.lang.NonNull;
 
-import it.noitechpark.enumClasses.agency_lang;
-import it.noitechpark.enumClasses.agency_timezone;
+import com.opendatahub.enumClasses.agency_lang;
+import com.opendatahub.enumClasses.agency_timezone;
 public class AgencyValues implements Serializable {
 
 	/**
@@ -94,8 +94,8 @@ public class AgencyValues implements Serializable {
 	}
 
 	public AgencyValues(String agency_id, String agency_name, URL agency_url,
-			it.noitechpark.enumClasses.agency_timezone agency_timezone,
-			it.noitechpark.enumClasses.agency_lang agency_lang, String agency_phone, URL agency_fare_url,
+			com.opendatahub.enumClasses.agency_timezone agency_timezone,
+			com.opendatahub.enumClasses.agency_lang agency_lang, String agency_phone, URL agency_fare_url,
 			String agency_email) {
 		super();
 		this.agency_id = agency_id;
@@ -109,7 +109,7 @@ public class AgencyValues implements Serializable {
 	}
 
 	public AgencyValues(String agency_name, URL agency_url,
-			it.noitechpark.enumClasses.agency_timezone agency_timezone) {
+			com.opendatahub.enumClasses.agency_timezone agency_timezone) {
 		super();
 		this.agency_name = agency_name;
 		this.agency_url = agency_url;

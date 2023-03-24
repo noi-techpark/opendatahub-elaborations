@@ -1,11 +1,11 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.io.Serializable;
 import java.lang.String;
 import java.text.SimpleDateFormat;
 
 import org.springframework.lang.NonNull;
 
-import it.noitechpark.enumClasses.exception_type;
+import com.opendatahub.enumClasses.exception_type;
 public class Calendar_DatesValues implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -41,7 +41,7 @@ public class Calendar_DatesValues implements Serializable {
 	}
 
 	public Calendar_DatesValues(String service_id, SimpleDateFormat date,
-			it.noitechpark.enumClasses.exception_type exception_type) {
+			com.opendatahub.enumClasses.exception_type exception_type) {
 		super();
 		this.service_id = service_id;
 		this.date = date;

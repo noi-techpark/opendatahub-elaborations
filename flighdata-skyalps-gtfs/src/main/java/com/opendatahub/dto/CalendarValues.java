@@ -1,9 +1,9 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.io.Serializable;
 import java.lang.String;
 import org.springframework.lang.NonNull;
 
-import it.noitechpark.enumClasses.service_operation;
+import com.opendatahub.enumClasses.service_operation;
 public class CalendarValues implements Serializable {
     private static final long serialVersionUID = 1L;
 	@NonNull

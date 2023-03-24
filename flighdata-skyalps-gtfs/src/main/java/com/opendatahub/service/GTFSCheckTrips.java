@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -9,9 +9,9 @@ import java.util.Scanner;
 
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 
-import it.noiteachpark.Validation.CheckLocationType;
-import it.noitechpark.dto.AgencyValues;
-import it.noitechpark.dto.TripsValues;
+import com.opendatahub.validation.CheckLocationType;
+import com.opendatahub.dto.AgencyValues;
+import com.opendatahub.dto.TripsValues;
 
 public class GTFSCheckTrips extends Exception{
 	

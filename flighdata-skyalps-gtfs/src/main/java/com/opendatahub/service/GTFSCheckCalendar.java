@@ -1,11 +1,11 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-import it.noiteachpark.Validation.CheckLocationType;
-import it.noitechpark.dto.CalendarValues;
-import it.noitechpark.dto.Calendar_DatesValues;
+import com.opendatahub.validation.CheckLocationType;
+import com.opendatahub.dto.CalendarValues;
+import com.opendatahub.dto.Calendar_DatesValues;
 
 public class GTFSCheckCalendar extends Exception{
 	

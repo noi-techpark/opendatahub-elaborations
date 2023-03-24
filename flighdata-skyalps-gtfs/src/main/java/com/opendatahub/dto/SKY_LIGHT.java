@@ -1,4 +1,4 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.lang.String;
 import java.io.Serializable;
 

@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum station_entrances_exits {
 	As_the_parent_station(0), wheelchair_accessible(1), not_accessible_path(2);

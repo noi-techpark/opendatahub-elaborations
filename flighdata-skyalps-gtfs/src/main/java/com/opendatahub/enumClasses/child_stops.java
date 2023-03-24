@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum child_stops {
 	As_the_parent_station(0), some_accessible_paths(1), some_accessible_other_paths(2);

@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum location_type {
 	Stop_Point(0), Station(1), Stop_Area(1), Entrance(2), Exit(2), Generic_Node(3), Boarding_Area(4);

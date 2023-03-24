@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.FileWriter;
 
@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-import it.noitechpark.constantsClasses.Stop_Times;
-import it.noitechpark.dto.Stop_TimesValues;
+import com.opendatahub.constantsClasses.Stop_Times;
+import com.opendatahub.dto.Stop_TimesValues;
 
 public class GTFSStop_Times {
 

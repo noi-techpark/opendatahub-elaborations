@@ -1,12 +1,12 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.io.Serializable;
 import java.lang.String;
 import org.springframework.lang.NonNull;
 
-import it.noitechpark.enumClasses.continous_pickup_stopTimes;
-import it.noitechpark.enumClasses.pickup_type;
-import it.noitechpark.enumClasses.stop_sequence;
-import it.noitechpark.enumClasses.timepoint;
+import com.opendatahub.enumClasses.continous_pickup_stopTimes;
+import com.opendatahub.enumClasses.pickup_type;
+import com.opendatahub.enumClasses.stop_sequence;
+import com.opendatahub.enumClasses.timepoint;
 public class Stop_TimesValues implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -135,7 +135,7 @@ public class Stop_TimesValues implements Serializable {
 	public Stop_TimesValues(String trip_id, String arrival_time, String departure_time, String stop_id,
 			stop_sequence stop_sequence, String stop_headsign, pickup_type pickyp_type, pickup_type dropoff_type,
 			continous_pickup_stopTimes continous_pickyp, continous_pickup_stopTimes continous_dropoff,
-			float shape_dist_traveled, it.noitechpark.enumClasses.timepoint timepoint) {
+			float shape_dist_traveled, com.opendatahub.enumClasses.timepoint timepoint) {
 		super();
 		this.trip_id = trip_id;
 		this.arrival_time = arrival_time;

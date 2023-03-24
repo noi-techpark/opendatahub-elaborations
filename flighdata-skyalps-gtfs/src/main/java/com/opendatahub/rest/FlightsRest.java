@@ -1,4 +1,4 @@
-package it.noitechpark.rest;
+package com.opendatahub.rest;
 
 import java.util.Arrays;
 
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.client.RestTemplate;
 
-import it.noitechpark.dto.Flights;
+import com.opendatahub.dto.Flights;
 
 public class FlightsRest {
 

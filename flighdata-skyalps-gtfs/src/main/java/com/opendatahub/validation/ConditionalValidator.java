@@ -1,4 +1,4 @@
-package it.noiteachpark.Validation;
+package com.opendatahub.validation;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;

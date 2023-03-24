@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum wheelchair_accessible {
 	No_accessibility_information_available(0), AtLeast_One_rider_weelchair_allowed(1),

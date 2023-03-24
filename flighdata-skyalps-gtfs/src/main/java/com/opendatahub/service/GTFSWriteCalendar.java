@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.FileWriter;
 
@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-import it.noitechpark.constantsClasses.Calendar;
-import it.noitechpark.dto.CalendarValues;
+import com.opendatahub.constantsClasses.Calendar;
+import com.opendatahub.dto.CalendarValues;
 
 public class GTFSWriteCalendar {
 

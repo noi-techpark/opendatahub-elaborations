@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.FileWriter;
 
@@ -8,9 +8,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-import it.noitechpark.constantsClasses.Calendar_Dates;
-import it.noitechpark.dto.Calendar_DatesValues;
-import it.noitechpark.enumClasses.exception_type;
+import com.opendatahub.constantsClasses.Calendar_Dates;
+import com.opendatahub.dto.Calendar_DatesValues;
+import com.opendatahub.enumClasses.exception_type;
 
 public class GTFSWriteCalendar_Dates {
 

@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum agency_lang {
 	Italian(1), English(2), French(3), Spanish(4), Japanese(5), Null(0);

@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum parentless_stops {
 	NoInfo(0), Some_vehicles_supported(1), Wheelchair_boarding_not_possible(2);

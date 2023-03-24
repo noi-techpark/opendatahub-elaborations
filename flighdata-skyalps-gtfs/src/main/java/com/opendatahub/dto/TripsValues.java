@@ -1,10 +1,10 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.io.Serializable;
 import java.lang.String;
 import org.springframework.lang.NonNull;
 
-import it.noitechpark.enumClasses.bikes_allowed;
-import it.noitechpark.enumClasses.wheelchair_accessible;
+import com.opendatahub.enumClasses.bikes_allowed;
+import com.opendatahub.enumClasses.wheelchair_accessible;
 public class TripsValues implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -105,8 +105,8 @@ public class TripsValues implements Serializable {
 
 	public TripsValues(String route_id, String service_id, String trip_id, String trip_headsign,
 			String trip_short_name, String direction_id, String block_id, String shape_id,
-			it.noitechpark.enumClasses.wheelchair_accessible wheelchair_accessible,
-			it.noitechpark.enumClasses.bikes_allowed bikes_allowed) {
+			com.opendatahub.enumClasses.wheelchair_accessible wheelchair_accessible,
+			com.opendatahub.enumClasses.bikes_allowed bikes_allowed) {
 		super();
 		this.route_id = route_id;
 		this.service_id = service_id;

@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.FileWriter;
 
@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-import it.noitechpark.constantsClasses.Routes;
-import it.noitechpark.dto.RoutesValues;
+import com.opendatahub.constantsClasses.Routes;
+import com.opendatahub.dto.RoutesValues;
 
 public class GTFSWriteRoutes {
 	public static void writeRoutes(ArrayList<RoutesValues> routesValueslist) throws IOException, MalformedURLException, GTFSCheckRoutes, GTFSCheckStops {

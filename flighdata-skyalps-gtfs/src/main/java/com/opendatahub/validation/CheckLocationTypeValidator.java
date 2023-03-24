@@ -1,4 +1,4 @@
-package it.noiteachpark.Validation;
+package com.opendatahub.validation;
 
 import java.util.Objects;
 
@@ -8,7 +8,7 @@ import javax.validation.ConstraintValidatorContext;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Component;
 
-import it.noitechpark.dto.StopsValue;
+import com.opendatahub.dto.StopsValue;
 @Component
 public class CheckLocationTypeValidator implements ConstraintValidator<CheckLocationType, String> {
 

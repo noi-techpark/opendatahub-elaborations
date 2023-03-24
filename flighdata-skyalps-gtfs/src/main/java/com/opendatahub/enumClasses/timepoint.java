@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum timepoint {
 	Approximate_time(0), Exact_time(1);

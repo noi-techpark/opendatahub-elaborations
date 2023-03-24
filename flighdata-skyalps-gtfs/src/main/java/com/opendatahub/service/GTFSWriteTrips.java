@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.FileWriter;
 
@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-import it.noitechpark.constantsClasses.Trips;
-import it.noitechpark.dto.TripsValues;
+import com.opendatahub.constantsClasses.Trips;
+import com.opendatahub.dto.TripsValues;
 
 public class GTFSWriteTrips {
 	public static void writeTrips(ArrayList<TripsValues> tripsvalueslist) throws IOException, MalformedURLException, GTFSCheckTrips {

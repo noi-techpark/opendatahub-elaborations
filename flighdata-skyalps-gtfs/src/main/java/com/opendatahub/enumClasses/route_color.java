@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum route_color {
 	Black(1), White(2), Yellow(3), Red(4), Other(0);

@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum continous_drop_off {
 	ContinousStopping_DropOff(0), NoContinousStopping_Dropoff(1), MustPhoneAgency(2), MustCoordinateDriver(3);

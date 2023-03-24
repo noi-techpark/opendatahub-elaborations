@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum agency_timezone {
 	EuropeRome(1), Other(2);

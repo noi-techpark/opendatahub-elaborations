@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -6,10 +6,10 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.stream.Stream;
 
-import it.noiteachpark.Validation.CheckLocationType;
-import it.noitechpark.dto.AgencyValues;
-import it.noitechpark.dto.RoutesValues;
-import it.noitechpark.dto.StopsValue;
+import com.opendatahub.validation.CheckLocationType;
+import com.opendatahub.dto.AgencyValues;
+import com.opendatahub.dto.RoutesValues;
+import com.opendatahub.dto.StopsValue;
 
 public class GTFSCheckRoutes  extends Exception{
 	

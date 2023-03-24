@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum continous_pickup_stopTimes {
 	Continous_stopping_pickup(0), Continous_stop_pickup(1), Phone_agency_to_arrange(2),

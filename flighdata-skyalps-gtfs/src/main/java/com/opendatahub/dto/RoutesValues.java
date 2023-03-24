@@ -1,12 +1,12 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.net.URL;
 
 import org.springframework.lang.NonNull;
 
-import it.noitechpark.enumClasses.continous_drop_off;
-import it.noitechpark.enumClasses.continous_pickup;
-import it.noitechpark.enumClasses.route_color;
-import it.noitechpark.enumClasses.route_type;
+import com.opendatahub.enumClasses.continous_drop_off;
+import com.opendatahub.enumClasses.continous_pickup;
+import com.opendatahub.enumClasses.route_color;
+import com.opendatahub.enumClasses.route_type;
 
 import java.io.Serializable;
 import java.lang.String;
@@ -128,11 +128,11 @@ public class RoutesValues implements Serializable {
 	}
 
 	public RoutesValues(String route_id, String agency_id, String route_short_name, String route_long_name,
-			String route_desc, it.noitechpark.enumClasses.route_type route_type, URL route_URL,
-			it.noitechpark.enumClasses.route_color route_color,
-			it.noitechpark.enumClasses.route_color route_text_color, int route_sort_order,
-			it.noitechpark.enumClasses.continous_pickup continous_pickup,
-			it.noitechpark.enumClasses.continous_drop_off continous_drop_off) {
+			String route_desc, com.opendatahub.enumClasses.route_type route_type, URL route_URL,
+			com.opendatahub.enumClasses.route_color route_color,
+			com.opendatahub.enumClasses.route_color route_text_color, int route_sort_order,
+			com.opendatahub.enumClasses.continous_pickup continous_pickup,
+			com.opendatahub.enumClasses.continous_drop_off continous_drop_off) {
 		super();
 		this.route_id = route_id;
 		this.agency_id = agency_id;
@@ -149,7 +149,7 @@ public class RoutesValues implements Serializable {
 	}
 
 	public RoutesValues(String route_id, String agency_id, String route_short_name, String route_long_name,
-			it.noitechpark.enumClasses.route_type route_type) {
+			com.opendatahub.enumClasses.route_type route_type) {
 		super();
 		this.route_id = route_id;
 		this.agency_id = agency_id;

@@ -1,4 +1,4 @@
-package it.noitechpark.constantsClasses;
+package com.opendatahub.constantsClasses;
 
 public class Stop_Times {
 

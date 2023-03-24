@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum continous_pickup {
 	ContinousStopping_Pickup(0), NoContinousStopping_pickUp(1), MustPhoneAgency(2), MustCoordinateDriver(3);

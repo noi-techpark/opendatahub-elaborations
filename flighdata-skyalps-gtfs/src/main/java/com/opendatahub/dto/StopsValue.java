@@ -1,4 +1,4 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.io.Serializable;
 
 import java.lang.String;
@@ -9,10 +9,10 @@ import javax.validation.Valid;
 import org.springframework.lang.NonNull;
 import org.springframework.validation.annotation.Validated;
 
-import it.noiteachpark.Validation.CheckLocationType;
-import it.noiteachpark.Validation.ConditionalValid;
-import it.noitechpark.enumClasses.location_type;
-import it.noitechpark.enumClasses.parentless_stops;
+import com.opendatahub.validation.CheckLocationType;
+import com.opendatahub.validation.ConditionalValid;
+import com.opendatahub.enumClasses.location_type;
+import com.opendatahub.enumClasses.parentless_stops;
 public class StopsValue implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -164,7 +164,7 @@ public class StopsValue implements Serializable {
 
 	public StopsValue(String stop_id, String stop_code, String stop_name, String tts_stop_name,
 			java.lang.String stop_desc, Double stop_lat, Double stop_lon, java.lang.String zone_id, URL stop_URL,
-			it.noitechpark.enumClasses.location_type location_type, Integer parent_station,
+			com.opendatahub.enumClasses.location_type location_type, Integer parent_station,
 			java.lang.String stop_timezone, parentless_stops wheelchair_boarding, java.lang.String level_id,
 			java.lang.String platform_code) {
 		super();

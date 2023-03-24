@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.FileWriter;
 
@@ -7,11 +7,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
-import it.noitechpark.constantsClasses.Agency;
-import it.noitechpark.constantsClasses.DefaultValues;
-import it.noitechpark.dto.AgencyValues;
-import it.noitechpark.enumClasses.agency_lang;
-import it.noitechpark.enumClasses.agency_timezone;
+import com.opendatahub.constantsClasses.Agency;
+import com.opendatahub.constantsClasses.DefaultValues;
+import com.opendatahub.dto.AgencyValues;
+import com.opendatahub.enumClasses.agency_lang;
+import com.opendatahub.enumClasses.agency_timezone;
 
 public class GTFSWriteAgency {
 	public static void writeAgency(ArrayList<AgencyValues> agencyvalueslist) throws IOException, MalformedURLException, GTFSCheckAgency {

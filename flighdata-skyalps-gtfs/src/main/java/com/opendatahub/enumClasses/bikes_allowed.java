@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum bikes_allowed {
 	No_bike(0), AtLeast_One_rider_weelchair_allowed(1), No_Riders_In_Wheelchair_allowed(2);

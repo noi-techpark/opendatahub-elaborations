@@ -1,11 +1,11 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-import it.noiteachpark.Validation.CheckLocationType;
-import it.noitechpark.dto.AgencyValues;
-import it.noitechpark.dto.StopsValue;
+import com.opendatahub.validation.CheckLocationType;
+import com.opendatahub.dto.AgencyValues;
+import com.opendatahub.dto.StopsValue;
 
 public class GTFSCheckAgency extends Exception{
 	

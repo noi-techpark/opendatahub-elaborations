@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum pickup_type {
 	Regularly_scheduled_pickup(0), No_pickup_available(1), Phone_agency_to_arrange(2),

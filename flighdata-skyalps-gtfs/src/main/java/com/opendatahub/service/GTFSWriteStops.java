@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 
 import java.io.FileWriter;
@@ -10,10 +10,10 @@ import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import it.noiteachpark.Validation.CheckLocationType;
-import it.noitechpark.constantsClasses.Stops;
-import it.noitechpark.dto.StopsValue;
-import it.noitechpark.enumClasses.location_type;
+import com.opendatahub.validation.CheckLocationType;
+import com.opendatahub.constantsClasses.Stops;
+import com.opendatahub.dto.StopsValue;
+import com.opendatahub.enumClasses.location_type;
 public class GTFSWriteStops {
 
 	

@@ -1,4 +1,4 @@
-package it.noitechpark.dto;
+package com.opendatahub.dto;
 import java.io.Serializable;
 import java.lang.String;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -20,8 +20,8 @@ public class fares implements Serializable {
 	}
 	
 
-	public fares(it.noitechpark.dto.SKY_GO SKY_GO, it.noitechpark.dto.SKY_PLUS SKY_PLUS,
-			it.noitechpark.dto.SKY_BASIC SKY_BASIC, it.noitechpark.dto.SKY_LIGHT SKY_LIGHT) {
+	public fares(com.opendatahub.dto.SKY_GO SKY_GO, com.opendatahub.dto.SKY_PLUS SKY_PLUS,
+			com.opendatahub.dto.SKY_BASIC SKY_BASIC, com.opendatahub.dto.SKY_LIGHT SKY_LIGHT) {
 		super();
 		this.SKY_GO = SKY_GO;
 		this.SKY_PLUS = SKY_PLUS;

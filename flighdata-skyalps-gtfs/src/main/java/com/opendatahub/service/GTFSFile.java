@@ -1,4 +1,4 @@
-package it.noitechpark.service;
+package com.opendatahub.service;
 
 import java.io.File;
 
@@ -9,7 +9,7 @@ import java.util.Date;
 
 import org.springframework.stereotype.Service;
 
-import it.noitechpark.constantsClasses.GTFSFileNames;
+import com.opendatahub.constantsClasses.GTFSFileNames;
 
 @Service
 public class GTFSFile {

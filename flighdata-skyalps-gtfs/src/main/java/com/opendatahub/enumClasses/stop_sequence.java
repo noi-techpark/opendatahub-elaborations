@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum stop_sequence {
 	Departing_airpot(1), Arrival_airport(2);

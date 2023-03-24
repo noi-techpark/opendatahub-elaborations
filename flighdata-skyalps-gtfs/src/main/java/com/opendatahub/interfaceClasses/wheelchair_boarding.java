@@ -1,12 +1,12 @@
-package it.noitechpark.interfaceClasses;
+package com.opendatahub.interfaceClasses;
 
-import it.noitechpark.enumClasses.child_stops;
-import it.noitechpark.enumClasses.parentless_stops;
-import it.noitechpark.enumClasses.station_entrances_exits;
+import com.opendatahub.enumClasses.child_stops;
+import com.opendatahub.enumClasses.parentless_stops;
+import com.opendatahub.enumClasses.station_entrances_exits;
 
 public class wheelchair_boarding {
 
-	public static it.noitechpark.enumClasses.parentless_stops getparentlessstops(int parentless_stops2) {
+	public static com.opendatahub.enumClasses.parentless_stops getparentlessstops(int parentless_stops2) {
 
 		if (parentless_stops2 == 1) {
 			return parentless_stops.Some_vehicles_supported;
@@ -22,7 +22,7 @@ public class wheelchair_boarding {
 		// return null;
 	}
 
-	public static it.noitechpark.enumClasses.station_entrances_exits getStation_Entrances_exits(int entrance_exit2) {
+	public static com.opendatahub.enumClasses.station_entrances_exits getStation_Entrances_exits(int entrance_exit2) {
 
 		if (entrance_exit2 == 1) {
 			return station_entrances_exits.wheelchair_accessible;
@@ -38,7 +38,7 @@ public class wheelchair_boarding {
 		// return null;
 	}
 
-	public static it.noitechpark.enumClasses.child_stops getChildStops(int child_stops2) {
+	public static com.opendatahub.enumClasses.child_stops getChildStops(int child_stops2) {
 
 		if (child_stops2 == 1) {
 			return child_stops.some_accessible_paths;

@@ -1,4 +1,4 @@
-package it.noitechpark.enumClasses;
+package com.opendatahub.enumClasses;
 
 public enum route_type {
 	Tram_StreetCar_LightRail(0), Subway_metro(1), Rail(2), Bus(3), Ferry(4), Cable_tram(5),
