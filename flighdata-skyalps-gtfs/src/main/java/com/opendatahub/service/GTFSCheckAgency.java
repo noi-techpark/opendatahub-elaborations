@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import com.opendatahub.validation.CheckLocationType;
 import com.opendatahub.dto.AgencyValues;
-import com.opendatahub.dto.StopsValue;
 
 public class GTFSCheckAgency extends Exception{
 	

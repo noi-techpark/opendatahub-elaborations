@@ -1,4 +1,4 @@
-package it.noitechpark;
+package com.opendatahub;
 
 import java.io.IOException;
 
@@ -44,7 +44,6 @@ import com.opendatahub.enumClasses.timepoint;
 import com.opendatahub.enumClasses.wheelchair_accessible;
 import com.opendatahub.interfaceClasses.wheelchair_boarding;
 import com.opendatahub.rest.FlightsRest;
-import com.opendatahub.service.GTFSCheckStops;
 import com.opendatahub.service.GTFSFile;
 import com.opendatahub.service.GTFSFolder;
 import com.opendatahub.service.GTFSStop_Times;
