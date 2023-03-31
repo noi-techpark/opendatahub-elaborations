@@ -265,15 +265,17 @@ public class JobScheduler {
         /**
          * Upload to S3 bucket
          */
-
+        LOG.info("Uploading files to S3...");
+        
         File[] listFiles = GTFSFolder.FOLDER_FILE.listFiles();
 
         for (File file : listFiles) {
-            LOG.info("uploading file: {}", file.getName());
+            LOG.debug("uploading file: {}", file.getName());
             InputStream stream = new FileInputStream(file);
             s3FileUtil.uploadFile(stream, file.getName(), (int) file.length());
-            LOG.info("uploading file done: {}", file.getName());
+            LOG.debug("uploading file done: {}", file.getName());
         }
 
+        LOG.info("Uploading files to S3 done.");
     }
 }
