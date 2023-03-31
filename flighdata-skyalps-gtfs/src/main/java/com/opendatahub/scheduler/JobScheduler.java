@@ -271,7 +271,7 @@ public class JobScheduler {
         for (File file : listFiles) {
             LOG.info("uploading file: {}", file.getName());
             InputStream stream = new FileInputStream(file);
-            s3FileUtil.uploadFile(stream, file.getName());
+            s3FileUtil.uploadFile(stream, file.getName(), (int) file.length());
             LOG.info("uploading file done: {}", file.getName());
         }
 
