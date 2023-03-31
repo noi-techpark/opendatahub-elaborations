@@ -1,6 +1,10 @@
 package com.opendatahub.scheduler;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -48,6 +52,7 @@ import com.opendatahub.service.GTFSWriteCalendar_Dates;
 import com.opendatahub.service.GTFSWriteRoutes;
 import com.opendatahub.service.GTFSWriteStops;
 import com.opendatahub.service.GTFSWriteTrips;
+import com.opendatahub.utils.S3FileUtil;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,7 +63,10 @@ public class JobScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(JobScheduler.class);
 
     @Autowired
-    GTFSFolder gtfsfolder;
+    private GTFSFolder gtfsfolder;
+
+    @Autowired
+    private S3FileUtil s3FileUtil;
 
     @Scheduled(cron = "${scheduler-cron:*/10 * * * * *}")
     public void calculateGtfs()
@@ -252,14 +260,20 @@ public class JobScheduler {
         GTFSWriteCalendar.writeCalendar(calendarValues);
         GTFSWriteStops.writeStops(stopsvalueslist);
         GTFSWriteRoutes.writeRoutes(routesvaluelist);
-
         GTFSWriteTrips.writeTrips(tripsvalueslist);
-        /*
-         * JSONObject json2_obj = json2.getJSONObject(2); Gson gson = new
-         * GsonBuilder().setPrettyPrinting().create(); String json2_obj_pretty =
-         * gson.toJson(json2_obj); String sname = json2_obj.getString("sname");
-         * System.out.println(sname);
+
+        /**
+         * Upload to S3 bucket
          */
+
+        File[] listFiles = GTFSFolder.FOLDER_FILE.listFiles();
+
+        for (File file : listFiles) {
+            LOG.info("uploading file: {}", file.getName());
+            InputStream stream = new FileInputStream(file);
+            s3FileUtil.uploadFile(stream, file.getName());
+            LOG.info("uploading file done: {}", file.getName());
+        }
 
     }
 }

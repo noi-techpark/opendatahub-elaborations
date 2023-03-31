@@ -45,7 +45,7 @@ public class S3FileUtil {
      * @throws AmazonClientException
      * @throws InterruptedException
      */
-    public void uploadFile(InputStream fileInputStream, String fileName, int contentLength)
+    public void uploadFile(InputStream fileInputStream, String fileName)
             throws AmazonServiceException, AmazonClientException, InterruptedException {
 
         logger.info("upload of file: {} to S3", fileName);
@@ -63,7 +63,7 @@ public class S3FileUtil {
                 .build();
 
         ObjectMetadata objectMetadata = new ObjectMetadata();
-        objectMetadata.setContentLength(contentLength);
+        // objectMetadata.setContentLength(contentLength);
 
         transferManager.upload(bucketName, fileName, fileInputStream, objectMetadata);
 
