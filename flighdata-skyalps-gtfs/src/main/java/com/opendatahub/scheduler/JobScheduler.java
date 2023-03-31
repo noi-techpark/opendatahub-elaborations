@@ -85,11 +85,11 @@ public class JobScheduler {
         ArrayList<RoutesValues> routesvaluelist = new ArrayList<RoutesValues>();
         ArrayList<StopsValue> stopsvalueslist = new ArrayList<StopsValue>();
         Flights result = FlightsRest.getFlights(restTemplate);
-        LOG.info("Result: " + result);
+        LOG.debug("Result: " + result);
 
         ObjectMapper objectMapper = new ObjectMapper();
         String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(result.getData()).toString();
-        LOG.info("Result Flights: " + json);
+        LOG.debug("Result Flights: " + json);
         GTFSFolder.writeRequestAndResponse();
         GTFSFile.writeFiles();
         JSONArray json2 = new JSONArray(json);
@@ -167,7 +167,7 @@ public class JobScheduler {
             agencyValues.add(new AgencyValues("1", sorigin.get(i).toString(), null, null, null, null, null, null));
         }
         for (int j = 0; j < stoptimesvalues.size(); j++) {
-            LOG.info(stoptimesvalues.get(j).toString());
+            LOG.debug(stoptimesvalues.get(j).toString());
         }
         for (int i = 0; i < scode.size(); i++) {
             calendarValues.add(new CalendarValues(scode.get(i), service_operation.valueOf(false),
