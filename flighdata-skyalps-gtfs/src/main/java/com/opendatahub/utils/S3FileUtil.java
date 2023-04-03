@@ -48,7 +48,7 @@ public class S3FileUtil {
     public void uploadFile(InputStream fileInputStream, String fileName, int contentLength)
             throws AmazonServiceException, AmazonClientException, InterruptedException {
 
-        logger.info("upload of file: {} to S3", fileName);
+        logger.debug("upload of file: {} to S3", fileName);
 
         BasicAWSCredentials awsCreds = new BasicAWSCredentials(accessKeyId, accessSecretKey);
 
@@ -67,7 +67,7 @@ public class S3FileUtil {
 
         transferManager.upload(bucketName, fileName, fileInputStream, objectMetadata);
 
-        logger.info("upload of file: {} to S3 done", fileName);
+        logger.debug("upload of file: {} to S3 done", fileName);
     }
 
 }
