@@ -8,8 +8,8 @@ python-jose==3.2.0
 python-keycloak==0.25.0
 pytz==2020.4
 requests==2.26.0
-rsa==4.6
+rsa==4.9
 six==1.15.0
-urllib3==1.26.2
+urllib3==1.26.12
 zope.interface==5.2.0
 schedule==1.1.0
