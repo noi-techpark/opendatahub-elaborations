@@ -11,25 +11,25 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class GTFSFolder {
-	
-	 private static final DateFormat SDF = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
 
-	    public static final File FOLDER_FILE = new File(new File(System.getProperty("user.home"), "Desktop"), "GTFS_" + SDF.format(new Date()));
+	public static final File FOLDER_FILE = new File(new File(System.getProperty("user.home")), "GTFS");
 
 	public static void writeRequestAndResponse() throws IOException {
-		 File theDir = FOLDER_FILE;
-		/*Date date = new Date();
-		SimpleDateFormat format = new SimpleDateFormat("yyyy_MM_dd_HH.mm.ss");
-
-		String currentDateTime = format.format(date);
-
-		String folderPath = "C:\\Users\\39351\\Desktop\\" + "GTFS_" + currentDateTime;
-
-		File theDir = new File(folderPath);*/
+		File theDir = FOLDER_FILE;
+		/*
+		 * Date date = new Date();
+		 * SimpleDateFormat format = new SimpleDateFormat("yyyy_MM_dd_HH.mm.ss");
+		 * 
+		 * String currentDateTime = format.format(date);
+		 * 
+		 * String folderPath = "C:\\Users\\39351\\Desktop\\" + "GTFS_" +
+		 * currentDateTime;
+		 * 
+		 * File theDir = new File(folderPath);
+		 */
 
 		// if the directory does not exist, create it
 		if (!theDir.exists()) {
-			// System.out.println("creating directory: " + theDir.getName());
 			boolean result = false;
 
 			try {
