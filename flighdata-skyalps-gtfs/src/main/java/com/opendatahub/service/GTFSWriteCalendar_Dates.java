@@ -38,20 +38,8 @@ public class GTFSWriteCalendar_Dates {
 		GTFSReadFileFolder.readFiles();
 		FileWriter writer = new FileWriter(GTFSReadFileFolder.getCalendar_Dates());
 		writer.write(firstLine);
-		writer.write(System.getProperty("line.separator"));
-		Calendar_DatesValues calendarValues = new Calendar_DatesValues();
-		if(GTFSCheckCalendarDates.checkCalendarDatesMandatoryFields(calendarValuesList)) {
-		for (int i = 0; i < calendarValuesList.size(); i++) {
-			calendarValues.setService_id(calendarValuesList.get(i).getService_id());
-			calendarValues.setException_type(calendarValuesList.get(i).getException_type());
-			calendarValues.setDate(calendarValuesList.get(i).getDate());
-			writer.write(calendarValues.getService_id() + ",");
-			writer.write(calendarValues.getException_type() + ",");
-			writer.write(calendarValues.getDate().toLocalizedPattern());
-			writer.write(System.getProperty("line.separator"));
-		}
 		writer.close();
-		}
+		
 	}
 
 	private static void writeCalendar_Dates() {

@@ -21,7 +21,7 @@ public class GTFSFile {
 
 		// String currentDateTime = format.format(date);
 		int fileCounter = 1;
-		// String folderPath = "C:\\Users\\39351\\Desktop\\" + "GTFS_" +
+		// String folderPath = "C:/Users/39351/Desktop/" + "GTFS_" +
 		// currentDateTime;
 
 		String fileType = ".txt";

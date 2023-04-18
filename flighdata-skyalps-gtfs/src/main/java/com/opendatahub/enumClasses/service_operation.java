@@ -23,4 +23,15 @@ public enum service_operation {
 			return Service_not_available;
 		}
 	}
+	
+	public static int intvalueOf(boolean i) {
+		if (i == true) {
+			return 1;
+		} else if (i == false) {
+			return 0;
+		} else {
+			return 0;
+		}
+	}
+	
 }

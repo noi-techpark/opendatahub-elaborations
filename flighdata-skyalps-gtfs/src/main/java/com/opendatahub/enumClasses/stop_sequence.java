@@ -22,4 +22,30 @@ public enum stop_sequence {
 			return null;
 		}
 	}
+	
+	public static int intvalueOf(String i) {
+		if (i == "Departing_airpot") {
+			return 1;
+		} else if (i == "Arrival_airport") {
+			return 2;
+		} else {
+			return 1;
+		}
+	}
+	
+	public static int flightFromBzo() {
+		return 0;
+	}
+	
+	public static int flightToBzo() {
+		return 1;
+	}
+	
+	public static int departingairport() {
+		return 1;
+	}
+	
+	public static int arrivalairport() {
+		return 1;
+	}
 }

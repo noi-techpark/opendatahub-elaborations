@@ -19,23 +19,23 @@ public class GTFSWriteCalendar {
 			if (calendarValuesList.get(i).getService_id() == null) {
 				return;
 			}
-			if (calendarValuesList.get(i).getMonday() == null) {
+			if (String.valueOf(calendarValuesList.get(i).getMonday()) == null) {
 				return;
 			}
-			if (calendarValuesList.get(i).getTuesday() == null) {
+			if (String.valueOf(calendarValuesList.get(i).getTuesday()) == null) {
 				return;
 			}
-			if (calendarValuesList.get(i).getWednesday() == null) {
+			if (String.valueOf(calendarValuesList.get(i).getWednesday()) == null) {
 				return;
 			}
 			;
-			if (calendarValuesList.get(i).getThursday() == null) {
+			if (String.valueOf(calendarValuesList.get(i).getThursday()) == null) {
 				return;
 			}
-			if (calendarValuesList.get(i).getFriday() == null) {
+			if (String.valueOf(calendarValuesList.get(i).getFriday()) == null) {
 				return;
 			}
-			if (calendarValuesList.get(i).getSaturday() == null) {
+			if (String.valueOf(calendarValuesList.get(i).getSaturday()) == null) {
 				return;
 			}
 			if (calendarValuesList.get(i).getStart_date() == null) {
@@ -68,9 +68,9 @@ public class GTFSWriteCalendar {
 			calendarValues.setEnd_date(calendarValuesList.get(i).getEnd_date());
 			writer.write(calendarValues.getService_id() + ",");
 			writer.write(calendarValues.getMonday() + ",");
-			writer.write(calendarValues.getTuesday().toString() + ",");
-			writer.write(calendarValues.getWednesday().toString() + ",");
-			writer.write(calendarValues.getThursday().toString() + ",");
+			writer.write(String.valueOf(calendarValues.getTuesday()) + ",");
+			writer.write(String.valueOf(calendarValues.getWednesday()) + ",");
+			writer.write(String.valueOf(calendarValues.getThursday()) + ",");
 			writer.write(calendarValues.getFriday() + ",");
 			writer.write(calendarValues.getSaturday() + ",");
 			writer.write(calendarValues.getStart_date() + ",");

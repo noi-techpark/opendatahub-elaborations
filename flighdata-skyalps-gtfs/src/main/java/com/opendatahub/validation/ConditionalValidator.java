@@ -1,4 +1,4 @@
-package com.opendatahub.validation;
+package com.opendatahub.Validation;
 
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;

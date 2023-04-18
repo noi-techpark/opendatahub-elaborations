@@ -39,5 +39,45 @@ public enum route_type {
 			return Tram_StreetCar_LightRail;
 		}
 	}
+	
+	public static int defaultValue() {
+		return Integer.valueOf("1100");
+	}
+	
+	public static int intValueOf(String i) {
+		if(i == "Subway") {
+			return 1;
+		} else if(i == "Tram") {
+			return 0;
+		} if(i == "Streetcar") {
+			return 0;
+		} else if(i == "Light rail") {
+			return 0;
+		} if(i == "Metro") {
+			return 1;
+		} else if(i == "Rail") {
+			return 2;
+		} if(i == "Bus") {
+			return 3;
+		} else if(i == "Ferry") {
+			return 4;
+		} if(i == "Cable tram") {
+			return 5;
+		} else if(i == "Aerial lift") {
+			return 6;
+		} if(i == "suspended cable car") {
+			return 6;
+		} else if(i == "Funicular") {
+			return 7;
+		} if(i == "Trolleybus") {
+			return 11;
+		} else if(i == "Monorail") {
+			return 12;
+		} else if(i == "Default" || i == null) {
+		return 1100; 
+		} else {
+			return 1100;
+		}
+	}
 
 }

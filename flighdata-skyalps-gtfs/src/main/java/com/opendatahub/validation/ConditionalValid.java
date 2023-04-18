@@ -1,4 +1,4 @@
-package com.opendatahub.validation;
+package com.opendatahub.Validation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

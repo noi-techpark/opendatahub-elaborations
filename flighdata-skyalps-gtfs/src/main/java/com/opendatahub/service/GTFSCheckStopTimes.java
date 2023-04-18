@@ -3,7 +3,7 @@ package com.opendatahub.service;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.opendatahub.validation.CheckLocationType;
+import com.opendatahub.Validation.CheckLocationType;
 import com.opendatahub.dto.AgencyValues;
 import com.opendatahub.dto.Stop_TimesValues;
 
@@ -23,8 +23,8 @@ public class GTFSCheckStopTimes  extends Exception{
 
 	public static boolean checkStopTimesMandatoryFields(ArrayList<Stop_TimesValues>  stoptimesvalues) throws GTFSCheckStopTimes  {
 		for(int i = 0; i < stoptimesvalues.size(); i++) {
-			if(stoptimesvalues.get(i).getTrip_id() != null && stoptimesvalues.get(i).getStop_id() != null && stoptimesvalues.get(i).getStop_sequence() != null) {
-					if(!stoptimesvalues.get(i).getTrip_id().toString().isBlank() && !stoptimesvalues.get(i).getStop_id().isBlank() && !stoptimesvalues.get(i).getStop_sequence().toString().isBlank()) {
+			if(stoptimesvalues.get(i).getTrip_id() != null && stoptimesvalues.get(i).getStop_id() != null) {
+					if(!stoptimesvalues.get(i).getTrip_id().toString().isBlank() && !stoptimesvalues.get(i).getStop_id().isBlank()) {
 					return true;
 					} else {
 						throw new GTFSCheckStopTimes("Error: Trip ID, Stop ID, Stop Sequence are mandatory");
@@ -44,72 +44,9 @@ public class GTFSCheckStopTimes  extends Exception{
 
 	} 
 	
-	public static boolean checkarrivaltime(ArrayList<Stop_TimesValues>  stoptimesvalues) throws GTFSCheckStopTimes  {
-		for(int i = 0; i < stoptimesvalues.size(); i++) {
-			if(stoptimesvalues.get(i).getTimepoint() != null) {
-					if(!stoptimesvalues.get(i).getTimepoint().toString().isBlank()) {
-						if(stoptimesvalues.get(i).getTimepoint().getValue() == 1 ||  stoptimesvalues.get(i).getTimepoint().getValue() == 0) {
-						if(stoptimesvalues.get(i).getArrival_time() != null) {
-							if(!stoptimesvalues.get(i).getArrival_time().isBlank()) {
-					return true; 
-							} else { throw new GTFSCheckStopTimes("Error: Stop Sequence error");}
-						} else { throw new GTFSCheckStopTimes("Error: Stop Sequence error");}
-						} else {
-							throw new GTFSCheckStopTimes("Error: Stop Sequence error");
-						}
-					} else {
-						throw new GTFSCheckStopTimes("Error: Stop Sequence error");
-					}
-				
-					
-			} 
-			
-		
-		}
-		throw new GTFSCheckStopTimes("Error: Stop Sequence error"); 
-	
-	}
-
-	private static void checkarrivaltime() {
-		// TODO Auto-generated method stub
-
-	} 
-	
-	public static boolean checkdeparturetime(ArrayList<Stop_TimesValues>  stoptimesvalues) throws GTFSCheckStopTimes  {
-		for(int i = 0; i < stoptimesvalues.size(); i++) {
-			if(stoptimesvalues.get(i).getTimepoint() != null) {
-					if(!stoptimesvalues.get(i).getTimepoint().toString().isBlank()) {
-						if(stoptimesvalues.get(i).getTimepoint().getValue() == 1 ||  stoptimesvalues.get(i).getTimepoint().getValue() == 0) {
-						if(stoptimesvalues.get(i).getArrival_time() != null) {
-							if(!stoptimesvalues.get(i).getArrival_time().isBlank()) {
-					return true; 
-							} else { throw new GTFSCheckStopTimes("Error: Stop Sequence error");}
-						} else { throw new GTFSCheckStopTimes("Error: Stop Sequence error");}
-						} else {
-							throw new GTFSCheckStopTimes("Error: Stop Sequence error");
-						}
-					} else {
-						throw new GTFSCheckStopTimes("Error: Stop Sequence error");
-					}
-				
-					
-			} 
-			
-		
-		}
-		throw new GTFSCheckStopTimes("Error: Stop Sequence error"); 
-	
-	}
-
-	private static void checkdeparturetime() {
-		// TODO Auto-generated method stub
-
-	} 
 	
 	@CheckLocationType
 	public static void main(String[] args) throws IOException {
-		checkdeparturetime();
-		checkarrivaltime();
 		checkStopTimesMandatoryFields();
 	}
 

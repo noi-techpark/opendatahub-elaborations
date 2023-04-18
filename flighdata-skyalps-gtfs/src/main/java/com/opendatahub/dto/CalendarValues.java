@@ -9,17 +9,17 @@ public class CalendarValues implements Serializable {
 	@NonNull
 	private String service_id; // to be taken from scode
 	@NonNull
-	private service_operation monday;
+	private int monday;
 	@NonNull
-	private service_operation tuesday;
+	private int tuesday;
 	@NonNull
-	private service_operation wednesday;
+	private int wednesday;
 	@NonNull
-	private service_operation thursday;
+	private int thursday;
 	@NonNull
-	private service_operation friday;
+	private int friday;
 	@NonNull
-	private service_operation saturday;
+	private int saturday;
 	@NonNull
 	private String start_date; // SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
 	@NonNull
@@ -37,51 +37,51 @@ public class CalendarValues implements Serializable {
 		this.service_id = service_id;
 	}
 
-	public service_operation getMonday() {
+	public int getMonday() {
 		return monday;
 	}
 
-	public void setMonday(service_operation monday) {
+	public void setMonday(int monday) {
 		this.monday = monday;
 	}
 
-	public service_operation getTuesday() {
+	public int getTuesday() {
 		return tuesday;
 	}
 
-	public void setTuesday(service_operation tuesday) {
+	public void setTuesday(int tuesday) {
 		this.tuesday = tuesday;
 	}
 
-	public service_operation getWednesday() {
+	public int getWednesday() {
 		return wednesday;
 	}
 
-	public void setWednesday(service_operation wednesday) {
-		this.wednesday = wednesday;
+	public void setWednesday(int i) {
+		this.wednesday = i;
 	}
 
-	public service_operation getThursday() {
+	public int getThursday() {
 		return thursday;
 	}
 
-	public void setThursday(service_operation thursday) {
+	public void setThursday(int thursday) {
 		this.thursday = thursday;
 	}
 
-	public service_operation getFriday() {
+	public int getFriday() {
 		return friday;
 	}
 
-	public void setFriday(service_operation friday) {
+	public void setFriday(int friday) {
 		this.friday = friday;
 	}
 
-	public service_operation getSaturday() {
+	public int getSaturday() {
 		return saturday;
 	}
 
-	public void setSaturday(service_operation saturday) {
+	public void setSaturday(int saturday) {
 		this.saturday = saturday;
 	}
 
@@ -101,9 +101,9 @@ public class CalendarValues implements Serializable {
 		this.end_date = end_date;
 	}
 
-	public CalendarValues(String service_id, service_operation monday, service_operation tuesday,
-			service_operation wednesday, service_operation thursday, service_operation friday,
-			service_operation saturday, String start_date, String end_date) {
+	public CalendarValues(String service_id, int monday, int tuesday,
+			int wednesday, int thursday, int friday,
+			int saturday, String start_date, String end_date) {
 		super();
 		this.service_id = service_id;
 		this.monday = monday;

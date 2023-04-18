@@ -1,4 +1,4 @@
-package com.opendatahub.validation;
+package com.opendatahub.Validation;
 
 import java.util.Objects;
 
@@ -16,14 +16,6 @@ public class CheckLocationTypeValidator implements ConstraintValidator<CheckLoca
 	public boolean isValid(String value, ConstraintValidatorContext context) {
 		return Strings.isBlank(value);
 				
-	}
-	
-	public boolean checklocationtype(StopsValue value) {
-		if(value.getLocation_type().getValue() == 1 || value.getLocation_type().getValue() == 0 || value.getLocation_type().getValue() == 2) {
-	return true; 
-	} else {
-   return false;
-	}
 	}
 
 }
