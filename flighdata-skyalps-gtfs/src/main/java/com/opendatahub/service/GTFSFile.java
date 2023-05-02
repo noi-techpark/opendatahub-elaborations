@@ -16,18 +16,17 @@ public class GTFSFile {
 
 	public static void writeFiles() throws IOException, MalformedURLException {
 
-		// Date date = new Date();
-		// SimpleDateFormat format = new SimpleDateFormat("yyyy_MM_dd_HH.mm.ss");
+		//Date date = new Date();
+		//SimpleDateFormat format = new SimpleDateFormat("yyyy_MM_dd_HH.mm.ss");
 
-		// String currentDateTime = format.format(date);
+		//String currentDateTime = format.format(date);
 		int fileCounter = 1;
-		// String folderPath = "C:/Users/39351/Desktop/" + "GTFS_" +
-		// currentDateTime;
+		//String folderPath = "C:/Users/39351/Desktop/" + "GTFS_" + currentDateTime;
 
 		String fileType = ".txt";
-		// File dir = new File(folderPath);
-
-		File dir = GTFSFolder.FOLDER_FILE;
+		//File dir = new File(folderPath);
+		
+	        File dir = GTFSFolder.FOLDER_FILE;
 		System.out.println(dir.getAbsolutePath());
 		GTFSFileNames filename = new GTFSFileNames();
 		String filePath1 = dir.getAbsolutePath() + "/" + filename.getAgency().toString() + fileType;

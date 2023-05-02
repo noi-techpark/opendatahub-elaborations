@@ -38,6 +38,7 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opencsv.CSVReader;
 import com.opendatahub.constantsClasses.DefaultValues;
 import com.opendatahub.dto.AgencyValues;
 import com.opendatahub.dto.CalendarValues;
@@ -127,8 +128,8 @@ public class JobScheduler {
 
         List<String> todestination = new ArrayList<String>();
         List<String> fromdestination = new ArrayList<String>();
-        Map<String, ArrayList<String>> todestinationHashMap = new HashMap<String, ArrayList<String>>();
-        Map<String, ArrayList<String>> fromdestinationHashMap = new HashMap<String, ArrayList<String>>();
+        Map<String, ArrayList<StopsValue>> todestinationHashMap = new HashMap<String, ArrayList<StopsValue>>();
+        Map<String, ArrayList<StopsValue>> fromdestinationHashMap = new HashMap<String, ArrayList<StopsValue>>();
         // JSONObject Smetadata = new JSONObject();
 
         for (int i = 0; i < json2.length(); i++) {
@@ -194,7 +195,7 @@ public class JobScheduler {
             calendarValues.add(new CalendarValues(scode.get(i), service_operation.intvalueOf(false),
                     service_operation.intvalueOf(false), service_operation.intvalueOf(false),
                     service_operation.intvalueOf(false), service_operation.intvalueOf(false),
-                    service_operation.intvalueOf(false), currentDateTime, currentDateTime));
+                    service_operation.intvalueOf(false), service_operation.intvalueOf(false), currentDateTime, currentDateTime));
             String scodeDate = scode.get(i).substring(0, 2);
             String scodeMounth = scode.get(i).substring(2, 5);
             if(scodeMounth.equals("JAN")) {
@@ -254,37 +255,48 @@ public class JobScheduler {
         	
         }
      
-            for (int j = 0; j < calendarValues.size(); j++) {
+            /*for (int j = 0; j < calendarValues.size(); j++) {
+            	calendarValues.get(j).setMonday(service_operation.intvalueOf(weekdaymon.get(j)));
                 calendarValues.get(j).setFriday(service_operation.intvalueOf(weekdayfri.get(j)));
                 
+                calendarValues.get(j).setSaturday(service_operation.intvalueOf(weekdaysat.get(j)));
+                calendarValues.get(j).setSunday(service_operation.intvalueOf(weekdaysun.get(j)));
+                calendarValues.get(j).setTuesday(service_operation.intvalueOf(weekdaytue.get(j)));
+                calendarValues.get(j).setWednesday(service_operation.intvalueOf(weekdaywed.get(j)));
+                calendarValues.get(j).setThursday(service_operation.intvalueOf(weekdaythu.get(j)));
+              
+                }*/
+            
+            for (int j = 0; j < weekdayfri.size() && j < calendarValues.size(); j++) {
+                calendarValues.get(j).setFriday(service_operation.intvalueOf(weekdayfri.get(j)));
             }
-            for (int j = 0; j < calendarValues.size(); j++) {
+            
+            for (int j = 0; j < weekdaymon.size() && j < calendarValues.size(); j++) {
                 calendarValues.get(j).setMonday(service_operation.intvalueOf(weekdaymon.get(j)));
             }
         
-            for (int j = 0; j < calendarValues.size(); j++) {
-                calendarValues.get(j).setThursday(service_operation.intvalueOf(weekdaythu.get(j)));
-            }
-        
-            for (int j = 0; j < calendarValues.size(); j++) {
+            for (int j = 0; j < weekdaysat.size() && j < calendarValues.size(); j++) {
                 calendarValues.get(j).setSaturday(service_operation.intvalueOf(weekdaysat.get(j)));
             }
-        
-            for (int j = 0; j < calendarValues.size(); j++) {
-                calendarValues.get(j).setSaturday(service_operation.intvalueOf(weekdaysun.get(j)));
+            
+            for (int j = 0; j < weekdaysun.size() && j < calendarValues.size(); j++) {
+                calendarValues.get(j).setSunday(service_operation.intvalueOf(weekdaysun.get(j)));
             }
-        
-            for (int j = 0; j < calendarValues.size(); j++) {
+            
+            for (int j = 0; j < weekdaythu.size() && j < calendarValues.size(); j++) {
+                calendarValues.get(j).setThursday(service_operation.intvalueOf(weekdaythu.get(j)));
+            }
+            
+            for (int j = 0; j < weekdaytue.size() && j < calendarValues.size(); j++) {
                 calendarValues.get(j).setTuesday(service_operation.intvalueOf(weekdaytue.get(j)));
             }
-        
-            for (int j = 0; j < calendarValues.size(); j++) {
+            
+            for (int j = 0; j < weekdaywed.size() && j < calendarValues.size(); j++) {
                 calendarValues.get(j).setWednesday(service_operation.intvalueOf(weekdaywed.get(j)));
             }
-           
-        
+            
         for (int i = 0; i < todestination.size(); i++) {
-        	  routesvaluelist.add(new RoutesValues(todestination.get(i),todestination.get(i), route_type.defaultValue()));
+        	  //routesvaluelist.add(new RoutesValues(todestination.get(i),todestination.get(i), route_type.defaultValue()));
               stopsvalueslist.add(new StopsValue(todestination.get(i), todestination.get(i), todestination.get(i),
                      null, null));
               tripsvalueslist.get(i).setRoute_id(todestination.get(i));
@@ -293,9 +305,9 @@ public class JobScheduler {
         for (int i = 0; i < fromdestination.size(); i++) {
             stopsvalueslist.add(new StopsValue(fromdestination.get(i), fromdestination.get(i),
                     fromdestination.get(i), null, null));
-            routesvaluelist.add(new RoutesValues(fromdestination.get(i),fromdestination.get(i), route_type.defaultValue()));
+            //routesvaluelist.add(new RoutesValues(fromdestination.get(i),fromdestination.get(i), route_type.defaultValue()));
             stoptimesvalues.get(i).setStop_id(fromdestination.get(i) + "-" + todestination.get(i));
-            if(fromdestination.get(i).equals("BZO")) {
+            if(!fromdestination.get(i).equals("BZO")) {
             	stoptimesvalues.get(i).setStop_sequence(1);
             	tripsvalueslist.get(i).setDirection_id(stop_sequence.flightToBzo());
             } else {
@@ -305,43 +317,82 @@ public class JobScheduler {
             
 
         }
-   	 for (Map.Entry<String, ArrayList<String>> entry : GTFSCsvFile.getCSVFile().entrySet()) {
+        for(int i = 0; i < stoptimesvalues.size(); i++) {
+        	stoptimesvalues.get(i).setStop_id(stopsvalueslist.get(i).getStop_id());
+        }
+        
+        for (int i = 0; i < snames.size(); i++) {
+        	if(snames.get(i).substring(0, 3).equals("BZO") || snames.get(i).substring(4, 7).equals("BZO")) {
+        		String newsnames = snames.get(i).replaceAll("-", "_");
+        	routesvaluelist.add(new RoutesValues(newsnames,newsnames, route_type.defaultValue()));
+        	tripsvalueslist.get(i).setRoute_id(newsnames);
+        	}        	
+        }
+        
+        for(int i = 0; i < stoptimesvalues.size(); i++) {
+        	if(stoptimesvalues.get(i).getStop_sequence() == 1) {
+        		stoptimesvalues.get(i).setArrival_time(std.get(i)); 
+        		stoptimesvalues.get(i).setDeparture_time(std.get(i));
+        	} else if(stoptimesvalues.get(i).getStop_sequence() == 2) {
+        		stoptimesvalues.get(i).setArrival_time(sta.get(i)); 
+        		stoptimesvalues.get(i).setDeparture_time(sta.get(i));
+        	}
+        }
+   	 for (Map.Entry<String, ArrayList<StopsValue>> entry : GTFSCsvFile.getCSVFile().entrySet()) {
    		 if(todestination.contains(entry.getKey())) {
    			String key = entry.getKey();
-            ArrayList<String> value = entry.getValue();
+            ArrayList<StopsValue> value = entry.getValue();
             todestinationHashMap.put(key, value);
    		 }
          
      }
    	 
-	 for (Map.Entry<String, ArrayList<String>> entry : GTFSCsvFile.getCSVFile().entrySet()) {
+	 for (Map.Entry<String, ArrayList<StopsValue>> entry : GTFSCsvFile.getCSVFile().entrySet()) {
    		 if(fromdestination.contains(entry.getKey())) {
    			String key = entry.getKey();
-            ArrayList<String> value = entry.getValue();
+            ArrayList<StopsValue> value = entry.getValue();
             fromdestinationHashMap.put(key, value);
             
    		 }
          
      }
-	 for(int i = 0; i < todestination.size(); i++) {
-		 for (Map.Entry<String, ArrayList<String>> entry : todestinationHashMap.entrySet()) {
+	/* for(int i = 0; i < todestination.size(); i++) {
+		 for (Map.Entry<String, ArrayList<String[]>> entry : todestinationHashMap.entrySet()) {
 			 if(todestination.get(i).equals(entry.getKey())) {
-		            ArrayList<String> value = entry.getValue();
-		        stopsvalueslist.get(i).setStop_lat(value.get(0));
-		        stopsvalueslist.get(i).setStop_lon(value.get(1));
+		            ArrayList<String[]> value = entry.getValue();
+		        stopsvalueslist.get(i).setStop_lat(value.get(0)[0]);
+		        stopsvalueslist.get(i).setStop_lon(value.get(1)[1]);
 		   		 }
 		 }
-	 }
+	 }*/
+	 for (String destination : todestination) {
+		    ArrayList<StopsValue> value = todestinationHashMap.get(destination);
+		    if (value != null && value.size() > 0) {
+		    	 StopsValue stop = new StopsValue(value.get(0).getStop_id(), value.get(0).getStop_code(), value.get(0).getStop_name(), value.get(0).getStop_lat(), value.get(0).getStop_lon());
+		    	 stopsvalueslist.add(stop);
+		       // stopsvalueslist.get(0).setStop_lat(value.get(0).getStop_lat()); // pass in the first element of the String array
+		       // stopsvalueslist.get(0).setStop_lon(value.get(0).getStop_lon()); // pass in the second element of the String array
+		    }
+		}
 	 Collections.reverse(stopsvalueslist);
-	 for(int i = 0; i < fromdestination.size(); i++) {
-		 for (Map.Entry<String, ArrayList<String>> entry : fromdestinationHashMap.entrySet()) {
+	 /*for(int i = 0; i < fromdestination.size(); i++) {
+		 for (Map.Entry<String, ArrayList<String[]>> entry : fromdestinationHashMap.entrySet()) {
 			 if(fromdestination.get(i).equals(entry.getKey())) {
-		            ArrayList<String> value = entry.getValue();
-		            stopsvalueslist.get(i).setStop_lat(value.get(0));
-			        stopsvalueslist.get(i).setStop_lon(value.get(1));
+		            ArrayList<String[]> value = entry.getValue();
+		            stopsvalueslist.get(i).setStop_lat(value.get(0)[0]);
+			        stopsvalueslist.get(i).setStop_lon(value.get(1)[1]);
 		   		 }
 		 }
-	 }
+	 }*/
+	 for (String destination : fromdestination) {
+		    ArrayList<StopsValue> value = fromdestinationHashMap.get(destination);
+		    if (value != null && value.size() > 0) {
+		    	 StopsValue stop = new StopsValue(value.get(0).getStop_id(), value.get(0).getStop_code(), value.get(0).getStop_name(), value.get(0).getStop_lat(), value.get(0).getStop_lon());
+		         stopsvalueslist.add(stop);
+		        //stopsvalueslist.get(0).setStop_lat(value.get(0).getStop_lat()); // pass in the first element of the String array
+		        //stopsvalueslist.get(0).setStop_lon(value.get(0).getStop_lon()); // pass in the second element of the String array
+		    }
+		}
 	 Collections.reverse(stopsvalueslist);
 	 
         GTFSWriteAgency.writeAgency(agencyValues);
@@ -368,4 +419,5 @@ public class JobScheduler {
 
         LOG.info("Uploading files to S3 done.");
     }
+    
 }

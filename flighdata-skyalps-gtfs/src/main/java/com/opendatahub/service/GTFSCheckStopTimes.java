@@ -3,7 +3,7 @@ package com.opendatahub.service;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.opendatahub.Validation.CheckLocationType;
+import com.opendatahub.validation.CheckLocationType;
 import com.opendatahub.dto.AgencyValues;
 import com.opendatahub.dto.Stop_TimesValues;
 

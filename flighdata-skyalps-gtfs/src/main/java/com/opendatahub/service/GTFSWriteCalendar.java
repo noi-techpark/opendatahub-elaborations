@@ -38,6 +38,9 @@ public class GTFSWriteCalendar {
 			if (String.valueOf(calendarValuesList.get(i).getSaturday()) == null) {
 				return;
 			}
+			if (String.valueOf(calendarValuesList.get(i).getSunday()) == null) {
+				return;
+			}
 			if (calendarValuesList.get(i).getStart_date() == null) {
 				return;
 			}
@@ -48,7 +51,7 @@ public class GTFSWriteCalendar {
 
 		String firstLine = calendar.getService_id() + "," + calendar.getMonday() + "," + calendar.getTuesday() + ","
 				+ calendar.getWednesday() + "," + calendar.getThursday() + "," + calendar.getFriday() + ","
-				+ calendar.getSaturday() + "," + calendar.getStart_date() + "," + calendar.getEnd_date();
+				+ calendar.getSaturday() + "," + calendar.getSunday() + "," + calendar.getStart_date() + "," + calendar.getEnd_date();
 
 		GTFSReadFileFolder.readFiles();
 		FileWriter writer = new FileWriter(GTFSReadFileFolder.getCalendar());
@@ -58,21 +61,23 @@ public class GTFSWriteCalendar {
 		if(GTFSCheckCalendar.checkcalendarValues(calendarValuesList)) {
 		for (int i = 0; i < calendarValuesList.size(); i++) {
 			calendarValues.setService_id(calendarValuesList.get(i).getService_id());
+			calendarValues.setFriday(calendarValuesList.get(i).getFriday());
 			calendarValues.setMonday(calendarValuesList.get(i).getMonday());
+			calendarValues.setSaturday(calendarValuesList.get(i).getSaturday());
+			calendarValues.setSunday(calendarValuesList.get(i).getSunday());
+			calendarValues.setThursday(calendarValuesList.get(i).getThursday());
 			calendarValues.setTuesday(calendarValuesList.get(i).getTuesday());
 			calendarValues.setWednesday(calendarValuesList.get(i).getWednesday());
-			calendarValues.setThursday(calendarValuesList.get(i).getThursday());
-			calendarValues.setFriday(calendarValuesList.get(i).getFriday());
-			calendarValues.setSaturday(calendarValuesList.get(i).getSaturday());
 			calendarValues.setStart_date(calendarValuesList.get(i).getStart_date());
 			calendarValues.setEnd_date(calendarValuesList.get(i).getEnd_date());
 			writer.write(calendarValues.getService_id() + ",");
-			writer.write(calendarValues.getMonday() + ",");
-			writer.write(String.valueOf(calendarValues.getTuesday()) + ",");
-			writer.write(String.valueOf(calendarValues.getWednesday()) + ",");
-			writer.write(String.valueOf(calendarValues.getThursday()) + ",");
 			writer.write(calendarValues.getFriday() + ",");
+			writer.write(calendarValues.getMonday() + ",");
 			writer.write(calendarValues.getSaturday() + ",");
+			writer.write(calendarValues.getSunday() + ",");
+			writer.write(calendarValues.getThursday() + ",");
+			writer.write(calendarValues.getTuesday() + ",");
+			writer.write(calendarValues.getWednesday() + ",");
 			writer.write(calendarValues.getStart_date() + ",");
 			writer.write(calendarValues.getEnd_date() + ",");
 			writer.write(System.getProperty("line.separator"));

@@ -21,7 +21,7 @@ public class GTFSReadFileFolder {
 		SimpleDateFormat format = new SimpleDateFormat("yyyy_MM_dd_HH.mm.ss");
 
 		String currentDateTime = format.format(date);
-		String folderPath = "C:\\Users\\39351\\Desktop\\" + "GTFS_" + currentDateTime;
+		String folderPath = "C:/Users/39351/Desktop/" + "GTFS_" + currentDateTime;
 		File folder = new File(folderPath);*/
 		File folder = GTFSFolder.FOLDER_FILE;
 		File[] listOfFiles = folder.listFiles();

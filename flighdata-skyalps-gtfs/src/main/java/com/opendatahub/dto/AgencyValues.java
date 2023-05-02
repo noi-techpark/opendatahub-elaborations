@@ -2,6 +2,7 @@ package com.opendatahub.dto;
 import java.io.Serializable;
 import java.lang.String;
 import java.net.URL;
+import java.util.Objects;
 
 import org.springframework.lang.NonNull;
 
@@ -61,5 +62,23 @@ public class AgencyValues implements Serializable {
 		return "AgencyValues [agency_name=" + agency_name + ", agency_url=" + agency_url + ", agency_timezone="
 				+ agency_timezone + "]";
 	}
+	@Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof AgencyValues)) {
+            return false;
+        }
+        AgencyValues other = (AgencyValues) obj;
+        return Objects.equals(agency_name, other.agency_name)
+                && Objects.equals(agency_url, other.agency_url)
+                && Objects.equals(agency_timezone, other.agency_timezone);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(agency_name, agency_url, agency_timezone);
+    }
 
 }

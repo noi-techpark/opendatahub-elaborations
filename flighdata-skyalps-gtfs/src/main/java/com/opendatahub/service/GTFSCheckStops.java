@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-import com.opendatahub.Validation.CheckLocationType;
+import com.opendatahub.validation.CheckLocationType;
 import com.opendatahub.constantsClasses.Stops;
 import com.opendatahub.dto.StopsValue;
 

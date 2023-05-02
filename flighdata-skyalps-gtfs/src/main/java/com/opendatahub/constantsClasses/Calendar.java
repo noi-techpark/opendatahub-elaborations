@@ -9,6 +9,7 @@ public class Calendar {
 	private String thursday = "thursday";
 	private String friday = "friday";
 	private String saturday = "saturday";
+	private String sunday = "sunday";
 	private String start_date = "start_date";
 	private String end_date = "end_date";
 
@@ -67,6 +68,14 @@ public class Calendar {
 	public void setSaturday(String saturday) {
 		this.saturday = saturday;
 	}
+	
+	public String getSunday() {
+		return sunday;
+	}
+
+	public void setSunday(String sunday) {
+		this.sunday = sunday;
+	}
 
 	public String getStart_date() {
 		return start_date;
@@ -87,7 +96,7 @@ public class Calendar {
 	@Override
 	public String toString() {
 		return "Calendar [service_id=" + service_id + ", monday=" + monday + ", tuesday=" + tuesday + ", wednesday="
-				+ wednesday + ", thursday=" + thursday + ", friday=" + friday + ", saturday=" + saturday
+				+ wednesday + ", thursday=" + thursday + ", friday=" + friday + ", saturday=" + saturday + ", sunday=" + sunday 
 				+ ", start_date=" + start_date + ", end_date=" + end_date + "]";
 	}
 

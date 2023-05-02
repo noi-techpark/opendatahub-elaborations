@@ -1,4 +1,4 @@
-package com.opendatahub.Validation;
+package com.opendatahub.validation;
 
 import java.util.Objects;
 

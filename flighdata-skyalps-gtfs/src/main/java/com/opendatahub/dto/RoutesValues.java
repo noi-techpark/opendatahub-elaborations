@@ -1,5 +1,6 @@
 package com.opendatahub.dto;
 import java.net.URL;
+import java.util.Objects;
 
 import org.springframework.lang.NonNull;
 
@@ -61,6 +62,25 @@ public class RoutesValues implements Serializable {
 		return "RoutesValues [route_id=" + route_id + ", route_short_name=" + route_short_name + ", route_type="
 				+ route_type + "]";
 	}
+	@Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof RoutesValues)) {
+            return false;
+        }
+        RoutesValues other = (RoutesValues) obj;
+        return Objects.equals(route_id, other.route_id)
+                && Objects.equals(route_short_name, other.route_short_name)
+                && Objects.equals(route_type, other.route_type);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(route_id, route_short_name, route_type);
+    }
+
 
 	
 }

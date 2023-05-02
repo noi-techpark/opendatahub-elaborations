@@ -9,7 +9,7 @@ import java.util.Scanner;
 
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 
-import com.opendatahub.Validation.CheckLocationType;
+import com.opendatahub.validation.CheckLocationType;
 import com.opendatahub.dto.AgencyValues;
 import com.opendatahub.dto.TripsValues;
 

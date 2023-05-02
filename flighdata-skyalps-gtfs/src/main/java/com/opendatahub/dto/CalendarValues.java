@@ -21,6 +21,8 @@ public class CalendarValues implements Serializable {
 	@NonNull
 	private int saturday;
 	@NonNull
+	private int sunday;
+	@NonNull
 	private String start_date; // SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
 	@NonNull
 	private String end_date; // SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
@@ -84,6 +86,14 @@ public class CalendarValues implements Serializable {
 	public void setSaturday(int saturday) {
 		this.saturday = saturday;
 	}
+	
+	public int getSunday() {
+		return sunday;
+	}
+
+	public void setSunday(int sunday) {
+		this.sunday = sunday;
+	}
 
 	public String getStart_date() {
 		return start_date;
@@ -103,7 +113,7 @@ public class CalendarValues implements Serializable {
 
 	public CalendarValues(String service_id, int monday, int tuesday,
 			int wednesday, int thursday, int friday,
-			int saturday, String start_date, String end_date) {
+			int saturday, int sunday, String start_date, String end_date) {
 		super();
 		this.service_id = service_id;
 		this.monday = monday;
@@ -112,6 +122,7 @@ public class CalendarValues implements Serializable {
 		this.thursday = thursday;
 		this.friday = friday;
 		this.saturday = saturday;
+		this.sunday = sunday;
 		this.start_date = start_date;
 		this.end_date = end_date;
 	}
@@ -120,7 +131,7 @@ public class CalendarValues implements Serializable {
 	public String toString() {
 		return "CalendarValues [service_id=" + service_id + ", monday=" + monday + ", tuesday=" + tuesday
 				+ ", wednesday=" + wednesday + ", thursday=" + thursday + ", friday=" + friday + ", saturday="
-				+ saturday + ", start_date=" + start_date + ", end_date=" + end_date + "]";
+				+ saturday + ", sunday="+ sunday + ", start_date=" + start_date + ", end_date=" + end_date + "]";
 	}
 
 }

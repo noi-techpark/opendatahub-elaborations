@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import com.opendatahub.constantsClasses.Agency;
 import com.opendatahub.constantsClasses.DefaultValues;
@@ -44,7 +48,17 @@ public class GTFSWriteAgency {
 		writer.write(System.getProperty("line.separator"));
 		AgencyValues agencyvaluesobject = new AgencyValues();
 		if(GTFSCheckAgency.checkAgencyMandatoryFields(agencyvalueslist)) {
-		for (int i = 0; i < agencyvalueslist.size(); i++) {
+			System.out.println("Before removing duplicates : " + Arrays.toString(agencyvalueslist.toArray()));
+
+final List<AgencyValues> listWithoutDuplicates = new ArrayList<>(
+new HashSet<>(agencyvalueslist));
+
+Set<AgencyValues> uniqueAgencies = new HashSet<>(agencyvalueslist);
+
+System.out.println("After removing duplicates :: "
+                     + Arrays.toString(uniqueAgencies.toArray()));
+
+		/*for (int i = 0; i < uniqueAgencies.size(); i++) {
 			agencyvaluesobject.setAgency_name(agencyvalueslist.get(i).getAgency_name());
 			agencyvaluesobject.setAgency_url(agencyvalueslist.get(i).getAgency_url());
 			agencyvaluesobject.setAgency_timezone(agencyvalueslist.get(i).getAgency_timezone());
@@ -54,7 +68,19 @@ public class GTFSWriteAgency {
 			writer.write(System.getProperty("line.separator"));
 
 		}
-		writer.close();
+		writer.close();*/
+for (AgencyValues agency2 : uniqueAgencies) {
+	/*agencyvaluesobject.setAgency_name(agencyvalueslist.get(i).getAgency_name());
+	agencyvaluesobject.setAgency_url(agencyvalueslist.get(i).getAgency_url());
+	agencyvaluesobject.setAgency_timezone(agencyvalueslist.get(i).getAgency_timezone());*/
+	writer.write(agency2.getAgency_name() + ",");
+	writer.write(agency2.getAgency_url().toString() + ",");
+	writer.write(agency2.getAgency_timezone().toString());
+	writer.write(System.getProperty("line.separator"));
+
+}
+writer.close();
+
 		}
 	}
 

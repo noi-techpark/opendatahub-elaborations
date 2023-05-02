@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.Assertions;
 import org.springframework.stereotype.Service;
 
 import com.opencsv.CSVReader;
@@ -26,8 +27,9 @@ public class GTFSCsvFile {
 	
 	public static final File CSV_FILE = new File(new File(System.getProperty("user.home"), "Desktop"), "airports.csv");
 	
-	public static Map<String, ArrayList<String>> getCSVFile() throws IOException, CsvValidationException {
-		Map<String, ArrayList<String>> multiValueMap = new HashMap<String, ArrayList<String>>();
+	public static Map<String, ArrayList<StopsValue>> getCSVFile() throws IOException, CsvValidationException {
+		Map<String, ArrayList<StopsValue>> multiValueMap = new HashMap<String, ArrayList<StopsValue>>();
+		//Map<String, ArrayList<String[]>> multiValueMap = new HashMap<String, ArrayList<String[]>>();
 		 File csv = CSV_FILE;
          boolean csvExists = csv.exists();
          if(csvExists == true) {
@@ -38,9 +40,33 @@ public class GTFSCsvFile {
          	int lineNumber = 0;
          	while((column = reader.readNext()) != null) {
          		lineNumber++;
-         		multiValueMap.put(column[13], new ArrayList<String>());
+         		
+         		String stopId = column[13];
+         		 String stopLatString = column[4];
+         	    String stopLonString = column[5];
+         	    if (stopLatString != null && !stopLatString.isEmpty() 
+         	            && stopLonString != null && !stopLonString.isEmpty() && !stopLatString.equals("latitude_deg") &&
+         	            !stopLonString.equals("longitude_deg")) {
+         	        double stopLat = Double.parseDouble(stopLatString);
+         	        double stopLon = Double.parseDouble(stopLonString);
+         	       
+         		StopsValue stop = new StopsValue(stopId, stopId, stopId, String.valueOf(stopLat), String.valueOf(stopLon));
+         		/*String stopId = column[13];
+          	    if (!multiValueMap.containsKey(stopId)) {
+          	        multiValueMap.put(stopId, new ArrayList<String[]>());
+          	    }
+          	    String[] latLonPair = {column[4], column[5]};
+          	    multiValueMap.get(stopId).add(latLonPair);*/
+         		  if (!multiValueMap.containsKey(stopId)) {
+         			  
+         		        multiValueMap.put(stopId, new ArrayList<StopsValue>());
+         		    }
+         		    multiValueMap.get(stopId).add(stop);
+         	    }
+         		   // multiValueMap.get(stopId).add(column[5]);
+         		/*multiValueMap.put(column[13], new ArrayList<String>());
          		multiValueMap.get(column[13]).add(column[4]);
-         		multiValueMap.get(column[13]).add(column[5]);
+         		multiValueMap.get(column[13]).add(column[5]);*/
          		
          	}
 
@@ -74,11 +100,34 @@ public class GTFSCsvFile {
               	int lineNumber = 0;
               	while((column = reader.readNext()) != null) {
               		lineNumber++;
-              		multiValueMap.put(column[13], new ArrayList<String>());
+              		String stopId = column[13];
+              		 String stopLatString = column[4];
+              	    String stopLonString = column[5];
+              	    if (stopLatString != null && !stopLatString.isEmpty() 
+              	            && stopLonString != null && !stopLonString.isEmpty()) {
+              	        double stopLat = Double.parseDouble(stopLatString);
+              	        double stopLon = Double.parseDouble(stopLonString);
+             		StopsValue stop = new StopsValue(stopId, stopId, stopId, String.valueOf(stopLat), String.valueOf(stopLon));
+             			
+             		/*String stopId = column[13];
+              	    if (!multiValueMap.containsKey(stopId)) {
+              	        multiValueMap.put(stopId, new ArrayList<String[]>());
+              	    }
+              	    String[] latLonPair = {column[4], column[5]};
+              	    multiValueMap.get(stopId).add(latLonPair);*/
+             		  if (!multiValueMap.containsKey(stopId)) {
+             			  
+             		        multiValueMap.put(stopId, new ArrayList<StopsValue>());
+             		    }
+             		    multiValueMap.get(stopId).add(stop);
+              	    }
+             		    //multiValueMap.get(stopId).add(column[5]);
+              		/*multiValueMap.put(column[13], new ArrayList<String>());
               		multiValueMap.get(column[13]).add(column[4]);
-              		multiValueMap.get(column[13]).add(column[5]);
+              		multiValueMap.get(column[13]).add(column[5]);*/
               		
               	}
+             		
 
               	reader.close();
               	isr.close();
