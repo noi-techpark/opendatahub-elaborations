@@ -29,13 +29,13 @@ public class FlightsRest {
 		headers.setAccept(Arrays.asList(MediaType.ALL)); /* Collections.singletonList(MediaType.APPLICATION_JSON) */
 		ResponseEntity<Flights> response = restTemplate.getForEntity(URL_GET_FLIGHTS, Flights.class);
 		if (response.getStatusCode() == HttpStatus.OK) {
-			LOG.info("Request Successful");
-			LOG.info("" + response.getBody());
+			LOG.info("Request Successful {}", URL_GET_FLIGHTS);
+			LOG.debug("" + response.getBody());
 			return (response.getBody());
 
 		} else {
-			LOG.info("Request Failed");
-			LOG.info("" + response.getStatusCode());
+			LOG.info("Request Failed {}", URL_GET_FLIGHTS);
+			LOG.debug("" + response.getStatusCode());
 		}
 		return (null);
 
