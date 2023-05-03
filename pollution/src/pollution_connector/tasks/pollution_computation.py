@@ -109,6 +109,11 @@ class PollutionComputationManager:
 
         return from_date
 
+    def _get_latest_date_for_station(self, traffic_station: TrafficSensorStation) -> datetime:
+        measures = self._connector_collector.traffic.get_latest_measures(station=traffic_station)
+        return max(map(lambda m: m.transaction_time, measures))
+
+
     def _download_traffic_data(self,
                                from_date: datetime,
                                to_date: datetime,
@@ -157,6 +162,17 @@ class PollutionComputationManager:
                                      max_to_date: datetime):
 
         start_date = self._get_starting_date_for_station(traffic_station, min_from_date)
+
+        # Detect inactive stations:
+        # If we're about to request more than one window of measurements, do a check first if there even is any new data
+        if (max_to_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
+            latest_measurement_date = get_latest_measurement_timestamp()
+            # traffic data request range end is the latest measurement
+            # For inactive stations, this latest measurement date will be < start_date, thus no further requests will be made
+            # In general, it makes no sense to ask for data beyond the latest measurement, if we already know which date that is.
+            logger.warn(f"Skipping elaborating station [{traffic_station}] because now new data was available. Latest: {latest_measurement_date}")
+            max_to_date = min(max_to_date, latest_measurement_date)
+
         to_date = start_date
 
         while start_date < max_to_date:
