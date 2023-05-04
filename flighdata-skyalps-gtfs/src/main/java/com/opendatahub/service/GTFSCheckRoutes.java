@@ -1,15 +1,9 @@
 package com.opendatahub.service;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.stream.Stream;
-
 import com.opendatahub.validation.CheckLocationType;
-import com.opendatahub.dto.AgencyValues;
 import com.opendatahub.dto.RoutesValues;
-import com.opendatahub.dto.StopsValue;
 
 public class GTFSCheckRoutes  extends Exception{
 	

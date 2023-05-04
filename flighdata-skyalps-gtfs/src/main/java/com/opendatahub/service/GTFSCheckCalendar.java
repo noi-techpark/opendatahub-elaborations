@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import com.opendatahub.validation.CheckLocationType;
 import com.opendatahub.dto.CalendarValues;
-import com.opendatahub.dto.Calendar_DatesValues;
 
 public class GTFSCheckCalendar extends Exception{
 	

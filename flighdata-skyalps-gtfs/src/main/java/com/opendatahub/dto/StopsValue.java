@@ -2,18 +2,9 @@ package com.opendatahub.dto;
 import java.io.Serializable;
 
 import java.lang.String;
-import java.net.URL;
 import java.util.Objects;
 
-import javax.validation.Valid;
-
 import org.springframework.lang.NonNull;
-import org.springframework.validation.annotation.Validated;
-
-import com.opendatahub.validation.CheckLocationType;
-import com.opendatahub.validation.ConditionalValid;
-import com.opendatahub.enumClasses.location_type;
-import com.opendatahub.enumClasses.parentless_stops;
 public class StopsValue implements Serializable {
 
     private static final long serialVersionUID = 1L;

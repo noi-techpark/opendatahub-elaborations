@@ -18,7 +18,8 @@ import com.opendatahub.enumClasses.agency_lang;
 import com.opendatahub.enumClasses.agency_timezone;
 
 public class GTFSWriteAgency {
-	public static void writeAgency(ArrayList<AgencyValues> agencyvalueslist) throws IOException, MalformedURLException, GTFSCheckAgency {
+	public static void writeAgency(ArrayList<AgencyValues> agencyvalueslist)
+			throws IOException, MalformedURLException, GTFSCheckAgency {
 
 		Agency agency = new Agency();
 		for (int i = 0; i < agencyvalueslist.size(); i++) {
@@ -35,7 +36,8 @@ public class GTFSWriteAgency {
 			if (agencyvalueslist.get(i).getAgency_timezone() == null) {
 				// System.out.println("Agency_timezone is mandatory. Passing default value:
 				// Rome");
-				agencyvalueslist.get(i).setAgency_timezone(agency_timezone.valueOf(DefaultValues.getDefaultAgencyTimeZone_Value()));
+				agencyvalueslist.get(i)
+						.setAgency_timezone(agency_timezone.valueOf(DefaultValues.getDefaultAgencyTimeZone_Value()));
 			}
 		}
 
@@ -47,39 +49,45 @@ public class GTFSWriteAgency {
 		writer.write(firstLine);
 		writer.write(System.getProperty("line.separator"));
 		AgencyValues agencyvaluesobject = new AgencyValues();
-		if(GTFSCheckAgency.checkAgencyMandatoryFields(agencyvalueslist)) {
-			System.out.println("Before removing duplicates : " + Arrays.toString(agencyvalueslist.toArray()));
+		if (GTFSCheckAgency.checkAgencyMandatoryFields(agencyvalueslist)) {
+			// System.out.println("Before removing duplicates : " + Arrays.toString(agencyvalueslist.toArray()));
 
-final List<AgencyValues> listWithoutDuplicates = new ArrayList<>(
-new HashSet<>(agencyvalueslist));
+			final List<AgencyValues> listWithoutDuplicates = new ArrayList<>(
+					new HashSet<>(agencyvalueslist));
 
-Set<AgencyValues> uniqueAgencies = new HashSet<>(agencyvalueslist);
+			Set<AgencyValues> uniqueAgencies = new HashSet<>(agencyvalueslist);
 
-// System.out.println("After removing duplicates :: "
-//                      + Arrays.toString(uniqueAgencies.toArray()));
+			// System.out.println("After removing duplicates :: "
+			// + Arrays.toString(uniqueAgencies.toArray()));
 
-		/*for (int i = 0; i < uniqueAgencies.size(); i++) {
-			agencyvaluesobject.setAgency_name(agencyvalueslist.get(i).getAgency_name());
-			agencyvaluesobject.setAgency_url(agencyvalueslist.get(i).getAgency_url());
-			agencyvaluesobject.setAgency_timezone(agencyvalueslist.get(i).getAgency_timezone());
-			writer.write(agencyvaluesobject.getAgency_name() + ",");
-			writer.write(agencyvaluesobject.getAgency_url().toString() + ",");
-			writer.write(agencyvaluesobject.getAgency_timezone().toString() + ",");
-			writer.write(System.getProperty("line.separator"));
+			/*
+			 * for (int i = 0; i < uniqueAgencies.size(); i++) {
+			 * agencyvaluesobject.setAgency_name(agencyvalueslist.get(i).getAgency_name());
+			 * agencyvaluesobject.setAgency_url(agencyvalueslist.get(i).getAgency_url());
+			 * agencyvaluesobject.setAgency_timezone(agencyvalueslist.get(i).
+			 * getAgency_timezone());
+			 * writer.write(agencyvaluesobject.getAgency_name() + ",");
+			 * writer.write(agencyvaluesobject.getAgency_url().toString() + ",");
+			 * writer.write(agencyvaluesobject.getAgency_timezone().toString() + ",");
+			 * writer.write(System.getProperty("line.separator"));
+			 * 
+			 * }
+			 * writer.close();
+			 */
+			for (AgencyValues agency2 : uniqueAgencies) {
+				/*
+				 * agencyvaluesobject.setAgency_name(agencyvalueslist.get(i).getAgency_name());
+				 * agencyvaluesobject.setAgency_url(agencyvalueslist.get(i).getAgency_url());
+				 * agencyvaluesobject.setAgency_timezone(agencyvalueslist.get(i).
+				 * getAgency_timezone());
+				 */
+				writer.write(agency2.getAgency_name() + ",");
+				writer.write(agency2.getAgency_url().toString() + ",");
+				writer.write(agency2.getAgency_timezone().toString());
+				writer.write(System.getProperty("line.separator"));
 
-		}
-		writer.close();*/
-for (AgencyValues agency2 : uniqueAgencies) {
-	/*agencyvaluesobject.setAgency_name(agencyvalueslist.get(i).getAgency_name());
-	agencyvaluesobject.setAgency_url(agencyvalueslist.get(i).getAgency_url());
-	agencyvaluesobject.setAgency_timezone(agencyvalueslist.get(i).getAgency_timezone());*/
-	writer.write(agency2.getAgency_name() + ",");
-	writer.write(agency2.getAgency_url().toString() + ",");
-	writer.write(agency2.getAgency_timezone().toString());
-	writer.write(System.getProperty("line.separator"));
-
-}
-writer.close();
+			}
+			writer.close();
 
 		}
 	}
