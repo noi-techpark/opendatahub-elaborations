@@ -334,6 +334,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         query_params = {}
 
+        iso_from_date = from_date.isoformat(timespec="milliseconds")
+        iso_to_date = to_date.isoformat(timespec="milliseconds")
+
         if station:
             if isinstance(station, str):
                 code = station
@@ -342,12 +345,12 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
             else:
                 raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
             query_params["where"] = f'scode.eq."{code}"'
-            logger.info(f"Retrieving measures from date [{from_date.isoformat()}] to date [{to_date.isoformat()}] for station [{code}]")
+            logger.info(f"Retrieving measures from date [{iso_from_date}] to date [{iso_to_date}] for station [{code}]")
         else:
-            logger.info(f"Retrieving measures from date [{from_date.isoformat()}] to date [{to_date.isoformat()}] for all stations")
+            logger.info(f"Retrieving measures from date [{iso_from_date}] to date [{iso_to_date}] for all stations")
 
         raw_measures = self._get_result_list(
-            path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/{from_date.isoformat()}/{to_date.isoformat()}",
+            path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/{iso_from_date}/{iso_to_date}",
             query_params=query_params
         )
 
