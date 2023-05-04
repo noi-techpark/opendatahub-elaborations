@@ -71,13 +71,13 @@ public class GTFSWriteCalendar {
 			calendarValues.setStart_date(calendarValuesList.get(i).getStart_date());
 			calendarValues.setEnd_date(calendarValuesList.get(i).getEnd_date());
 			writer.write(calendarValues.getService_id() + ",");
-			writer.write(calendarValues.getFriday() + ",");
 			writer.write(calendarValues.getMonday() + ",");
-			writer.write(calendarValues.getSaturday() + ",");
-			writer.write(calendarValues.getSunday() + ",");
-			writer.write(calendarValues.getThursday() + ",");
 			writer.write(calendarValues.getTuesday() + ",");
 			writer.write(calendarValues.getWednesday() + ",");
+			writer.write(calendarValues.getThursday() + ",");
+			writer.write(calendarValues.getFriday() + ",");
+			writer.write(calendarValues.getSaturday() + ",");
+			writer.write(calendarValues.getSunday() + ",");
 			writer.write(calendarValues.getStart_date() + ",");
 			writer.write(calendarValues.getEnd_date() + ",");
 			writer.write(System.getProperty("line.separator"));
