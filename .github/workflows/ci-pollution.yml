@@ -68,6 +68,9 @@ jobs:
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
 
+          # Force python to not buffer stdout
+          X_PYTHONUNBUFFERED: "true"
+
           X_ODH_COMPUTATION_BATCH_SIZE: 7
           X_COMPUTATION_CHECKPOINT_REDIS_HOST: pollution-connector-redis
           X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
@@ -144,6 +147,9 @@ jobs:
           # use 2018 for first import, otherwise a more recent date
           # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
           X_ODH_MINIMUM_STARTING_DATE : "2023-02-01"
+
+          # Force python to not buffer stdout
+          X_PYTHONUNBUFFERED: "true"
 
 
       - name: Build and push images
