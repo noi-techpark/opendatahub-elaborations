@@ -37,8 +37,8 @@ public class GTFSWriteRoutes {
 
 			Set<RoutesValues> uniqueRoutes = new HashSet<>(routesValueslist);
 
-			System.out.println("After removing duplicates :: "
-			                     + Arrays.toString(routesValueslist.toArray()));
+			// System.out.println("After removing duplicates :: "
+			//                      + Arrays.toString(routesValueslist.toArray()));
 			
 		for (RoutesValues routes2 : uniqueRoutes) {
 			/*routesvalues.setRoute_id(routesValueslist.get(i).getRoute_id());

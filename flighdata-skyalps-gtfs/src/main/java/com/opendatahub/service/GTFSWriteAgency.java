@@ -55,8 +55,8 @@ new HashSet<>(agencyvalueslist));
 
 Set<AgencyValues> uniqueAgencies = new HashSet<>(agencyvalueslist);
 
-System.out.println("After removing duplicates :: "
-                     + Arrays.toString(uniqueAgencies.toArray()));
+// System.out.println("After removing duplicates :: "
+//                      + Arrays.toString(uniqueAgencies.toArray()));
 
 		/*for (int i = 0; i < uniqueAgencies.size(); i++) {
 			agencyvaluesobject.setAgency_name(agencyvalueslist.get(i).getAgency_name());
