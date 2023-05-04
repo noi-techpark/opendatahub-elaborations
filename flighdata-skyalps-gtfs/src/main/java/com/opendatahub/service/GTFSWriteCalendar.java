@@ -61,13 +61,13 @@ public class GTFSWriteCalendar {
 		if(GTFSCheckCalendar.checkcalendarValues(calendarValuesList)) {
 		for (int i = 0; i < calendarValuesList.size(); i++) {
 			calendarValues.setService_id(calendarValuesList.get(i).getService_id());
-			calendarValues.setFriday(calendarValuesList.get(i).getFriday());
 			calendarValues.setMonday(calendarValuesList.get(i).getMonday());
-			calendarValues.setSaturday(calendarValuesList.get(i).getSaturday());
-			calendarValues.setSunday(calendarValuesList.get(i).getSunday());
-			calendarValues.setThursday(calendarValuesList.get(i).getThursday());
 			calendarValues.setTuesday(calendarValuesList.get(i).getTuesday());
 			calendarValues.setWednesday(calendarValuesList.get(i).getWednesday());
+			calendarValues.setThursday(calendarValuesList.get(i).getThursday());
+			calendarValues.setFriday(calendarValuesList.get(i).getFriday());
+			calendarValues.setSaturday(calendarValuesList.get(i).getSaturday());
+			calendarValues.setSunday(calendarValuesList.get(i).getSunday());
 			calendarValues.setStart_date(calendarValuesList.get(i).getStart_date());
 			calendarValues.setEnd_date(calendarValuesList.get(i).getEnd_date());
 			writer.write(calendarValues.getService_id() + ",");
