@@ -166,7 +166,7 @@ class PollutionComputationManager:
         # Detect inactive stations:
         # If we're about to request more than one window of measurements, do a check first if there even is any new data
         if (max_to_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
-            latest_measurement_date = get_latest_measurement_timestamp()
+            latest_measurement_date = self._get_latest_date_for_station(traffic_station)
             # traffic data request range end is the latest measurement
             # For inactive stations, this latest measurement date will be < start_date, thus no further requests will be made
             # In general, it makes no sense to ask for data beyond the latest measurement, if we already know which date that is.
