@@ -3,19 +3,21 @@ package com.opendatahub.service;
 import java.io.File;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import org.springframework.stereotype.Service;
 
 @Service
 public class GTFSFolder {
 
-	private static final DateFormat SDF = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
+	// private static final DateFormat SDF = new
+	// SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
+
+	// public static final File FOLDER_FILE = new File(new
+	// File(System.getProperty("user.home"), "Desktop"),
+	// "GTFS_" + SDF.format(new Date()));
 
 	public static final File FOLDER_FILE = new File(new File(System.getProperty("user.home"), "Desktop"),
-			"GTFS_" + SDF.format(new Date()));
+			"GTFS");
 
 	public static void writeRequestAndResponse() throws IOException {
 		File theDir = FOLDER_FILE;
