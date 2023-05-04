@@ -170,7 +170,7 @@ class PollutionComputationManager:
             # traffic data request range end is the latest measurement
             # For inactive stations, this latest measurement date will be < start_date, thus no further requests will be made
             # In general, it makes no sense to ask for data beyond the latest measurement, if we already know which date that is.
-            logger.warn(f"Skipping elaborating station [{traffic_station}] because now new data was available. Latest: {latest_measurement_date}")
+            logger.info(f"Station [{traffic_station}] has a large elaboration range. Latest measurement date: {latest_measurement_date}")
             max_to_date = min(max_to_date, latest_measurement_date)
 
         to_date = start_date
