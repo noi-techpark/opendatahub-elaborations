@@ -2,6 +2,8 @@ version: "3.4"
 
 services:
   worker:
+    depends_on:
+      - redis
     container_name: "pollution-connector"
     build:
       context: .
@@ -14,6 +16,8 @@ services:
       - pollution
 
   scheduler:
+    depends_on:
+      - worker
     container_name: "pollution-connector-scheduler"
     build:
       context: .
