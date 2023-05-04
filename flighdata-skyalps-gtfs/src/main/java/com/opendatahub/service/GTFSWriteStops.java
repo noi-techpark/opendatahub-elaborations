@@ -44,8 +44,8 @@ public class GTFSWriteStops {
 
 			Set<StopsValue> uniqueStops = new HashSet<>(stopsvalues);
 
-			System.out.println("After removing duplicates :: "
-			                     + Arrays.toString(stopsvalues.toArray()));
+			// System.out.println("After removing duplicates :: "
+			//                      + Arrays.toString(stopsvalues.toArray()));
 			for (StopsValue stop : uniqueStops) {
 				if (stop.getStop_lat() != null && stop.getStop_lon() != null) {
 			/*stopsValues2.setStop_id(stop.get(i).getStop_id());
