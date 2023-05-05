@@ -18,7 +18,7 @@ import com.opendatahub.dto.Flights;
 
 public class FlightsRest {
 
-	private static final String URL_GET_FLIGHTS = "https://mobility.api.opendatahub.com/v2/flat,node/Flight/";
+	private static final String URL_GET_FLIGHTS = "https://mobility.api.opendatahub.com/v2/flat,node/Flight?limit=-1";
 	private static final Logger LOG = LoggerFactory.getLogger(FlightsRest.class);
 
 	@RequestMapping(value = "/getFlights", method = RequestMethod.POST)
