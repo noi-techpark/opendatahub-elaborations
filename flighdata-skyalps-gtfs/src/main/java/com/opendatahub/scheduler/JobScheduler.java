@@ -63,6 +63,9 @@ public class JobScheduler {
     @Autowired
     private GTFSCsvFile gtfsCsvFile;
 
+    @Autowired
+    private FlightsRest flightsRest;
+
     @Scheduled(cron = "${scheduler-cron:*/10 * * * * *}")
     public void calculateGtfs()
             throws Exception, JsonParseException, JsonMappingException, IOException {
@@ -79,7 +82,7 @@ public class JobScheduler {
         ArrayList<TripsValues> tripsvalueslist = new ArrayList<TripsValues>();
         ArrayList<RoutesValues> routesvaluelist = new ArrayList<RoutesValues>();
         ArrayList<StopsValue> stopsvalueslist = new ArrayList<StopsValue>();
-        Flights result = FlightsRest.getFlights(restTemplate);
+        Flights result = flightsRest.getFlights(restTemplate);
         LOG.debug("Result: " + result);
 
         ObjectMapper objectMapper = new ObjectMapper();
