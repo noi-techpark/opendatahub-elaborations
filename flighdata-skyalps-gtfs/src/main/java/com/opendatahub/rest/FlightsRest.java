@@ -24,7 +24,7 @@ public class FlightsRest {
 	@Value("${odh.base_url}")
 	private String baseUrl; 
 
-	private final String GET_FLIGHTS = "/flat,node/Flight?limit=-1&where=sactive.eq.true";
+	private final String GET_FLIGHTS = "/v2/flat,node/Flight?limit=-1&where=sactive.eq.true";
 	private final Logger LOG = LoggerFactory.getLogger(FlightsRest.class);
 
 	@RequestMapping(value = "/getFlights", method = RequestMethod.POST)
