@@ -57,7 +57,7 @@ jobs:
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
           X_JAVA_OPTIONS: -Xms128m -Xmx512m
 
-          X_ODH_BASE_URL: https://mobility.api.opendatahub.testingmachine.eu/v2
+          X_ODH_BASE_URL: https://mobility.api.opendatahub.testingmachine.eu
 
           X_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_S3_ACCESS_KEY_ID }}
           X_AWS_ACCESS_SECRET_KEY: ${{ secrets.AWS_S3_SECRET_ACCESS_KEY }}
@@ -119,7 +119,7 @@ jobs:
   #         X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
   #         X_JAVA_OPTIONS: -Xms128m -Xmx512m
 
-  #         X_ODH_BASE_URL: https://mobility.api.opendatahub.com/v2
+  #         X_ODH_BASE_URL: https://mobility.api.opendatahub.com
 
   #         X_AWS_ACCESS_KEY_ID: ${ secrets.AWS_S3_ACCESS_KEY_ID }
   #         X_AWS_ACCESS_SECRET_KEY: ${ secrets.AWS_S3_SECRET_ACCESS_KEY }
