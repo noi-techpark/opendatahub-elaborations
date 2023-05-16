@@ -111,7 +111,7 @@ class PollutionComputationManager:
 
     def _get_latest_date_for_station(self, traffic_station: TrafficSensorStation) -> datetime:
         measures = self._connector_collector.traffic.get_latest_measures(station=traffic_station)
-        return max(list(map(lambda m: m.transaction_time, measures)))
+        return max(list(map(lambda m: m.valid_time, measures)))
 
 
     def _download_traffic_data(self,
