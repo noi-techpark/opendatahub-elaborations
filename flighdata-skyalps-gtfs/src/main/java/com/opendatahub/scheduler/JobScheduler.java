@@ -65,11 +65,9 @@ public class JobScheduler {
     @Autowired
     private GTFSCsvFile gtfsCsvFile;
 
-
     @Autowired
     private FlightsRest flightsRest;
 
-    
     @PostConstruct
     private void postConstruct() throws JsonParseException, JsonMappingException, IOException, Exception {
         // calc on time on startup
@@ -434,11 +432,11 @@ public class JobScheduler {
 
         for (File file : listFiles) {
             LOG.debug("uploading file: {}", file.getName());
-            InputStream stream = new FileInputStream(file);
-            s3FileUtil.uploadFile(stream, file.getName(), (int) file.length());
+            s3FileUtil.uploadFile(file);
             LOG.debug("uploading file done: {}", file.getName());
 
             // add to zip
+            InputStream stream = new FileInputStream(file);
             ZipEntry zipEntry = new ZipEntry(file.getName());
             zipOutputStream.putNextEntry(zipEntry);
             byte[] byteBuffer = new byte[1024];
@@ -446,15 +444,15 @@ public class JobScheduler {
             while ((bytesRead = stream.read(byteBuffer)) != -1) {
                 zipOutputStream.write(byteBuffer, 0, bytesRead);
             }
+            stream.close();
             zipOutputStream.flush();
             zipOutputStream.closeEntry();
         }
         zipOutputStream.close();
 
-        LOG.debug("uploading file: {}", GTFSFolder.ZIP_FILE_NAME);
-        InputStream stream = new FileInputStream(GTFSFolder.ZIP_FILE_NAME);
-        s3FileUtil.uploadFile(stream, GTFSFolder.ZIP_FILE_NAME, (int) zipFile.length());
-        LOG.debug("uploading file done:  {}", GTFSFolder.ZIP_FILE_NAME);
+        LOG.debug("uploading file: {}", zipFile.getName());
+        s3FileUtil.uploadFile(zipFile);
+        LOG.debug("uploading file done:  {}", zipFile.getName());
 
         LOG.info("Uploading files to S3 done.");
     }
