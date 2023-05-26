@@ -21,7 +21,7 @@ import com.opendatahub.dto.Flights;
 @Service
 public class FlightsRest {
 
-	@Value("${odh.base_url}")
+	@Value("${odh.base.url}")
 	private String baseUrl; 
 
 	private final String GET_FLIGHTS = "/v2/flat,node/Flight?limit=-1&where=sactive.eq.true";
