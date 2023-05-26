@@ -2,6 +2,7 @@ package com.opendatahub.scheduler;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -12,6 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.json.JSONArray;
 import org.slf4j.Logger;
@@ -49,13 +52,12 @@ import com.opendatahub.service.GTFSWriteStops;
 import com.opendatahub.service.GTFSWriteTrips;
 import com.opendatahub.utils.S3FileUtil;
 
+import jakarta.annotation.PostConstruct;
+
 @Service
 public class JobScheduler {
 
     private static final Logger LOG = LoggerFactory.getLogger(JobScheduler.class);
-
-    @Autowired
-    private GTFSFolder gtfsfolder;
 
     @Autowired
     private S3FileUtil s3FileUtil;
@@ -65,6 +67,13 @@ public class JobScheduler {
 
     @Autowired
     private FlightsRest flightsRest;
+
+    
+    @PostConstruct
+    private void postConstruct() throws JsonParseException, JsonMappingException, IOException, Exception {
+        // calc on time on startup
+        calculateGtfs();
+    }
 
     @Scheduled(cron = "${scheduler-cron:*/10 * * * * *}")
     public void calculateGtfs()
@@ -418,12 +427,33 @@ public class JobScheduler {
 
         File[] listFiles = GTFSFolder.FOLDER_FILE.listFiles();
 
+        // create zip file
+        File zipFile = new File(GTFSFolder.ZIP_FILE_NAME);
+        ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
+
         for (File file : listFiles) {
             LOG.debug("uploading file: {}", file.getName());
             InputStream stream = new FileInputStream(file);
             s3FileUtil.uploadFile(stream, file.getName(), (int) file.length());
             LOG.debug("uploading file done: {}", file.getName());
+
+            // add to zip
+            ZipEntry zipEntry = new ZipEntry(file.getName());
+            zipOutputStream.putNextEntry(zipEntry);
+            byte[] byteBuffer = new byte[1024];
+            int bytesRead = -1;
+            while ((bytesRead = stream.read(byteBuffer)) != -1) {
+                zipOutputStream.write(byteBuffer, 0, bytesRead);
+            }
+            zipOutputStream.flush();
+            zipOutputStream.closeEntry();
         }
+        zipOutputStream.close();
+
+        LOG.debug("uploading file: {}", GTFSFolder.ZIP_FILE_NAME);
+        InputStream stream = new FileInputStream(GTFSFolder.ZIP_FILE_NAME);
+        s3FileUtil.uploadFile(stream, GTFSFolder.ZIP_FILE_NAME, (int) zipFile.length());
+        LOG.debug("uploading file done:  {}", GTFSFolder.ZIP_FILE_NAME);
 
         LOG.info("Uploading files to S3 done.");
     }

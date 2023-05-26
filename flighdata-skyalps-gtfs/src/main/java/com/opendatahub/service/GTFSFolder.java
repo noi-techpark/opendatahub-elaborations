@@ -19,6 +19,8 @@ public class GTFSFolder {
 	public static final File FOLDER_FILE = new File(new File(System.getProperty("user.home"), "Desktop"),
 			"GTFS");
 
+	public static String ZIP_FILE_NAME = FOLDER_FILE + ".zip";
+
 	public static void writeRequestAndResponse() throws IOException {
 		File theDir = FOLDER_FILE;
 		/*
