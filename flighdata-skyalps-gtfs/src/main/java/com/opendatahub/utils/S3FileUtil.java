@@ -1,5 +1,6 @@
 package com.opendatahub.utils;
 
+import java.io.File;
 import java.io.InputStream;
 
 import com.amazonaws.AmazonClientException;
@@ -40,17 +41,17 @@ public class S3FileUtil {
          * Uploads a fileInputStream to a S3 bucket
          *
          * @param fileInputStream
-         * @param fileName
+         * @param file.getName()
          * @param contentLength
          * @param lastModified
          * @throws AmazonServiceException
          * @throws AmazonClientException
          * @throws InterruptedException
          */
-        public void uploadFile(InputStream fileInputStream, String fileName, int contentLength)
+        public void uploadFile(File file)
                         throws AmazonServiceException, AmazonClientException, InterruptedException {
 
-                logger.debug("upload of file: {} to S3", fileName);
+                logger.debug("upload of file: {} to S3", file.getName());
 
                 BasicAWSCredentials awsCreds = new BasicAWSCredentials(accessKeyId, accessSecretKey);
 
@@ -64,15 +65,11 @@ public class S3FileUtil {
                                 .withS3Client(amazonS3)
                                 .build();
 
-                ObjectMetadata objectMetadata = new ObjectMetadata();
-                objectMetadata.setContentLength(contentLength);
-
-                Upload upload = transferManager.upload(bucketName, fileName, fileInputStream, objectMetadata);
+                Upload upload = transferManager.upload(bucketName, file.getName(), file);
                 upload.waitForCompletion();
+                
 
-                transferManager.shutdownNow(false);
-
-                logger.debug("upload of file: {} to S3 done", fileName);
+                logger.debug("upload of file: {} to S3 done", file.getName());
         }
 
 }
