@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 ShapefileFeatureImporter
 ==========================
 This is a simple utility tool which imports multiline geometric data from a shapefile and matches it with the specified LinkStation.

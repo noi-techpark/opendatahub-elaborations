@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 # flighdata-skyalps-gtfs
 
 The following GTFS Converter is used to take data from the Sky Alps API and converting them into the GTFS format.

@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 import os
 
 from pollution_connector.settings import LOGS_DIR, LOG_LEVEL, LOG_LEVEL_LIBS

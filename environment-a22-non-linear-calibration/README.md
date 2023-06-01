@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 # A22 environment: Non-linear calibration
 
 The goal of this AWS Lambda Function is to fetch hourly environmental data from
