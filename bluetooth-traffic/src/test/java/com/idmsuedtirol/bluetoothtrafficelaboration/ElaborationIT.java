@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 package com.idmsuedtirol.bluetoothtrafficelaboration;
 
 import static org.junit.Assert.assertFalse;

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 var assert = require('assert');
 var bdpMuni = require('./app.js');
 var chai = require('chai');  
