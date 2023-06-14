@@ -6,6 +6,7 @@ import datetime
 from model.Dtos import DataPoint
 from ODHAPIClient import DataFetcher
 from ODHPusher import DataPusher
+from ParameterImporter import getParameters
 
 import json
 import numpy as np
@@ -20,8 +21,8 @@ PM10 = "PM10"
 PM25 = "PM2.5"
 T_INT = "temperature-internal"
 TYPES_TO_ELABORATE = [O3,NO2,NO,PM10,PM25]
-F = open('data.json',)
-PARAMETER_MAP = json.load(F)
+PARAMETER_MAP = getParameters()
+STATIONS_TO_ELABORATE = list(PARAMETER_MAP.keys())
 log = logging.getLogger()
 
 fetcher = DataFetcher()
@@ -32,21 +33,21 @@ def parseODHTime(time: str) -> datetime:
 
 class Processor:
     def calc_by_station(self):
-        time_map = fetcher.get_newest_data_timestamps()
-        start = parseODHTime(DEFAULT_START_CALC)
+        time_map = fetcher.get_newest_data_timestamps(stations=STATIONS_TO_ELABORATE, types=TYPES_TO_ELABORATE)
         for s_id in time_map:
+            start = parseODHTime(DEFAULT_START_CALC)
+            end = start
             for t_id in time_map[s_id]:
                 state_map = time_map[s_id][t_id]
-                end_time = parseODHTime(state_map.get('raw'))
-                start_time = parseODHTime(state_map.get('processed',DEFAULT_START_CALC))
-                if (start_time and start < start_time):
-                    start = start_time
-            history = fetcher.get_raw_history(s_id,start,end_time+datetime.timedelta(0,3))
-            elaborations = self.calc(history,s_id)
-            pusher.send_data("EnvironmentStation",elaborations)
-    def calc(self, history,station_id):
-        station_map ={"branch":{ station_id:{"branch":{},"data":[],"name":"default"}}}
-        for time in  history:
+                end = max(parseODHTime(state_map.get('raw')), end)
+                start = min(parseODHTime(state_map.get('processed', DEFAULT_START_CALC)), start)
+            history = fetcher.get_raw_history(s_id, start, end+datetime.timedelta(0, 3), types=TYPES_TO_ELABORATE)
+            if history:
+                elaborations = self.calc(history,s_id)
+                pusher.send_data("EnvironmentStation", elaborations)
+    def calc(self, history, station_id):
+        station_map = {"branch":{ station_id:{"branch":{},"data":[],"name":"default"}}}
+        for time in history:
             elabs = self.process_single_dataset(history[time], station_id, time)
             if elabs != None:
                 for type_id in elabs:
@@ -65,16 +66,24 @@ class Processor:
             for type_id in (value for value in data if value in TYPES_TO_ELABORATE): #Intersection
                 value = data[type_id]
                 processed_value = None               
-                station_id_short =str(station_id).split("_")[1]
-                parameters = PARAMETER_MAP[station_id_short][type_id][temparature_key]
+                parameters = PARAMETER_MAP[station_id][type_id][temparature_key]
                 if ((type_id == NO2 or type_id == NO) and O3 in data and T_INT in data):
-                    processed_value = (
-                        float(parameters["a"]) 
-                        + np.multiply(float(parameters["b"]), np.power(float(value),2)) 
-                        + np.multiply(float(parameters["c"]), float(value)) 
-                        + np.multiply(float(parameters["d"]), float(data[O3]))
-                        + np.multiply(float(parameters["e"]), np.power(data[T_INT],4))
-                    )
+                    if(int(parameters["calc"]) == 1):
+                        processed_value = (
+                            float(parameters["a"]) 
+                            + np.multiply(float(parameters["b"]), np.power(float(value),2)) 
+                            + np.multiply(float(parameters["c"]), float(value)) 
+                            + np.multiply(float(parameters["d"]), np.power(float(data[O3]), 0.1))
+                            + np.multiply(float(parameters["e"]), np.power(data[T_INT],4))
+                        ) 
+                    else:
+                        processed_value = (
+                            float(parameters["a"]) 
+                            + np.multiply(float(parameters["b"]), np.power(float(value),2)) 
+                            + np.multiply(float(parameters["c"]), float(value)) 
+                            + np.multiply(float(parameters["d"]), float(data[O3]))
+                            + np.multiply(float(parameters["e"]), np.power(data[T_INT],4))
+                        )
                 elif ((type_id == PM10 or type_id == PM25) and all (tid in data for tid in (RH,PM10,T_INT))
                         and not (data[T_INT] >= 20 and data[PM10]>100) and not(data[T_INT] < 20 and data[RH]>97)):
                     processed_value = (
@@ -98,6 +107,6 @@ class Processor:
                 if processed_value != None:
                     if processed_value < 0:
                         processed_value = 0
-                    data_point_map[type_id+"_processed"] = DataPoint(datetime.datetime.strptime(time,"%Y-%m-%d %H:%M:%S.%f%z").timestamp() * 1000,processed_value,3600)
+                    data_point_map[type_id+"_processed"] = DataPoint(parseODHTime(time).timestamp() * 1000, processed_value, 3600)
                     processed_value = None
             return data_point_map
