@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC0-1.0
 
 # A22 environment: Non-linear calibration
 
-The goal of this AWS Lambda Function is to fetch hourly environmental data from
+The goal of this  is to fetch hourly environmental data from
 the Open Data Hub, process it and send it back. For a in-depth description refer
 to the chapter [Details about the implementation](#details-about-the-implementation).
 
@@ -86,7 +86,6 @@ More documentation can be found at
 
 The code in this project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE
 Version 3 license. See the [LICENSE](../LICENSE) file for more information.
-
 
 [environment-a22]: https://github.com/noi-techpark/bdp-commons/tree/main/data-collectors/environment-a22
 [environment-a22-averages]: ../environment-a22-averages/
