@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 @host={{$dotenv ODH_MOBILITY_API_NINJA}}
 @authhost={{$dotenv AUTHENTICATION_SERVER}}
 
