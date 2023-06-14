@@ -26,15 +26,19 @@ log = logging.getLogger()
 
 fetcher = DataFetcher()
 pusher = DataPusher()
+
+def parseODHTime(time: str) -> datetime:
+    return datetime.datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f%z")
+
 class Processor:
     def calc_by_station(self):
         time_map = fetcher.get_newest_data_timestamps()
-        start = datetime.datetime.strptime(DEFAULT_START_CALC,"%Y-%m-%d %H:%M:%S.%f%z")
+        start = parseODHTime(DEFAULT_START_CALC)
         for s_id in time_map:
             for t_id in time_map[s_id]:
                 state_map = time_map[s_id][t_id]
-                end_time = datetime.datetime.strptime(state_map.get('raw'),"%Y-%m-%d %H:%M:%S.%f%z")
-                start_time = datetime.datetime.strptime(state_map.get('processed',DEFAULT_START_CALC),"%Y-%m-%d %H:%M:%S.%f%z")
+                end_time = parseODHTime(state_map.get('raw'))
+                start_time = parseODHTime(state_map.get('processed',DEFAULT_START_CALC))
                 if (start_time and start < start_time):
                     start = start_time
             history = fetcher.get_raw_history(s_id,start,end_time+datetime.timedelta(0,3))
@@ -64,10 +68,12 @@ class Processor:
                 station_id_short =str(station_id).split("_")[1]
                 parameters = PARAMETER_MAP[station_id_short][type_id][temparature_key]
                 if ((type_id == NO2 or type_id == NO) and O3 in data and T_INT in data):
-                    processed_value = (float(parameters["a"]) + np.multiply(float(parameters["b"]),np.power(float(value),2)) + 
-                    float(parameters["c"]) * float(value) + 
-                    np.multiply(float(parameters["d"]),np.power(float(data[O3]),0.1))
-                    + np.multiply(float(parameters["e"]),np.power(data[T_INT],4))
+                    processed_value = (
+                        float(parameters["a"]) 
+                        + np.multiply(float(parameters["b"]), np.power(float(value),2)) 
+                        + np.multiply(float(parameters["c"]), float(value)) 
+                        + np.multiply(float(parameters["d"]), float(data[O3]))
+                        + np.multiply(float(parameters["e"]), np.power(data[T_INT],4))
                     )
                 elif ((type_id == PM10 or type_id == PM25) and all (tid in data for tid in (RH,PM10,T_INT))
                         and not (data[T_INT] >= 20 and data[PM10]>100) and not(data[T_INT] < 20 and data[RH]>97)):
