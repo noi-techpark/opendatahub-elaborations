@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+SPDX-FileCopyrightText: NOI Techpark <digital@noi.com>
 
 SPDX-License-Identifier: CC0-1.0
 -->
@@ -24,7 +24,7 @@ The instructions in the following paper will get you a copy of the project up an
 
 ## History: ##
 
-SkyAlps is an Italian airline operator managing flights at the Bolzano airport in South Tyrol. Thanks to the support of NOI, SkyAlps has initiated an innovation process that aims to share the data of the air services offered. The function requested by the GTFS is to map the available data provided through the web services of the Open Data Hub (https://mobility.api.opendatahub.bz.it/v2/flat,node/Flight) into the GTFS format specification, which foresees data to be stored in a certain number of TXT files, as summarized in the Specification file.
+SkyAlps is an Italian airline operator managing flights at the Bolzano airport in South Tyrol. Thanks to the support of NOI, SkyAlps has initiated an innovation process that aims to share the data of the air services offered. The function requested by the GTFS is to map the available data provided through the web services of the Open Data Hub (https://mobility.api.opendatahub.com/v2/flat,node/Flight) into the GTFS format specification, which foresees data to be stored in a certain number of TXT files, as summarized in the Specification file.
 The agency, calendar, calendar_dates, fare_attributes, fare_rules, feed_into, frequencies, routes, shapes, stop_times, stops, transfers, and trips gtfs files are written directly from the information retrieved by the ODH API JSON. The following converter is organized into several components: 
 [- Rest Template,](java/it/noitechpark/rest/FlightRest.java)
 [- Dto,](java/it/noitechpark/dto)
