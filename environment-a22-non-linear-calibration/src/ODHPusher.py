@@ -14,9 +14,10 @@ class DataPusher:
     def __init__(self):
         self.provenance_id = None
         self.token = KeycloakClient.getDefaultInstance().token("", "","client_credentials")
-        self.upsert_provenance()
 
     def send_data(self,station_type, data_map):
+        if not self.provenance_id:
+            self.upsert_provenance()
         data_map["provenance"]= self.provenance_id
         endpoint = os.getenv("ODH_MOBILITY_API_WRITER")+"/json/pushRecords/" + station_type
         log.debug("Data send to writer: " + str(data_map))

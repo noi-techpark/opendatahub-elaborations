@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+@host={{$dotenv ODH_MOBILITY_API_NINJA}}
+@authhost={{$dotenv AUTHENTICATION_SERVER}}
+
+### GET AN ACCESS TOKEN
+# @name login
+POST {{authhost}}realms/noi/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+&grant_type=client_credentials
+&client_id=odh-a22-dataprocessor
+&client_secret={{$dotenv CLIENT_SECRET}}
+
+###
+@token = {{login.response.body.access_token}}
+
+### First call to get all stations with data
+GET {{host}}/tree/EnvironmentStation/*/latest
+Authorization: Bearer {{token}}
+
+?limit=-1
+&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600
+&select=mvalidtime,scode
+
+###
+GET {{host}}/flat/EnvironmentStation/O3_raw,NO2-Alphasense_raw,NO-Alphasense_raw,PM10_raw,PM2.5_raw/2016-01-01T00:00:00+00:00/2023-06-14T12:00:03+00:00
+?select=mvalidtime,mvalue,tname
+&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600,scode.eq.AUGEG4_AIRQ13
+&limit=-1
+
+### Get history of single station
+GET {{host}}/flat/EnvironmentStation/*/2021-01-01/2021-01-02
+Authorization: Bearer {{token}}
+
+?limit=-1
+&where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600,scode.eq.AUGEG4_AIRQ01
+&select=mvalidtime,mvalue,tname
