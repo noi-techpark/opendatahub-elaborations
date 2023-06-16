@@ -135,7 +135,7 @@ jobs:
           # Open Data Hub API v2 Connectivity (ninja)
           X_NINJA_CLIENT: odh-mobility-elaborations
           X_NINJA_SECRET: ${{ secrets.NINJA_CLIENT_SECRET_PROD }}
-          X_ODH_BASE_URI: https://mobility.api.opendatahub.bz.it/
+          X_ODH_BASE_URI: https://mobility.api.opendatahub.com/
 
           # Data collector recognition
           X_origin: a22-algorab
