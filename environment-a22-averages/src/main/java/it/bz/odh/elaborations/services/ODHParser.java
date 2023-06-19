@@ -82,13 +82,11 @@ public class ODHParser {
             return (LinkedHashMap<String, Object>) value;
         return null;
     }
-    public List<SimpleRecordDto> getRawData(String station, String type, Long lastElaborationDateinMS) throws ParseException {
-        LinkedHashMap<String, Object> data = client.getRawData(station, type, lastElaborationDateinMS);
-        return parseHistoryFromResponse(station,type,data);
-    }
-    public List<SimpleRecordDto> getRawData(String station, String type) throws ParseException {
-        Long guessOldestRawData = client.guessOldestRawData(station,type);
-        LinkedHashMap<String, Object> data = client.getRawData(station, type, guessOldestRawData);
+    public List<SimpleRecordDto> getRawData(String station, String type, long rawTimeWindowStart) throws ParseException {
+        if (rawTimeWindowStart == 0) {
+            rawTimeWindowStart = client.guessOldestRawData(station,type);
+        }
+        LinkedHashMap<String, Object> data = client.getRawData(station, type, rawTimeWindowStart);
         return parseHistoryFromResponse(station,type,data);
     }
     
@@ -113,9 +111,9 @@ public class ODHParser {
         }
         return history;
     }
-	public Long getEndOfInterval(String station, String type, Long lastRawData, String dataOrigin) {
+	public long getEndOfInterval(String station, String type, Long lastRawData, String dataOrigin) {
 		LinkedHashMap<String, Object> data = client.getEndOfEmptyInterval(station, type, lastRawData, dataOrigin);
 		List<SimpleRecordDto> parsedData = parseHistoryFromResponse(station, type, data);
-		return parsedData.isEmpty() ? null : parsedData.get(0).getTimestamp();
+		return parsedData.isEmpty() ? 0 : parsedData.get(0).getTimestamp();
 	}
 }

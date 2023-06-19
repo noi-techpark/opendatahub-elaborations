@@ -66,74 +66,92 @@ public class JobScheduler {
         return dataMap;
     }
 
-    private void decideWhatToCalculate(DataMapDto<RecordDtoImpl> dataMap,
-            DataMapDto<RecordDtoImpl> newestElaborationMap, int minTimePassedSinceLastElaboration) {
-        Long now = new Date().getTime();
-        for (Map.Entry<String, DataMapDto<RecordDtoImpl>> stationMapEntry : dataMap.getBranch().entrySet()) {
-            for (Map.Entry<String, DataMapDto<RecordDtoImpl>> typeMapEntry : stationMapEntry.getValue().getBranch()
-                    .entrySet()) {
-                try {
-                    List<RecordDtoImpl> data = new ArrayList<>();
-                    DataMapDto<RecordDtoImpl> elaborationTypeMap = newestElaborationMap.getBranch()
-                            .get(stationMapEntry.getKey());
-                    if (!newestElaborationMap.getBranch().isEmpty() && elaborationTypeMap != null
-                            && !elaborationTypeMap.getBranch().isEmpty()
-                            && elaborationTypeMap.getBranch().get(typeMapEntry.getKey()) != null
-                            && !elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getData().isEmpty())
-                        data = elaborationTypeMap.getBranch().get(typeMapEntry.getKey()).getData();
+    private void decideWhatToCalculate(DataMapDto<RecordDtoImpl> rawData,
+            DataMapDto<RecordDtoImpl> newestElabData, int minTimePassedSinceLastElaboration) {
+        long now = new Date().getTime();
+        for (Map.Entry<String, DataMapDto<RecordDtoImpl>> rawStation : rawData.getBranch().entrySet()) {
+            String stationId = rawStation.getKey();
+            DataMapDto<RecordDtoImpl> rawStationDto = rawStation.getValue();
 
-                    List<RecordDtoImpl> rawData = dataMap.getBranch().get(stationMapEntry.getKey()).getBranch()
-                            .get(typeMapEntry.getKey()).getData();
-                    Long lastElaborationDateUTC = !data.isEmpty() ? data.get(0).getTimestamp() : null;
-                    Long lastRawDateUTC = rawData.get(0).getTimestamp();
-                    if (lastElaborationDateUTC == null || now - minTimePassedSinceLastElaboration >= lastElaborationDateUTC) // start
-                        startElaboration(stationMapEntry.getKey(), typeMapEntry.getKey(), lastElaborationDateUTC,
-                                lastRawDateUTC, now);
-                }catch(Exception e) {
-                    logger.error("Something went wrong calculating: " + stationMapEntry.getKey()+"-"+typeMapEntry.getKey()+":"+e.getMessage());
+            for (String dataTypeId : rawStation.getValue().getBranch().keySet()) {
+                try {
+                    DataMapDto<RecordDtoImpl> elabStationDto = newestElabData.getBranch().get(stationId);
+                    
+                    long lastElaborationDateUTC = getLastMeasurementTimestamp(elabStationDto, dataTypeId);
+                    long lastRawDateUTC = getLastMeasurementTimestamp(rawStationDto, dataTypeId);
+
+                    if (now >= lastElaborationDateUTC + minTimePassedSinceLastElaboration ){
+                        startElaboration(stationId, dataTypeId, lastElaborationDateUTC, lastRawDateUTC, now);
+                    }
+                } catch(Exception e) {
+                    logger.error("Something went wrong calculating: " + stationId+"-"+dataTypeId+":"+e.getMessage());
                     e.printStackTrace();
                 }
             }
         }
     }
 
-    private void startElaboration(String station, String type, Long lastElaborationDateUTC, Long lastRawDateUTC,
-            Long now) throws ParseException {
-        List<SimpleRecordDto> stationData = null;
-        if (lastElaborationDateUTC != null)
-            stationData = odhParser.getRawData(station, type, lastElaborationDateUTC);
-        else
-            stationData = odhParser.getRawData(station, type);
-        if (stationData.isEmpty())
-            throw new IllegalStateException("Unable to get raw data for " + station + ":" + type);
-        List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(now, stationData, Calendar.HOUR);
-        if (averageElaborations.isEmpty() && stationData.get(stationData.size()-1).getTimestamp() < lastRawDateUTC) {
-            Long lastRawData = stationData.isEmpty()?lastElaborationDateUTC:stationData.get(stationData.size()-1).getTimestamp();
-            Long endOfNoDataInterval = odhParser.getEndOfInterval(station, type, lastRawData, null);
-            if (endOfNoDataInterval != null) {
-                stationData = odhParser.getRawData(station, type, endOfNoDataInterval);
-                averageElaborations = elaborationService.calcAverage(now, stationData, Calendar.HOUR);
+    private long getLastMeasurementTimestamp(
+        DataMapDto<RecordDtoImpl> stationDto,
+        String dataTypeId ) {
+
+        if (stationDto != null
+            && !stationDto.getBranch().isEmpty()
+            && stationDto.getBranch().get(dataTypeId) != null
+            && !stationDto.getBranch().get(dataTypeId).getData().isEmpty()
+        ){
+            return stationDto.getBranch().get(dataTypeId).getData().get(0).getTimestamp();
+        } else {
+            return 0;
+        }
+    }
+
+    private void startElaboration(String station, String type, long lastElaborationDateUTC, long lastRawDateUTC,
+            long now) throws ParseException {
+        long elabWindowStart = lastElaborationDateUTC;
+        while (elabWindowStart < lastRawDateUTC){
+            List<SimpleRecordDto> rawData = odhParser.getRawData(station, type, elabWindowStart);
+            if (rawData.isEmpty()){
+                elabWindowStart = odhParser.getEndOfInterval(station, type, elabWindowStart, null);
+                logger.warn("Unable to get raw data for " + station + ":" + type);
+                continue;
             }
-        }
-        if (averageElaborations.isEmpty() )
-            throw new IllegalStateException("Unable to calculate any data");
-        DataMapDto<RecordDtoImpl> dto = new DataMapDto<>();
-        dto.addRecords(station, type, averageElaborations);
 
-        logger.debug("Created " + averageElaborations.size() + " elaborations for " + station + ":" + type);
-        try {
-            webClient.pushData(dto);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            throw new IllegalStateException("Failed to push data for station:" + station + " and type:" + type);
-        }
-        logger.debug("Completed sending to odh");
+            List<SimpleRecordDto> averageElaborations = elaborationService.calcAverage(now, rawData, Calendar.HOUR);
 
-        Long newOldestElaboration = DateUtils
-                .ceiling(new Date(averageElaborations.get(averageElaborations.size() - 1).getTimestamp()),
-                        Calendar.HOUR)
-                .getTime();
-        if (newOldestElaboration <= lastRawDateUTC)
-            startElaboration(station, type, newOldestElaboration, lastRawDateUTC, now);
+            long endOfRawInterval = getNewestRawTimestamp(rawData);
+
+            if (averageElaborations.isEmpty()) {
+                logger.warn("Unable to calculate any data. Maybe not enough data points in interval?");
+                if (endOfRawInterval < lastRawDateUTC){
+                    // find the next data point, and use that as start. This way we skip empty periods
+                    elabWindowStart = odhParser.getEndOfInterval(station, type, endOfRawInterval, null);
+                } else {
+                    // We've reached the end of of available raw data (loop will terminate)
+                    elabWindowStart = endOfRawInterval;
+                }
+            } else {
+                DataMapDto<RecordDtoImpl> dto = new DataMapDto<>();
+                dto.addRecords(station, type, averageElaborations);
+
+                logger.debug("Created " + averageElaborations.size() + " elaborations for " + station + ":" + type);
+                try {
+                    webClient.pushData(dto);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    throw new IllegalStateException("Failed to push data for station:" + station + " and type:" + type);
+                }
+                logger.debug("Completed sending to odh");
+
+                elabWindowStart = DateUtils
+                    .ceiling(new Date(getNewestRawTimestamp(averageElaborations)),
+                            Calendar.HOUR)
+                    .getTime();
+            }
+        } 
+    }
+
+    private Long getNewestRawTimestamp(List<SimpleRecordDto> rawData) {
+        return rawData.get(rawData.size() - 1).getTimestamp();
     }
 }
