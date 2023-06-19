@@ -37,7 +37,7 @@ public class ODHReaderClient{
 
     public LinkedHashMap getRawData(String station,String type,String from, String to, Integer limit, String dataOrigin) {
         return ninja.get().uri("/v2/tree/EnvironmentStation/" + type + "/" + from + "/" +  to
-                        + "?limit=" + limit + "&where=sactive.eq.true,sorigin.eq." + (dataOrigin != null ? dataOrigin : DATA_ORIGIN) + ",scode.eq."+station+"&select=tmeasurements")
+                        + "?limit=" + limit + "&where=sactive.eq.true,sorigin.eq." + (dataOrigin != null ? dataOrigin : DATA_ORIGIN) + ",scode.eq."+station+",mperiod.eq.60&select=tmeasurements")
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
 
