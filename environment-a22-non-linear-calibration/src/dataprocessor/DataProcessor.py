@@ -21,6 +21,7 @@ PM10 = "PM10"
 PM25 = "PM2.5"
 T_INT = "temperature-internal"
 TYPES_TO_ELABORATE = [O3,NO2,NO,PM10,PM25]
+TYPES_TO_REQUEST = TYPES_TO_ELABORATE + [T_INT] # Temperature is required by calc, even though it's not elaborated
 PARAMETER_MAP = getParameters()
 STATIONS_TO_ELABORATE = list(PARAMETER_MAP.keys())
 log = logging.getLogger()
@@ -35,13 +36,14 @@ class Processor:
     def calc_by_station(self):
         time_map = fetcher.get_newest_data_timestamps(stations=STATIONS_TO_ELABORATE, types=TYPES_TO_ELABORATE)
         for s_id in time_map:
-            start = parseODHTime(DEFAULT_START_CALC)
-            end = start
+            
+            start = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+            end = parseODHTime(DEFAULT_START_CALC)
             for t_id in time_map[s_id]:
                 state_map = time_map[s_id][t_id]
                 end = max(parseODHTime(state_map.get('raw')), end)
                 start = min(parseODHTime(state_map.get('processed', DEFAULT_START_CALC)), start)
-            history = fetcher.get_raw_history(s_id, start, end+datetime.timedelta(0, 3), types=TYPES_TO_ELABORATE)
+            history = fetcher.get_raw_history(s_id, start, end+datetime.timedelta(0, 3), types=TYPES_TO_REQUEST)
             if history:
                 elaborations = self.calc(history,s_id)
                 pusher.send_data("EnvironmentStation", elaborations)
@@ -68,7 +70,7 @@ class Processor:
                 processed_value = None               
                 parameters = PARAMETER_MAP[station_id][type_id][temparature_key]
                 if ((type_id == NO2 or type_id == NO) and O3 in data and T_INT in data):
-                    if(int(parameters["calc"]) == 1):
+                    if(int(parameters["calc_version"]) == 1):
                         processed_value = (
                             float(parameters["a"]) 
                             + np.multiply(float(parameters["b"]), np.power(float(value),2)) 
