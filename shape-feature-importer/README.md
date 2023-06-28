@@ -14,7 +14,7 @@ Currently the automated CI/CD is disabled, so please use locally with docker lik
 ## Execute locally with docker
 To execute the importer from your machine follow these steps:
  - `cp .env.example .env`
- - Fill .env with the database password like `DB_PWD=your_password`
+ - Fill .env with the database password like `PGPASSWORD=your_password` and `PGHOST=your_host`
  - `docker compose up`
 
 Note: After the first time, its runs faster, because the images are already loaded. You can then simply do `docker-compose up` without the first two steps.
