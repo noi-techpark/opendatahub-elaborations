@@ -8,14 +8,14 @@ ShapefileFeatureImporter
 ==========================
 This is a simple utility tool which imports multiline geometric data from a shapefile and matches it with the specified LinkStation.
 
-## Automated CI/CD disabled
-Currently the automated CI/CD is disabled, so please use locally with `docker compose`
+## AUTOMATED CI/CD DISABLED
+Currently the automated CI/CD is disabled, so please use locally with docker like explained in the next section.
 
 ## Execute locally with docker
 To execute the importer from your machine follow these steps:
  - `cp .env.example .env`
  - Fill .env with the database password like `DB_PWD=your_password`
- - `docker-compose up`
+ - `docker compose up`
 
 Note: After the first time, its runs faster, because the images are already loaded. You can then simply do `docker-compose up` without the first two steps.
 
