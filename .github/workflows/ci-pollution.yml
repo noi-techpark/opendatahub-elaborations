@@ -80,7 +80,7 @@ jobs:
 
           # use 2018 for first import, otherwise a more recent date
           # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
-          X_ODH_MINIMUM_STARTING_DATE : "2023-02-01"
+          X_ODH_MINIMUM_STARTING_DATE : "2023-06-01"
 
 
       - name: Build and push images
@@ -148,7 +148,7 @@ jobs:
 
           # use 2018 for first import, otherwise a more recent date
           # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
-          X_ODH_MINIMUM_STARTING_DATE : "2023-02-01"
+          X_ODH_MINIMUM_STARTING_DATE : "2023-06-01"
 
           # Force python to not buffer stdout
           X_PYTHONUNBUFFERED: "true"
