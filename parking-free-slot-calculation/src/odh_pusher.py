@@ -32,7 +32,7 @@ class DataPusher:
 
     def sendData(self,stationType, dataMap):
         token = keycloak_openid.token("", "","client_credentials")
-        r = requests.post(os.getenv("ODH_MOBILITY_API_WRITER")+"/json/pushRecords/"+stationType, json=dataMap, headers={"Authorization" : "Bearer " + token['access_token']})
+        r = requests.post(os.getenv("ODH_MOBILITY_API_WRITER")+"/json/pushRecords/"+stationType, json=dataMap, headers={"Authorization" : "Bearer " + token['access_token'], "ContentType" : "application/json"})
         if (r.status_code != 201):
             print("Status code not 201 but " + str(r.status_code))
 
