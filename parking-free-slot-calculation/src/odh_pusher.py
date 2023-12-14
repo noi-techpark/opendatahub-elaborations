@@ -10,7 +10,7 @@ from model.Dtos import Provenance
 # Configure client
 keycloak_openid = KeycloakOpenID(
     server_url= os.getenv("AUTHENTICATION_SERVER"),
-    client_id="odh-a22-dataprocessor",
+    client_id=os.getenv("CLIENT_ID"),
     realm_name="noi",
     client_secret_key=os.getenv("CLIENT_SECRET"),
     verify=True
@@ -32,7 +32,7 @@ class DataPusher:
 
     def sendData(self,stationType, dataMap):
         token = keycloak_openid.token("", "","client_credentials")
-        r = requests.post(os.getenv("ODH_MOBILITY_API_WRITER")+"/json/pushRecords/"+stationType, json=dataMap, headers={"Authorization" : "Bearer " + token['access_token']})
+        r = requests.post(os.getenv("ODH_MOBILITY_API_WRITER")+"/json/pushRecords/"+stationType, json=dataMap, headers={"Content-Type": "application/json","Authorization" : f"Bearer " + token['access_token']})
         if (r.status_code != 201):
             print("Status code not 201 but " + str(r.status_code))
 
