@@ -8,7 +8,7 @@ public class DefaultValues {
 	
 	private static String defaultAgency_nameValue = "SkyAlps"; 
 	private static String defultAgency_urlValue = "http://www.skyalps.com";
-	private static String defaultAgencyTimeZone_Value = "EuropeRome";
+	private static String defaultAgencyTimeZone_Value = "Europe/Rome";
 	private static String defaultAgencyLangValue = "English";
 	private static String snameString = "sname";
 	private static String soriginString = "sorigin";

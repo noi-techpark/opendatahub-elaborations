@@ -6,19 +6,19 @@ package com.opendatahub.constantsClasses;
 
 public class GTFSFileNames {
 
-	private static String agency = "Agency";
-	private static String stops = "Stops";
-	private static String routes = "Routes";
-	private static String trips = "Trips";
-	private static String stop_times = "Stop_times";
-	private static String calendar = "Calendar";
-	private static String calendar_dates = "Calendar_dates";
-	private static String fare_attributes = "Fare_attributes";
-	private static String fare_rules = "Fare_rules";
-	private static String shapes = "Shapes";
-	private static String frequencies = "Frequencies";
-	private static String transfers = "Transfers";
-	private static String feed_info = "Feed_info";
+	private static String agency = "agency";
+	private static String stops = "stops";
+	private static String routes = "routes";
+	private static String trips = "trips";
+	private static String stop_times = "stop_times";
+	private static String calendar = "calendar";
+	private static String calendar_dates = "calendar_dates";
+	private static String fare_attributes = "fare_attributes";
+	private static String fare_rules = "fare_rules";
+	private static String shapes = "shapes";
+	private static String frequencies = "frequencies";
+	private static String transfers = "transfers";
+	private static String feed_info = "feed_info";
 
 	public String getAgency() {
 		return agency;
