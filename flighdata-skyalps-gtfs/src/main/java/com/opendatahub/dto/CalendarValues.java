@@ -9,7 +9,6 @@ import org.springframework.lang.NonNull;
 
 import com.opendatahub.enumClasses.service_operation;
 public class CalendarValues implements Serializable {
-    private static final long serialVersionUID = 1L;
 	@NonNull
 	private String service_id; // to be taken from scode
 	@NonNull

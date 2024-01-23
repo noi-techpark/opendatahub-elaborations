@@ -8,7 +8,6 @@ import java.io.FileWriter;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.opendatahub.constantsClasses.Calendar;

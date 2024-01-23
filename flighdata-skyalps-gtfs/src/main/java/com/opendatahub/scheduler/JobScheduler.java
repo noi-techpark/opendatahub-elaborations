@@ -358,12 +358,15 @@ public class JobScheduler {
 
         // remove duplicates from calendar values
         // because well, who knows how the above works?
-        calendarValues = calendarValues.stream().distinct().collect(Collectors.toList());
+        Map<String, CalendarValues> calendarValuesMap = new HashMap<>();
+        for(CalendarValues value:calendarValues ){
+            calendarValuesMap.put(value.getService_id(), value);
+        }
 
         GTFSWriteAgency.writeAgency(agencyValues);
         GTFSWriteCalendar_Dates.writeCalendar_Dates(calendarDatesValues);
         GTFSStop_Times.writeStop_Times(stoptimesvalues);
-        GTFSWriteCalendar.writeCalendar(calendarValues);
+        GTFSWriteCalendar.writeCalendar(new ArrayList<>(calendarValuesMap.values()));
         GTFSWriteStops.writeStops(stopsvalueslist);
         GTFSWriteRoutes.writeRoutes(routesvaluelist);
         GTFSWriteTrips.writeTrips(tripsvalueslist);
