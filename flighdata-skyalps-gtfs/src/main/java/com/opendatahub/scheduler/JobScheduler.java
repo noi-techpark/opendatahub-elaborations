@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -90,7 +89,7 @@ public class JobScheduler {
         String currentDateTime = format.format(date);
         ArrayList<AgencyValues> agencyValues = new ArrayList<AgencyValues>();
         ArrayList<Calendar_DatesValues> calendarDatesValues = new ArrayList<Calendar_DatesValues>();
-        List<CalendarValues> calendarValues = new ArrayList< CalendarValues>();
+        List<CalendarValues> calendarValues = new ArrayList<CalendarValues>();
         ArrayList<Stop_TimesValues> stoptimesvalues = new ArrayList<Stop_TimesValues>();
         ArrayList<TripsValues> tripsvalueslist = new ArrayList<TripsValues>();
         ArrayList<RoutesValues> routesvaluelist = new ArrayList<RoutesValues>();
@@ -297,11 +296,9 @@ public class JobScheduler {
         }
 
         for (int i = 0; i < snames.size(); i++) {
-            if (snames.get(i).substring(0, 3).equals("BZO") || snames.get(i).substring(4, 7).equals("BZO")) {
-                String newsnames = snames.get(i).replaceAll("-", "_");
-                routesvaluelist.add(new RoutesValues(newsnames, newsnames, route_type.defaultValue()));
-                tripsvalueslist.get(i).setRoute_id(newsnames);
-            }
+            String newsnames = snames.get(i).replaceAll("-", "_");
+            routesvaluelist.add(new RoutesValues(newsnames, newsnames, route_type.defaultValue()));
+            tripsvalueslist.get(i).setRoute_id(newsnames);
         }
 
         for (int i = 0; i < stoptimesvalues.size(); i++) {
@@ -359,7 +356,7 @@ public class JobScheduler {
         // remove duplicates from calendar values
         // because well, who knows how the above works?
         Map<String, CalendarValues> calendarValuesMap = new HashMap<>();
-        for(CalendarValues value:calendarValues ){
+        for (CalendarValues value : calendarValues) {
             calendarValuesMap.put(value.getService_id(), value);
         }
 

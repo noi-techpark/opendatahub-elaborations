@@ -18,7 +18,9 @@ public class GTFSWriteTrips {
 
 		Trips trips = new Trips();
 
-		String firstLine = trips.getRoute_id() + "," + trips.getService_id() + "," + trips.getTrip_id() + "," + trips.getDirection_id();
+		// String firstLine = trips.getRoute_id() + "," + trips.getService_id() + "," + trips.getTrip_id() + "," + trips.getDirection_id();
+		String firstLine = trips.getRoute_id() + "," + trips.getService_id() + "," + trips.getTrip_id(); // remove direction_id 
+
 
 		GTFSReadFileFolder.readFiles();
 		FileWriter writer = new FileWriter(GTFSReadFileFolder.getTrips());
@@ -33,8 +35,8 @@ public class GTFSWriteTrips {
 			tripsvalues.setDirection_id(tripsvalueslist.get(i).getDirection_id());
 			writer.write(tripsvalues.getRoute_id() + ",");
 			writer.write(tripsvalues.getService_id() + ",");
-			writer.write(tripsvalues.getTrip_id().toString() + ",");
-			writer.write(String.valueOf(tripsvalues.getDirection_id()).toString());
+			writer.write(tripsvalues.getTrip_id().toString());
+			// writer.write(String.valueOf(tripsvalues.getDirection_id()).toString());
 			writer.write(System.getProperty("line.separator"));
 
 		}

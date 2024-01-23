@@ -7,8 +7,6 @@ import java.io.Serializable;
 import java.lang.String;
 import org.springframework.lang.NonNull;
 
-import com.opendatahub.enumClasses.bikes_allowed;
-import com.opendatahub.enumClasses.wheelchair_accessible;
 public class TripsValues implements Serializable {
 
     private static final long serialVersionUID = 1L;
