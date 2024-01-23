@@ -42,7 +42,6 @@ public class GTFSStop_Times {
 				writer.write(stoptimesvalues.getStop_id().toString() + ",");
 				writer.write(String.valueOf(stoptimesvalues.getStop_sequence()));
 				writer.write(System.getProperty("line.separator"));
-
 			}
 			writer.close();
 		}

@@ -6,11 +6,6 @@ package com.opendatahub.dto;
 import java.io.Serializable;
 import java.lang.String;
 import org.springframework.lang.NonNull;
-
-import com.opendatahub.enumClasses.continous_pickup_stopTimes;
-import com.opendatahub.enumClasses.pickup_type;
-import com.opendatahub.enumClasses.stop_sequence;
-import com.opendatahub.enumClasses.timepoint;
 public class Stop_TimesValues implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -89,7 +90,7 @@ public class JobScheduler {
         String currentDateTime = format.format(date);
         ArrayList<AgencyValues> agencyValues = new ArrayList<AgencyValues>();
         ArrayList<Calendar_DatesValues> calendarDatesValues = new ArrayList<Calendar_DatesValues>();
-        ArrayList<CalendarValues> calendarValues = new ArrayList<CalendarValues>();
+        List<CalendarValues> calendarValues = new ArrayList< CalendarValues>();
         ArrayList<Stop_TimesValues> stoptimesvalues = new ArrayList<Stop_TimesValues>();
         ArrayList<TripsValues> tripsvalueslist = new ArrayList<TripsValues>();
         ArrayList<RoutesValues> routesvaluelist = new ArrayList<RoutesValues>();
@@ -138,9 +139,6 @@ public class JobScheduler {
                 fullscode.add(json2.getJSONObject(i).getString(DefaultValues.getScodeString()));
             }
             if (json2.getJSONObject(i).getJSONObject(DefaultValues.getSmetadataString()) != null) {
-                // System.out.println(
-                // json2.getJSONObject(i).getJSONObject("smetadata").get(String.valueOf(json2.getJSONObject(i).getJSONObject("smetadata"))));
-                // System.out.println(json2.getJSONObject(i).getJSONObject("smetadata").getString(json2.getJSONObject(i).getJSONObject("smetadata").toString()));
                 weekdayfri.add(json2.getJSONObject(i).getJSONObject(DefaultValues.getSmetadataString())
                         .getBoolean(DefaultValues.getWeekdayfriString()));
                 weekdaymon.add(json2.getJSONObject(i).getJSONObject(DefaultValues.getSmetadataString())
@@ -225,8 +223,6 @@ public class JobScheduler {
             desiredFormat.setTimeZone(TimeZone.getTimeZone("Italy/Rome"));
 
             Date sodate = so.parse(fullYear);
-            // System.out.println("DAY : " + desiredFormat.format(sodate));//Questo deve
-            // essere flttoperiod per start date e fltsenddate per end date
             calendarValues.get(i).setStart_date(desiredFormat.format(sodate));
             calendarValues.get(i).setEnd_date(desiredFormat.format(sodate));
             tripsvalueslist
@@ -236,7 +232,6 @@ public class JobScheduler {
         for (int i = 0; i < sta.size(); i++) {
             stoptimesvalues.add(new Stop_TimesValues(DefaultValues.getStaticTripID(), sta.get(i),
                     DefaultValues.getStaticStopID(), "null", stop_sequence.intvalueOf("Departing_airpot")));
-            // tripsvalueslist.get(i).setDirection_id(sta.get(i));
         }
 
         for (int i = 0; i < std.size(); i++) {
@@ -248,29 +243,7 @@ public class JobScheduler {
         for (int i = 0; i < fullscode.size(); i++) {
             tripsvalueslist.get(i).setTrip_id(fullscode.get(i));
             stoptimesvalues.get(i).setTrip_id(fullscode.get(i));
-
         }
-
-        /*
-         * for (int j = 0; j < calendarValues.size(); j++) {
-         * calendarValues.get(j).setMonday(service_operation.intvalueOf(weekdaymon.get(j
-         * )));
-         * calendarValues.get(j).setFriday(service_operation.intvalueOf(weekdayfri.get(j
-         * )));
-         * 
-         * calendarValues.get(j).setSaturday(service_operation.intvalueOf(weekdaysat.get
-         * (j)));
-         * calendarValues.get(j).setSunday(service_operation.intvalueOf(weekdaysun.get(j
-         * )));
-         * calendarValues.get(j).setTuesday(service_operation.intvalueOf(weekdaytue.get(
-         * j)));
-         * calendarValues.get(j).setWednesday(service_operation.intvalueOf(weekdaywed.
-         * get(j)));
-         * calendarValues.get(j).setThursday(service_operation.intvalueOf(weekdaythu.get
-         * (j)));
-         * 
-         * }
-         */
 
         for (int j = 0; j < weekdayfri.size() && j < calendarValues.size(); j++) {
             calendarValues.get(j).setFriday(service_operation.intvalueOf(weekdayfri.get(j)));
@@ -301,9 +274,6 @@ public class JobScheduler {
         }
 
         for (int i = 0; i < todestination.size(); i++) {
-            // routesvaluelist.add(new
-            // RoutesValues(todestination.get(i),todestination.get(i),
-            // route_type.defaultValue()));
             stopsvalueslist.add(new StopsValue(todestination.get(i), todestination.get(i), todestination.get(i),
                     null, null));
             tripsvalueslist.get(i).setRoute_id(todestination.get(i));
@@ -312,9 +282,6 @@ public class JobScheduler {
         for (int i = 0; i < fromdestination.size(); i++) {
             stopsvalueslist.add(new StopsValue(fromdestination.get(i), fromdestination.get(i),
                     fromdestination.get(i), null, null));
-            // routesvaluelist.add(new
-            // RoutesValues(fromdestination.get(i),fromdestination.get(i),
-            // route_type.defaultValue()));
             stoptimesvalues.get(i).setStop_id(fromdestination.get(i) + "-" + todestination.get(i));
             if (!fromdestination.get(i).equals("BZO")) {
                 stoptimesvalues.get(i).setStop_sequence(1);
@@ -364,18 +331,7 @@ public class JobScheduler {
             }
 
         }
-        /*
-         * for(int i = 0; i < todestination.size(); i++) {
-         * for (Map.Entry<String, ArrayList<String[]>> entry :
-         * todestinationHashMap.entrySet()) {
-         * if(todestination.get(i).equals(entry.getKey())) {
-         * ArrayList<String[]> value = entry.getValue();
-         * stopsvalueslist.get(i).setStop_lat(value.get(0)[0]);
-         * stopsvalueslist.get(i).setStop_lon(value.get(1)[1]);
-         * }
-         * }
-         * }
-         */
+
         for (String destination : todestination) {
             ArrayList<StopsValue> value = todestinationHashMap.get(destination);
             if (value != null && value.size() > 0) {
@@ -389,31 +345,20 @@ public class JobScheduler {
             }
         }
         Collections.reverse(stopsvalueslist);
-        /*
-         * for(int i = 0; i < fromdestination.size(); i++) {
-         * for (Map.Entry<String, ArrayList<String[]>> entry :
-         * fromdestinationHashMap.entrySet()) {
-         * if(fromdestination.get(i).equals(entry.getKey())) {
-         * ArrayList<String[]> value = entry.getValue();
-         * stopsvalueslist.get(i).setStop_lat(value.get(0)[0]);
-         * stopsvalueslist.get(i).setStop_lon(value.get(1)[1]);
-         * }
-         * }
-         * }
-         */
+
         for (String destination : fromdestination) {
             ArrayList<StopsValue> value = fromdestinationHashMap.get(destination);
             if (value != null && value.size() > 0) {
                 StopsValue stop = new StopsValue(value.get(0).getStop_id(), value.get(0).getStop_code(),
                         value.get(0).getStop_name(), value.get(0).getStop_lat(), value.get(0).getStop_lon());
                 stopsvalueslist.add(stop);
-                // stopsvalueslist.get(0).setStop_lat(value.get(0).getStop_lat()); // pass in
-                // the first element of the String array
-                // stopsvalueslist.get(0).setStop_lon(value.get(0).getStop_lon()); // pass in
-                // the second element of the String array
             }
         }
         Collections.reverse(stopsvalueslist);
+
+        // remove duplicates from calendar values
+        // because well, who knows how the above works?
+        calendarValues = calendarValues.stream().distinct().collect(Collectors.toList());
 
         GTFSWriteAgency.writeAgency(agencyValues);
         GTFSWriteCalendar_Dates.writeCalendar_Dates(calendarDatesValues);

@@ -9,13 +9,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.List;
 
 import com.opendatahub.constantsClasses.Calendar;
 import com.opendatahub.dto.CalendarValues;
 
 public class GTFSWriteCalendar {
 
-	public static void writeCalendar(ArrayList<CalendarValues> calendarValuesList)
+	public static void writeCalendar(List<CalendarValues> calendarValuesList)
 			throws IOException, MalformedURLException, GTFSCheckCalendar {
 
 		Calendar calendar = new Calendar();
