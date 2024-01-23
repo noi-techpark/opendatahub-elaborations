@@ -28,22 +28,23 @@ public class GTFSStop_Times {
 		writer.write(firstLine);
 		writer.write(System.getProperty("line.separator"));
 		Stop_TimesValues stoptimesvalues = new Stop_TimesValues();
-		if(GTFSCheckStopTimes.checkStopTimesMandatoryFields(stopTimesValues)) {
-		for (int i = 0; i < stopTimesValues.size(); i++) {
-			stoptimesvalues.setTrip_id(stopTimesValues.get(i).getTrip_id());
-			stoptimesvalues.setArrival_time(stopTimesValues.get(i).getArrival_time());
-			stoptimesvalues.setDeparture_time(stopTimesValues.get(i).getDeparture_time());
-			stoptimesvalues.setStop_id(stopTimesValues.get(i).getStop_id());
-			stoptimesvalues.setStop_sequence(stopTimesValues.get(i).getStop_sequence());
-			writer.write(stoptimesvalues.getTrip_id() + ",");
-			writer.write(stoptimesvalues.getArrival_time() + ",");
-			writer.write(stoptimesvalues.getDeparture_time() + ",");
-			writer.write(stoptimesvalues.getStop_id().toString() + ",");
-			writer.write(String.valueOf(stoptimesvalues.getStop_sequence()));
-			writer.write(System.getProperty("line.separator"));
+		if (GTFSCheckStopTimes.checkStopTimesMandatoryFields(stopTimesValues)) {
+			for (int i = 0; i < stopTimesValues.size(); i++) {
+				stoptimesvalues.setTrip_id(stopTimesValues.get(i).getTrip_id());
+				stoptimesvalues.setArrival_time(stopTimesValues.get(i).getArrival_time());
+				stoptimesvalues.setDeparture_time(stopTimesValues.get(i).getDeparture_time());
+				stoptimesvalues.setStop_id(stopTimesValues.get(i).getStop_id());
+				stoptimesvalues.setStop_sequence(stopTimesValues.get(i).getStop_sequence());
+				writer.write(stoptimesvalues.getTrip_id() + ",");
+				// well, not nice, but this solves the needed formatting of HH:MM:SS
+				writer.write(stoptimesvalues.getArrival_time() + ":00" + ",");
+				writer.write(stoptimesvalues.getDeparture_time() + ":00" + ",");
+				writer.write(stoptimesvalues.getStop_id().toString() + ",");
+				writer.write(String.valueOf(stoptimesvalues.getStop_sequence()));
+				writer.write(System.getProperty("line.separator"));
 
-		}
-		writer.close();
+			}
+			writer.close();
 		}
 	}
 

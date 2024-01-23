@@ -25,8 +25,7 @@ public class Stop_Times {
 	}
 
 	public void setArrival_time(String arrival_time) {
-		// well, not nice, but this solves the needed formatting of HH:MM:SS
-		this.arrival_time = arrival_time + ":00";
+		this.arrival_time = arrival_time;
 	}
 
 	public String getDeparture_time() {
@@ -34,8 +33,7 @@ public class Stop_Times {
 	}
 
 	public void setDeparture_time(String departure_time) {
-		// well, not nice, but this solves the needed formatting of HH:MM:SS
-		this.departure_time = departure_time + ":00";
+		this.departure_time = departure_time;
 	}
 
 	public String getStop_id() {
