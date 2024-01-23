@@ -83,7 +83,7 @@ public class GTFSWriteCalendar {
 			writer.write(calendarValues.getSaturday() + ",");
 			writer.write(calendarValues.getSunday() + ",");
 			writer.write(calendarValues.getStart_date() + ",");
-			writer.write(calendarValues.getEnd_date() + ",");
+			writer.write(calendarValues.getEnd_date());
 			writer.write(System.getProperty("line.separator"));
 
 		}
