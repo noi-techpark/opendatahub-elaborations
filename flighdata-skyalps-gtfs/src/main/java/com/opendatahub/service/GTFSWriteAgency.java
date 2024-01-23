@@ -41,7 +41,7 @@ public class GTFSWriteAgency {
 				// System.out.println("Agency_timezone is mandatory. Passing default value:
 				// Rome");
 				agencyvalueslist.get(i)
-						.setAgency_timezone(agency_timezone.valueOf(DefaultValues.getDefaultAgencyTimeZone_Value()));
+						.setAgency_timezone(DefaultValues.getDefaultAgencyTimeZone_Value());
 			}
 		}
 
@@ -54,7 +54,8 @@ public class GTFSWriteAgency {
 		writer.write(System.getProperty("line.separator"));
 		AgencyValues agencyvaluesobject = new AgencyValues();
 		if (GTFSCheckAgency.checkAgencyMandatoryFields(agencyvalueslist)) {
-			// System.out.println("Before removing duplicates : " + Arrays.toString(agencyvalueslist.toArray()));
+			// System.out.println("Before removing duplicates : " +
+			// Arrays.toString(agencyvalueslist.toArray()));
 
 			final List<AgencyValues> listWithoutDuplicates = new ArrayList<>(
 					new HashSet<>(agencyvalueslist));
