@@ -18,7 +18,7 @@ public class GTFSWriteTrips {
 
 		Trips trips = new Trips();
 
-		String firstLine = trips.getRoute_id() + "," + trips.getService_id() + "," + trips.getTrip_id() + "," + trips.getDirection_id() + ",";
+		String firstLine = trips.getRoute_id() + "," + trips.getService_id() + "," + trips.getTrip_id() + "," + trips.getDirection_id();
 
 		GTFSReadFileFolder.readFiles();
 		FileWriter writer = new FileWriter(GTFSReadFileFolder.getTrips());

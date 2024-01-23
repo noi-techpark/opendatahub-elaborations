@@ -22,8 +22,7 @@ public class GTFSWriteRoutes {
 
 		Routes routes = new Routes();
 
-		String firstLine = routes.getRoute_id() + "," + routes.getRoute_short_name() + "," + routes.getRoute_type()
-				+ ",";
+		String firstLine = routes.getRoute_id() + "," + routes.getRoute_short_name() + "," + routes.getRoute_type();
 
 		GTFSReadFileFolder.readFiles();
 		FileWriter writer = new FileWriter(GTFSReadFileFolder.getRoutes());
