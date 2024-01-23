@@ -32,30 +32,30 @@ public class GTFSReadFileFolder {
 		for (int i = 0; i < listOfFiles.length; i++) {
 			if (listOfFiles[i].isFile()) {
 				// System.out.println("File " + listOfFiles[i].getName());
-				if (listOfFiles[i].getName().equals("Agency.txt")) {
+				if (listOfFiles[i].getName().equals("agency.txt")) {
 					Agency = listOfFiles[i];
 					// return listOfFiles[i];
 				}
-				if (listOfFiles[i].getName().equals("Stops.txt")) {
+				if (listOfFiles[i].getName().equals("stops.txt")) {
 					Stops = listOfFiles[i];
 					// return listOfFiles[i];
 				}
-				if (listOfFiles[i].getName().equals("Calendar_dates.txt")) {
+				if (listOfFiles[i].getName().equals("calendar_dates.txt")) {
 					Calendar_Dates = listOfFiles[i];
 				}
-				if (listOfFiles[i].getName().equals("Calendar.txt")) {
+				if (listOfFiles[i].getName().equals("calendar.txt")) {
 					Calendar = listOfFiles[i];
 				}
-				if (listOfFiles[i].getName().equals("Stop_times.txt")) {
+				if (listOfFiles[i].getName().equals("stop_times.txt")) {
 					Stop_times = listOfFiles[i];
 				}
-				if (listOfFiles[i].getName().equals("Routes.txt")) {
+				if (listOfFiles[i].getName().equals("routes.txt")) {
 					Routes = listOfFiles[i];
 				}
-				if (listOfFiles[i].getName().equals("Trips.txt")) {
+				if (listOfFiles[i].getName().equals("trips.txt")) {
 					Trips = listOfFiles[i];
 				}
-				if (listOfFiles[i].getName().equals("Fare_rules.txt")) {
+				if (listOfFiles[i].getName().equals("fare_rules.txt")) {
 					Fare_rules = listOfFiles[i];
 				}
 			} else if (listOfFiles[i].isDirectory()) {
