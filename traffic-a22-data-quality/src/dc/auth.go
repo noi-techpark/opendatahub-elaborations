@@ -2,7 +2,7 @@
 
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package bdplib
+package dc
 
 import (
 	"encoding/json"
@@ -26,9 +26,11 @@ type Token struct {
 	Scope            string
 }
 
-var tokenUri string = os.Getenv("OAUTH_TOKEN_URI")
-var clientId string = os.Getenv("OAUTH_CLIENT_ID")
-var clientSecret string = os.Getenv("OAUTH_CLIENT_SECRET")
+var tokenUri string = os.Getenv("API_OAUTH_TOKEN_URI")
+var clientId string = os.Getenv("API_OAUTH_CLIENT_ID")
+var clientSecret string = os.Getenv("API_OAUTH_CLIENT_SECRET")
+var username string = os.Getenv("API_OAUTH_USERNAME")
+var password string = os.Getenv("API_OAUTH_PASSWORD")
 
 var token Token
 
@@ -46,25 +48,29 @@ func GetToken() string {
 }
 
 func newToken() {
-	slog.Info("Getting new token...")
-	params := url.Values{}
-	params.Add("client_id", clientId)
-	params.Add("client_secret", clientSecret)
-	params.Add("grant_type", "client_credentials")
+	slog.Info("Getting new API token...")
 
-	authRequest(params)
+	authRequest()
 
-	slog.Info("Getting new token done.")
+	slog.Info("Getting new API token done.")
 }
 
-func authRequest(params url.Values) {
+func authRequest() {
+	params := url.Values{}
+	params.Add("grant_type", "password")
+	params.Add("client_id", clientId)
+	params.Add("client_secret", clientSecret)
+	params.Add("username", username)
+	params.Add("password", password)
+
 	body := strings.NewReader(params.Encode())
 
-	req, err := http.NewRequest("POST", tokenUri, body)
+	req, err := http.NewRequest("GET", tokenUri, body)
 	if err != nil {
 		slog.Error("error", err)
 		return
 	}
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -92,5 +98,5 @@ func authRequest(params url.Values) {
 	// calculate token expiry timestamp with 600 seconds margin
 	tokenExpiry = time.Now().Unix() + token.ExpiresIn - 600
 
-	slog.Debug("auth token expires in " + strconv.FormatInt(tokenExpiry, 10))
+	slog.Info("auth token expires in " + strconv.FormatInt(tokenExpiry, 10))
 }

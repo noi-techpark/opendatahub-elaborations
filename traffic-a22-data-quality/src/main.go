@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"time"
+
 	"traffic-a22-data-quality/dc"
 	"traffic-a22-data-quality/log"
 
@@ -17,6 +18,8 @@ import (
 func main() {
 	log.InitLogger()
 
+	dc.SyncDataTypes()
+
 	cron := os.Getenv("SCHEDULER_CRON")
 	slog.Debug("Cron defined as: " + cron)
 
@@ -25,7 +28,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	// call job once at startup
 	dc.Job()
+
+	// start cron job
 	s := gocron.NewScheduler(time.UTC)
 	s.CronWithSeconds(cron).Do(dc.Job)
 	s.StartBlocking()
