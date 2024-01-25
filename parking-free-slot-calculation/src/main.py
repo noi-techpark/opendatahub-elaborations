@@ -11,6 +11,7 @@ f = FreeParkingSlotsCalculator()
 
 def main():
     seconds= int(os.getenv("JOB_SCHEDULE_SEC"))
+    print("Starting job every " + str(seconds) + " seconds.")
     schedule.every(seconds).seconds.do(f.startCalculations)
     while 1:
         schedule.run_pending()
