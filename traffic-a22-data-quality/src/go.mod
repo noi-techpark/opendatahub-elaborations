@@ -1,6 +1,6 @@
 module traffic-a22-data-quality
 
-go 1.21.5
+go 1.21
 
 require github.com/go-co-op/gocron v1.37.0
 

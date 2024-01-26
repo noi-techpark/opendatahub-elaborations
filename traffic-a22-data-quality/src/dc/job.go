@@ -12,26 +12,37 @@ import (
 	"traffic-a22-data-quality/bdplib"
 )
 
-const stationTypeParent string = "ParkingFacility"
-const stationType string = "ParkingStation"
-
-const shortStay string = "short_stay"
-const Subscribers string = "subscribers"
-
-const dataTypeFreeShort string = "free_" + shortStay
-const dataTypeFreeSubs string = "free_" + Subscribers
-const dataTypeFreeTotal string = "free"
-const dataTypeOccupiedShort string = "occupied_" + shortStay
-const dataTypeOccupiedSubs string = "occupied_" + Subscribers
-const dataTypeOccupiedTotal string = "occupied"
-
 var origin string = os.Getenv("ORIGIN")
 
-const bzLat float64 = 46.49067
-const bzLon float64 = 11.33982
+func sumJob() {
+	/* ninja: get all the TrafficSensor stations with latest 3 datapoints, both period 10min and 1day
+	for all stations where the sum data is older than 1 day or missing, and that have more recent base data:
+		get data history from starting point until last EOD
+		for each calendar day:
+			check for data completeness, e.g. every 10 minutes of the day is covered, else do Idontknowwhat
+			sum up all the 10 minute periods
+			create combined sum measurement
+	*/
+}
 
-// GetFacilityData returns data for multiple companies; this identifier filters out STA
-const identifier string = "STA – Strutture Trasporto Alto Adige SpA Via dei Conciapelli, 60 39100  Bolzano UID: 00586190217"
+func combineJob() {
+	/*
+		get all TrafficSensors that don't have a parent station already
+		match them by gps point or metadata and determine groupings
+		create missing parent stations
+	*/
+}
+
+func sumUpJob() {
+	/*
+		get all stations that have a parent, and their most recent 1day data
+		get the parent's most recent data point
+		for all parents where data point is older than children data;
+			get history of children with start = most recent parent date
+			build children sum
+			push to parent
+	*/
+}
 
 func Job() {
 	var parentStations []bdplib.Station
@@ -127,20 +138,6 @@ func Job() {
 	bdplib.SyncStations(stationType, values(stations))
 	bdplib.PushData(stationTypeParent, dataMapParent)
 	bdplib.PushData(stationType, dataMap)
-}
-
-func SyncDataTypes() {
-	var dataTypes []bdplib.DataType
-	// free
-	dataTypes = append(dataTypes, bdplib.CreateDataType(dataTypeFreeShort, "", "Amount of free 'short stay' parking slots", "Instantaneous"))
-	dataTypes = append(dataTypes, bdplib.CreateDataType(dataTypeFreeSubs, "", "Amount of free 'subscribed' parking slots", "Instantaneous"))
-	dataTypes = append(dataTypes, bdplib.CreateDataType(dataTypeFreeTotal, "", "Amount of free parking slots", "Instantaneous"))
-	// occupied
-	dataTypes = append(dataTypes, bdplib.CreateDataType(dataTypeOccupiedShort, "", "Amount of occupied 'short stay' parking slots", "Instantaneous"))
-	dataTypes = append(dataTypes, bdplib.CreateDataType(dataTypeOccupiedSubs, "", "Amount of occupied 'subscribed' parking slots", "Instantaneous"))
-	dataTypes = append(dataTypes, bdplib.CreateDataType(dataTypeOccupiedTotal, "", "Amount of occupied parking slots", "Instantaneous"))
-
-	bdplib.SyncDataTypes(stationType, dataTypes)
 }
 
 // to extract values array from map, without external dependency
