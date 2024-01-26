@@ -32,6 +32,9 @@ if __name__ == "__main__":
     arg_parser.add_argument("-t", "--to-date", type=str, required=False,
                             help="The end date[time] in isoformat for downloading the traffic measures. If not specified, the default will be the current datetime")
 
+    arg_parser.add_argument("--station-codes", help="List of station codes that should be computed")
+    args = arg_parser.parse_args()
+
     arg_parser.add_argument("--run-async", action="store_true", help="If set it run the task in the celery cluster")
     args = arg_parser.parse_args()
 
@@ -51,9 +54,16 @@ if __name__ == "__main__":
     else:
         to_date = None
 
+
+    if args.station_codes:
+        station_codes = args.station_codes.split(',')
+        logger.info(f"Only computing for stations: [{args.station_codes.task_id}]")
+    else:
+        station_codes = None
+
     if args.run_async:
-        task: AsyncResult = compute_pollution_data.delay(min_from_date=from_date, max_to_date=to_date)
+        task: AsyncResult = compute_pollution_data.delay(min_from_date=from_date, max_to_date=to_date, station_code_list=station_codes)
         logger.info(f"Scheduled async pollution computation. Task ID: [{task.task_id}]")
     else:
         logger.info("Staring pollution computation")
-        compute_pollution_data(min_from_date=from_date, max_to_date=to_date)
+        compute_pollution_data(min_from_date=from_date, max_to_date=to_date, station_code_list=station_codes)

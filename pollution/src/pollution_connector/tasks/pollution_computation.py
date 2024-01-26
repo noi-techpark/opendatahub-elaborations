@@ -26,7 +26,8 @@ logger = logging.getLogger("pollution_connector.tasks.pollution_computation")
 
 @app.task
 def compute_pollution_data(min_from_date: Optional[datetime] = None,
-                           max_to_date: Optional[datetime] = None
+                           max_to_date: Optional[datetime] = None,
+                           station_code_list: Optional[string[]] = None,
                            ) -> None:
     """
     Start the computation of a batch of pollution data measures. As starting date for the batch is used the latest

@@ -286,11 +286,14 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         """
         raise NotImplementedError
 
-    def get_station_list(self) -> list[StationType]:
+    def get_station_list(self, station_codes = None) -> list[StationType]:
         """
         Retrieve the list of all the available stations.
+        :param station_codes: Comma separated station code list, that will be retrieved 
         """
         logger.info(f"Retrieving station list for type [{self._station_type}]")
+        
+
         raw_stations = self._get_result_list(f"/v2/flat,node/{self._station_type}")
 
         logger.info(f"Retrieved [{len(raw_stations)}] stations")
