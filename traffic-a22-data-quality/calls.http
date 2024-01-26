@@ -1,34 +1,36 @@
 ##### VSCODE / REST Client
 # Create a .env file and set the corresponding variables
 # See all $dotenv fields below
-
-@username={{$dotenv API_OAUTH_USERNAME}}
-@password={{$dotenv API_OAUTH_PASSWORD}}
-@secret={{$dotenv API_OAUTH_CLIENT_SECRET}}
-@clientId={{$dotenv API_OAUTH_CLIENT_ID}}
-
-
+#
+@authurl={{$dotenv ODH_AUTHENTICATION_URL}}
+@client_id={{$dotenv ODH_CLIENT_ID}}
+@client_secret={{$dotenv ODH_CLIENT_SECRET}}
+@ninja_url={{$dotenv ODH_NINJA_URL}}
+@bdp_url={{$dotenv ODH_WRITER_URL}}
 
 ### Get access token for the writer (LOCAL DEV)
 # @name login
-GET https://www.onecenter.info/oauth/token
+POST {{authurl}}realms/noi/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
-grant_type=password
-&username={{username}}
-&client_id={{clientId}}
-&client_secret={{secret}}
-&password={{password}}
+&grant_type=client_credentials
+&client_id={{client_id}}
+&client_secret={{client_secret}}
 
 ### save token
-
 @token = {{login.response.body.access_token}}
 
-### GetFacilities
-GET https://www.onecenter.info/api/DAZ/GetFacilities
+### Get candidate stations
+GET {{ninja_url}}/v2/flat/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/latest
+?where=mperiod.in.(600,86400)
+&select=scode
 Authorization: Bearer {{token}}
 
-### FacilityID
-GET https://www.onecenter.info/api/DAZ/FacilityFreePlaces
-?FacilityID=608612
-Authorization: Bearer {{login.response.body.access_token}}
+### Get candidate stations
+GET {{ninja_url}}/v2/tree/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/latest
+?select=scode,tname,mperiod,mvalidtime,mvalue
+&where=mperiod.eq.600
+Authorization: Bearer {{token}}
+
+
+
