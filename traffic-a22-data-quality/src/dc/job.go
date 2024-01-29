@@ -40,7 +40,7 @@ func Job() {
 }
 
 func sumJob() {
-	var res ninjalib.NinjaResponse[NinjaFlatData]
+	var res ninjalib.NinjaResponse[NinjaTreeData]
 	err := ninjalib.GetRequest(queryLatest, &res)
 	if err != nil {
 		slog.Error("error", err)
