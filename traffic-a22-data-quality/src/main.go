@@ -5,34 +5,24 @@
 package main
 
 import (
-	"log/slog"
-	"os"
-	"time"
-
 	"traffic-a22-data-quality/dc"
 	"traffic-a22-data-quality/log"
-
-	"github.com/go-co-op/gocron"
 )
 
 func main() {
 	log.InitLogger()
 
-	dc.SyncDataTypes()
-
-	cron := os.Getenv("SCHEDULER_CRON")
+	/* cron := os.Getenv("SCHEDULER_CRON")
 	slog.Debug("Cron defined as: " + cron)
 
 	if len(cron) == 0 {
 		slog.Error("Cron job definition in env missing")
 		os.Exit(1)
-	}
+	} */
 
-	// call job once at startup
 	dc.Job()
-
 	// start cron job
-	s := gocron.NewScheduler(time.UTC)
-	s.CronWithSeconds(cron).Do(dc.Job)
-	s.StartBlocking()
+	// s := gocron.NewScheduler(time.UTC)
+	// s.CronWithSeconds(cron).Do(dc.Job)
+	// s.StartBlocking()
 }

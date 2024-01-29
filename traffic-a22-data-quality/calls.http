@@ -2,7 +2,7 @@
 # Create a .env file and set the corresponding variables
 # See all $dotenv fields below
 #
-@authurl={{$dotenv ODH_AUTHENTICATION_URL}}
+@authurl={{$dotenv ODH_TOKEN_URI}}
 @client_id={{$dotenv ODH_CLIENT_ID}}
 @client_secret={{$dotenv ODH_CLIENT_SECRET}}
 @ninja_url={{$dotenv ODH_NINJA_URL}}
@@ -10,7 +10,7 @@
 
 ### Get access token for the writer (LOCAL DEV)
 # @name login
-POST {{authurl}}realms/noi/protocol/openid-connect/token
+POST {{authurl}}
 Content-Type: application/x-www-form-urlencoded
 
 &grant_type=client_credentials
@@ -21,16 +21,13 @@ Content-Type: application/x-www-form-urlencoded
 @token = {{login.response.body.access_token}}
 
 ### Get candidate stations
-GET {{ninja_url}}/v2/flat/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/latest
-?where=mperiod.in.(600,86400)
-&select=scode
+GET {{ninja_url}}{{$dotenv NINJA_QUERY_LATEST}}
 Authorization: Bearer {{token}}
 
 ### Get candidate stations
 GET {{ninja_url}}/v2/tree/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/latest
-?select=scode,tname,mperiod,mvalidtime,mvalue
-&where=mperiod.eq.600
+?where=mperiod.in.(600,86400)
+&select=mperiod
+&limit=-1	
 Authorization: Bearer {{token}}
-
-
 

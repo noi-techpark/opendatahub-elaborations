@@ -26,9 +26,9 @@ type Token struct {
 	Scope            string
 }
 
-var tokenUri string = os.Getenv("OAUTH_TOKEN_URI")
-var clientId string = os.Getenv("OAUTH_CLIENT_ID")
-var clientSecret string = os.Getenv("OAUTH_CLIENT_SECRET")
+var tokenUri string = os.Getenv("ODH_TOKEN_URI")
+var clientId string = os.Getenv("ODH_CLIENT_ID")
+var clientSecret string = os.Getenv("ODH_CLIENT_SECRET")
 
 var token Token
 
