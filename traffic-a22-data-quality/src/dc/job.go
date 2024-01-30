@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 	"traffic-a22-data-quality/ninjalib"
 )
 
@@ -16,12 +17,18 @@ var origin string = os.Getenv("ORIGIN")
 
 var queryLatest = os.Getenv("NINJA_QUERY_LATEST")
 
-type NinjaTreeData = map[string]struct {
-	Stations map[string]struct {
-		Datatypes map[string]struct {
-			Measurements []struct {
-				Period int64 `json:"mperiod"`
-			} `json:"tmeasurements"`
+const periodBase = 600
+const periodAggregate = 86400
+
+type NinjaMeasurement struct {
+	Period    int64              `json:"mperiod"`
+	Timestamp ninjalib.NinjaTime `json:"mvalidtime"`
+}
+
+type NinjaTreeData = map[string]struct { // key = stationtype
+	Stations map[string]struct { // key = stationcode
+		Datatypes map[string]struct { // key = datatype
+			Measurements []NinjaMeasurement `json:"tmeasurements"`
 		} `json:"sdatatypes"`
 	} `json:"stations"`
 }
@@ -30,7 +37,6 @@ type NinjaFlatData = []struct {
 	StationCode string             `json:"scode"`
 	TypeName    string             `json:"tname"`
 	Timestamp   ninjalib.NinjaTime `json:"_timestamp"`
-	MPeriod     uint64             `json:"mperiod"`
 }
 
 func Job() {
@@ -39,7 +45,13 @@ func Job() {
 	sumUpJob()
 }
 
+func debugLogJson(j any) {
+	s, _ := json.MarshalIndent(j, "", " ")
+	fmt.Println(string(s))
+}
+
 func sumJob() {
+	// ninja: get all the TrafficSensor stations with latest 3 datapoints, both period 10min and 1day
 	var res ninjalib.NinjaResponse[NinjaTreeData]
 	err := ninjalib.GetRequest(queryLatest, &res)
 	if err != nil {
@@ -47,12 +59,60 @@ func sumJob() {
 		return
 	}
 
-	resStr, _ := json.MarshalIndent(res, "", " ")
-	fmt.Print(string(resStr))
+	type todoStation struct {
+		lastBase      time.Time
+		lastAggregate time.Time
+	}
 
-	// ninja: get all the TrafficSensor stations with latest 3 datapoints, both period 10min and 1day
-	// for all stations where the sum data is older than 1 day or missing, and that have more recent base data:
+	var todos map[string]map[string]todoStation
+
+	for _, stations := range res.Data {
+		for stationCode, station := range stations.Stations {
+			for typeName, dataType := range station.Datatypes {
+				for _, m := range dataType.Measurements {
+					var lastBase time.Time
+					var lastAggregate time.Time
+					if m.Period == periodBase {
+						lastBase = m.Timestamp.Time
+					}
+					if m.Period == periodAggregate {
+						lastAggregate = m.Timestamp.Time
+					}
+
+					// When there is data newer than last aggregate + period, we have to aggregate this station
+					if lastBase.Sub(lastAggregate).Seconds() > periodAggregate {
+						todos[stationCode][typeName] = todoStation{
+							lastBase:      lastBase,
+							lastAggregate: lastAggregate,
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// 	get data history from starting point until last EOD
+
+	for stationCode, typeMap := range todos {
+		for typeName, todo := range typeMap {
+			var req ninjalib.NinjaRequest
+			req.AddDataType(typeName)
+			req.From = todo.lastAggregate
+			req.To = todo.lastBase
+			req.Select = "scode,mvalue,tname"
+			req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", periodBase, stationCode)
+			req.Limit = 300
+
+			var res ninjalib.NinjaResponse[NinjaFlatData]
+
+			err := ninjalib.HistoryRequest(req, &res)
+			if err != nil {
+				slog.Error("error", err)
+				return
+			}
+			debugLogJson(res)
+		}
+	}
 	// 	for each calendar day:
 	// 		check for data completeness, e.g. every 10 minutes of the day is covered, else do Idontknowwhat
 	// 		sum up all the 10 minute periods

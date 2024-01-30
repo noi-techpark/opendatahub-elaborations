@@ -31,7 +31,14 @@ Authorization: Bearer {{token}}
 ### Get candidate stations
 GET {{ninja_url}}/v2/tree/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/latest
 ?where=mperiod.in.(600,86400)
-&select=mperiod
+&select=mperiod,mvalidtime
 &limit=-1	
 Authorization: Bearer {{token}}
 
+
+### Get single station measurement history
+GET {{ninja_url}}/v2/flat/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/2019-12-01/2020-03-01
+?where=and(mperiod.eq.600,scode.eq."A22:1871:1")
+&select=mvalue,mvalidtime,tname
+&limit=200
+Authorization: Bearer {{token}}
