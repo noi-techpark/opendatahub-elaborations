@@ -18,37 +18,48 @@ const (
 )
 
 type NinjaRequest struct {
-	Repr     Repr `default:"FlatNode"`
+	Repr     Repr
 	Origin   string
-	Limit    int64  `default:"200"`
-	Offset   uint64 `default:"0"`
+	Limit    int64
+	Offset   uint64
 	Select   string
 	Where    string
-	Shownull bool `default:"false"`
-	Distinct bool `default:"true"`
+	Shownull bool
+	Distinct bool
 	Timezone string
 
-	EventOrigins []string `default:"[]string{*}"`
-	EdgeTypes    []string `default:"[]string{*}"`
+	EventOrigins []string
+	EdgeTypes    []string
 
 	Timepoint time.Time
 
-	StationTypes []string `default:"[]string{*}"`
-	DataTypes    []string `default:"[]string{*}"`
+	StationTypes []string
+	DataTypes    []string
 
 	From time.Time
 	To   time.Time
 }
 
-func (nr NinjaRequest) AddStationType(stationType string) {
+// Defaults according to Ninja Swagger documentation
+func DefaultNinjaRequest() *NinjaRequest {
+	def := new(NinjaRequest)
+	def.Repr = FlatNode
+	def.Limit = 200
+	def.Offset = 0
+	def.Shownull = false
+	def.Distinct = true
+	return def
+}
+
+func (nr *NinjaRequest) AddStationType(stationType string) {
 	nr.StationTypes = append(nr.StationTypes, stationType)
 }
-func (nr NinjaRequest) AddDataType(dataType string) {
+func (nr *NinjaRequest) AddDataType(dataType string) {
 	nr.DataTypes = append(nr.DataTypes, dataType)
 }
-func (nr NinjaRequest) AddEdgeType(edgeType string) {
+func (nr *NinjaRequest) AddEdgeType(edgeType string) {
 	nr.EdgeTypes = append(nr.EdgeTypes, edgeType)
 }
-func (nr NinjaRequest) AddEventOrigin(eventOrigin string) {
+func (nr *NinjaRequest) AddEventOrigin(eventOrigin string) {
 	nr.EventOrigins = append(nr.EventOrigins, eventOrigin)
 }

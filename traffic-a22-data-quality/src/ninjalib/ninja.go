@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"traffic-a22-data-quality/bdplib"
 )
 
@@ -24,9 +23,12 @@ var BaseUrl = os.Getenv("ODH_NINJA_URL")
 var referer = os.Getenv("NINJA_REFERER")
 
 func ar2Path(ar []string) string {
+	if len(ar) == 0 {
+		return "*"
+	}
 	var ret string
 	for i, s := range ar {
-		ret += url.PathEscape(s)
+		ret += s
 		if i < len(ar)-1 {
 			ret += ","
 		}
@@ -34,45 +36,53 @@ func ar2Path(ar []string) string {
 	return ret
 }
 
-func makeHistoryPath(req NinjaRequest) string {
-	return fmt.Sprintf("/v2/%s/%s/%s/%s",
+func makeHistoryPath(req *NinjaRequest) string {
+	return fmt.Sprintf("/v2/%s/%s/%s/%s/%s",
+		req.Repr,
 		ar2Path(req.StationTypes),
 		ar2Path(req.DataTypes),
 		req.From.Format(RequestTimeFormat),
 		req.To.Format(RequestTimeFormat))
 }
 
-func makeQueryParam(name string, value any, defaultValue any) string {
+func makeQueryParam(query *url.Values, name string, value any, defaultValue any) {
 	if value != defaultValue {
-		return fmt.Sprintf("&name=%s", url.QueryEscape(fmt.Sprint(value)))
+		query.Add(name, fmt.Sprint(value))
 	}
-	return ""
 }
 
-func makeQuery(req NinjaRequest) string {
-	var query string
-	query += makeQueryParam("origin", req.Origin, "")
-	query += makeQueryParam("limit", req.Origin, 200)
-	query += makeQueryParam("offset", req.Offset, 0)
-	query += makeQueryParam("select", req.Select, "")
-	query += makeQueryParam("where", req.Where, "")
-	query += makeQueryParam("shownull", req.Shownull, false)
-	query += makeQueryParam("distinct", req.Distinct, true)
-	query += makeQueryParam("timezone", req.Timezone, "")
-
-	return strings.Replace(query, "&", "?", 1) //make first one a question mark
+func makeQuery(req *NinjaRequest) *url.Values {
+	query := &url.Values{}
+	makeQueryParam(query, "origin", req.Origin, "")
+	makeQueryParam(query, "limit", req.Limit, 200)
+	makeQueryParam(query, "offset", req.Offset, 0)
+	makeQueryParam(query, "select", req.Select, "")
+	makeQueryParam(query, "where", req.Where, "")
+	makeQueryParam(query, "shownull", req.Shownull, false)
+	makeQueryParam(query, "distinct", req.Distinct, true)
+	makeQueryParam(query, "timezone", req.Timezone, "")
+	return query
 }
 
-func HistoryRequest[T any](req NinjaRequest, result *NinjaResponse[T]) error {
-	var url = makeHistoryPath(req) + makeQuery(req)
-	return GetRequest[T](url, result)
+func HistoryRequest[T any](req *NinjaRequest, result *NinjaResponse[T]) error {
+	u, err := url.Parse(BaseUrl)
+	if err != nil {
+		return fmt.Errorf("Unable to parse Base URL form config: %w", err)
+	}
+	u.Path += makeHistoryPath(req)
+	u.RawQuery = makeQuery(req).Encode()
+	return GetRequestURL[T](u, result)
 }
 
 func GetRequest[T any](query string, result *NinjaResponse[T]) error {
-	var fullUrl = BaseUrl + query
-	slog.Info("Ninja request with URL: " + fullUrl)
+	url, _ := url.Parse(BaseUrl + query)
+	return GetRequestURL[T](url, result)
+}
 
-	req, err := http.NewRequest(http.MethodGet, fullUrl, nil)
+func GetRequestURL[T any](reqUrl *url.URL, result *NinjaResponse[T]) error {
+	slog.Debug("Ninja request with URL: " + reqUrl.String())
+
+	req, err := http.NewRequest(http.MethodGet, reqUrl.String(), nil)
 	if err != nil {
 		return fmt.Errorf("Unable to create Ninja HTTP Request: %w", err)
 	}

@@ -64,7 +64,7 @@ func sumJob() {
 		lastAggregate time.Time
 	}
 
-	var todos map[string]map[string]todoStation
+	var todos = make(map[string]map[string]todoStation)
 
 	for _, stations := range res.Data {
 		for stationCode, station := range stations.Stations {
@@ -79,8 +79,11 @@ func sumJob() {
 						lastAggregate = m.Timestamp.Time
 					}
 
-					// When there is data newer than last aggregate + period, we have to aggregate this station
+					// Determine which stations we have to make history requests for
 					if lastBase.Sub(lastAggregate).Seconds() > periodAggregate {
+						if todos[stationCode] == nil {
+							todos[stationCode] = make(map[string]todoStation)
+						}
 						todos[stationCode][typeName] = todoStation{
 							lastBase:      lastBase,
 							lastAggregate: lastAggregate,
@@ -91,33 +94,49 @@ func sumJob() {
 		}
 	}
 
-	// 	get data history from starting point until last EOD
+	stripToDay := func(t time.Time) time.Time {
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	}
 
+	// 	get data history from starting point until last EOD
 	for stationCode, typeMap := range todos {
 		for typeName, todo := range typeMap {
-			var req ninjalib.NinjaRequest
-			req.AddDataType(typeName)
-			req.From = todo.lastAggregate
-			req.To = todo.lastBase
-			req.Select = "scode,mvalue,tname"
-			req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", periodBase, stationCode)
-			req.Limit = 300
+			// for every n months
+			// start with day lastAggregate = +1 until EOD lastBase
+			start := stripToDay(todo.lastAggregate).AddDate(0, 0, 1)
+			end := stripToDay(todo.lastBase)
 
-			var res ninjalib.NinjaResponse[NinjaFlatData]
+			for start.Compare(end) < 0 {
+				// request end = start + 3 months
+				res, err := getNinjaData(stationCode, typeName, start, end)
+				if err != nil {
+					slog.Error("Error requesting data from Ninja", err)
+					return
+				}
+				debugLogJson(res)
 
-			err := ninjalib.HistoryRequest(req, &res)
-			if err != nil {
-				slog.Error("error", err)
-				return
 			}
-			debugLogJson(res)
 		}
 	}
 	// 	for each calendar day:
 	// 		check for data completeness, e.g. every 10 minutes of the day is covered, else do Idontknowwhat
 	// 		sum up all the 10 minute periods
 	// 		create combined sum measurement
+}
 
+func getNinjaData(stationCode string, typeName string, from time.Time, to time.Time) (*ninjalib.NinjaResponse[NinjaFlatData], error) {
+	req := ninjalib.DefaultNinjaRequest()
+	req.AddDataType(typeName)
+	req.From = from
+	req.To = to
+	req.Select = "scode,mvalue,tname"
+	req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", periodBase, stationCode)
+	req.Limit = -1
+
+	var res *ninjalib.NinjaResponse[NinjaFlatData]
+
+	err := ninjalib.HistoryRequest(req, res)
+	return res, err
 }
 
 func combineJob() {

@@ -40,5 +40,5 @@ Authorization: Bearer {{token}}
 GET {{ninja_url}}/v2/flat/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/2019-12-01/2020-03-01
 ?where=and(mperiod.eq.600,scode.eq."A22:1871:1")
 &select=mvalue,mvalidtime,tname
-&limit=200
+&limit=20
 Authorization: Bearer {{token}}
