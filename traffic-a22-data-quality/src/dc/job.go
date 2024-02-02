@@ -9,20 +9,22 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"time"
 	"traffic-a22-data-quality/ninjalib"
 )
 
 var origin string = os.Getenv("ORIGIN")
-
-var queryLatest = os.Getenv("NINJA_QUERY_LATEST")
+var queryLatest string = os.Getenv("NINJA_QUERY_LATEST")
+var ninjaLimit, _ = strconv.Atoi(os.Getenv("NINJA_QUERY_LIMIT"))
 
 const periodBase = 600
 const periodAggregate = 86400
 
 type NinjaMeasurement struct {
-	Period    int64              `json:"mperiod"`
-	Timestamp ninjalib.NinjaTime `json:"mvalidtime"`
+	Period int64              `json:"mperiod"`
+	Time   ninjalib.NinjaTime `json:"mvalidtime"`
+	Since  ninjalib.NinjaTime `json:"mtransactiontime"`
 }
 
 type NinjaTreeData = map[string]struct { // key = stationtype
@@ -33,10 +35,11 @@ type NinjaTreeData = map[string]struct { // key = stationtype
 	} `json:"stations"`
 }
 
-type NinjaFlatData = []struct {
+type NinjaFlatData = struct {
 	StationCode string             `json:"scode"`
 	TypeName    string             `json:"tname"`
 	Timestamp   ninjalib.NinjaTime `json:"_timestamp"`
+	Value       uint64             `json:"mvalue"`
 }
 
 func Job() {
@@ -60,6 +63,7 @@ func sumJob() {
 	}
 
 	type todoStation struct {
+		firstBase     time.Time
 		lastBase      time.Time
 		lastAggregate time.Time
 	}
@@ -70,13 +74,15 @@ func sumJob() {
 		for stationCode, station := range stations.Stations {
 			for typeName, dataType := range station.Datatypes {
 				for _, m := range dataType.Measurements {
+					var firstBase time.Time
 					var lastBase time.Time
 					var lastAggregate time.Time
 					if m.Period == periodBase {
-						lastBase = m.Timestamp.Time
+						lastBase = m.Time.Time
+						firstBase = m.Since.Time
 					}
 					if m.Period == periodAggregate {
-						lastAggregate = m.Timestamp.Time
+						lastAggregate = m.Time.Time
 					}
 
 					// Determine which stations we have to make history requests for
@@ -85,6 +91,7 @@ func sumJob() {
 							todos[stationCode] = make(map[string]todoStation)
 						}
 						todos[stationCode][typeName] = todoStation{
+							firstBase:     firstBase,
 							lastBase:      lastBase,
 							lastAggregate: lastAggregate,
 						}
@@ -101,21 +108,27 @@ func sumJob() {
 	// 	get data history from starting point until last EOD
 	for stationCode, typeMap := range todos {
 		for typeName, todo := range typeMap {
-			// for every n months
-			// start with day lastAggregate = +1 until EOD lastBase
-			start := stripToDay(todo.lastAggregate).AddDate(0, 0, 1)
-			end := stripToDay(todo.lastBase)
+			var rest []NinjaFlatData
+			thereMightBeMore := true
+			for thereMightBeMore {
+				start := stripToDay(todo.lastAggregate).AddDate(0, 0, 1)
+				end := stripToDay(todo.lastBase)
 
-			for start.Compare(end) < 0 {
-				// request end = start + 3 months
 				res, err := getNinjaData(stationCode, typeName, start, end)
 				if err != nil {
 					slog.Error("Error requesting data from Ninja", err)
 					return
 				}
-				debugLogJson(res)
-
+				// debugLogJson(res)
+				if len(rest) == 0 {
+					rest := res.Data
+				} else {
+					rest := append(rest, res.Data...)
+				}
+				thereMightBeMore = res.Limit == int64(len(res.Data))
 			}
+
+			// do the things
 		}
 	}
 	// 	for each calendar day:
@@ -124,16 +137,16 @@ func sumJob() {
 	// 		create combined sum measurement
 }
 
-func getNinjaData(stationCode string, typeName string, from time.Time, to time.Time) (*ninjalib.NinjaResponse[NinjaFlatData], error) {
+func getNinjaData(stationCode string, typeName string, from time.Time, to time.Time) (*ninjalib.NinjaResponse[[]NinjaFlatData], error) {
 	req := ninjalib.DefaultNinjaRequest()
 	req.AddDataType(typeName)
 	req.From = from
 	req.To = to
 	req.Select = "scode,mvalue,tname"
 	req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", periodBase, stationCode)
-	req.Limit = -1
+	req.Limit = 10 //int64(ninjaLimit)
 
-	var res *ninjalib.NinjaResponse[NinjaFlatData]
+	res := &ninjalib.NinjaResponse[[]NinjaFlatData]{}
 
 	err := ninjalib.HistoryRequest(req, res)
 	return res, err
