@@ -36,10 +36,8 @@ type NinjaTreeData = map[string]struct { // key = stationtype
 }
 
 type NinjaFlatData = struct {
-	StationCode string             `json:"scode"`
-	TypeName    string             `json:"tname"`
-	Timestamp   ninjalib.NinjaTime `json:"_timestamp"`
-	Value       uint64             `json:"mvalue"`
+	Timestamp ninjalib.NinjaTime `json:"_timestamp"`
+	Value     uint64             `json:"mvalue"`
 }
 
 func Job() {
@@ -62,14 +60,56 @@ func sumJob() {
 		return
 	}
 
-	type todoStation struct {
-		firstBase     time.Time
-		lastBase      time.Time
-		lastAggregate time.Time
+	requestWindows := getRequestWindows(res)
+
+	// 	get data history from starting point until last EOD
+	for stationCode, typeMap := range requestWindows {
+		for typeName, todo := range typeMap {
+			// debugLogJson(res)
+			history, err := getBaseHistory(todo, stationCode, typeName)
+			if err != nil {
+				slog.Error("Error requesting history data from Ninja", err)
+				return
+			}
+
+			slog.Info(strconv.Itoa(len(history)))
+
+			sums := make(map[time.Time]uint64)
+			for _, m := range history {
+				date := stripToDay(m.Timestamp.Time)
+				sums[date] = sums[date] + m.Value
+			}
+			slog.Info(fmt.Sprint(sums))
+		}
 	}
+}
 
-	var todos = make(map[string]map[string]todoStation)
+func getBaseHistory(todo todoStation, stationCode string, typeName string) ([]NinjaFlatData, error) {
+	var ret []NinjaFlatData
+	for offset := 0; ; offset += 1 {
+		start, end := getRequestDates(todo)
 
+		res, err := getNinjaData(stationCode, typeName, start, end, offset)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(ret) == 0 {
+			ret = res.Data
+		} else {
+			ret = append(ret, res.Data...)
+		}
+
+		// only if limit = length, there might be more data
+		if res.Limit != int64(len(res.Data)) {
+			break
+		}
+	}
+	return ret, nil
+}
+
+func getRequestWindows(res ninjalib.NinjaResponse[NinjaTreeData]) map[string]map[string]todoStation {
+	todos := make(map[string]map[string]todoStation)
 	for _, stations := range res.Data {
 		for stationCode, station := range stations.Stations {
 			for typeName, dataType := range station.Datatypes {
@@ -85,7 +125,7 @@ func sumJob() {
 						lastAggregate = m.Time.Time
 					}
 
-					// Determine which stations we have to make history requests for
+					// only consider stations that don't have up to date aggregates
 					if lastBase.Sub(lastAggregate).Seconds() > periodAggregate {
 						if todos[stationCode] == nil {
 							todos[stationCode] = make(map[string]todoStation)
@@ -100,51 +140,39 @@ func sumJob() {
 			}
 		}
 	}
-
-	stripToDay := func(t time.Time) time.Time {
-		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-	}
-
-	// 	get data history from starting point until last EOD
-	for stationCode, typeMap := range todos {
-		for typeName, todo := range typeMap {
-			var rest []NinjaFlatData
-			thereMightBeMore := true
-			for thereMightBeMore {
-				start := stripToDay(todo.lastAggregate).AddDate(0, 0, 1)
-				end := stripToDay(todo.lastBase)
-
-				res, err := getNinjaData(stationCode, typeName, start, end)
-				if err != nil {
-					slog.Error("Error requesting data from Ninja", err)
-					return
-				}
-				// debugLogJson(res)
-				if len(rest) == 0 {
-					rest := res.Data
-				} else {
-					rest := append(rest, res.Data...)
-				}
-				thereMightBeMore = res.Limit == int64(len(res.Data))
-			}
-
-			// do the things
-		}
-	}
-	// 	for each calendar day:
-	// 		check for data completeness, e.g. every 10 minutes of the day is covered, else do Idontknowwhat
-	// 		sum up all the 10 minute periods
-	// 		create combined sum measurement
+	return todos
 }
 
-func getNinjaData(stationCode string, typeName string, from time.Time, to time.Time) (*ninjalib.NinjaResponse[[]NinjaFlatData], error) {
+func stripToDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
+type todoStation struct {
+	firstBase     time.Time
+	lastBase      time.Time
+	lastAggregate time.Time
+}
+
+func getRequestDates(todo todoStation) (time.Time, time.Time) {
+	start := todo.lastAggregate
+	if start.Before(todo.firstBase) {
+		start = todo.firstBase
+	}
+
+	start = stripToDay(start).AddDate(0, 0, 1)
+	end := stripToDay(todo.lastBase)
+	return start, end
+}
+
+func getNinjaData(stationCode string, typeName string, from time.Time, to time.Time, offset int) (*ninjalib.NinjaResponse[[]NinjaFlatData], error) {
 	req := ninjalib.DefaultNinjaRequest()
 	req.AddDataType(typeName)
 	req.From = from
 	req.To = to
-	req.Select = "scode,mvalue,tname"
+	req.Select = "mvalue"
 	req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", periodBase, stationCode)
-	req.Limit = 10 //int64(ninjaLimit)
+	req.Limit = int64(ninjaLimit)
+	req.Offset = uint64(offset)
 
 	res := &ninjalib.NinjaResponse[[]NinjaFlatData]{}
 
