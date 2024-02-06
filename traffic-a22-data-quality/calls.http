@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+##### VSCODE / REST Client
+# Create a .env file and set the corresponding variables
+# See all $dotenv fields below
+#
+@authurl={{$dotenv ODH_TOKEN_URL}}
+@client_id={{$dotenv ODH_CLIENT_ID}}
+@client_secret={{$dotenv ODH_CLIENT_SECRET}}
+@ninja_url={{$dotenv NINJA_BASE_URL}}
+@bdp_url={{$dotenv BDP_BASE_URL}}
+
+### Get access token for the writer (LOCAL DEV)
+# @name login
+POST {{authurl}}
+Content-Type: application/x-www-form-urlencoded
+
+&grant_type=client_credentials
+&client_id={{client_id}}
+&client_secret={{client_secret}}
+
+### save token
+@token = {{login.response.body.access_token}}
+
+### Get candidate stations
+GET {{ninja_url}}/v2/tree/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/latest
+?where=mperiod.in.(600,86400)
+&select=mperiod,mvalidtime,mtransactiontime
+&limit=-1	
+Authorization: Bearer {{token}}
+
+
+### Get single station measurement history
+GET {{ninja_url}}/v2/flat/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/2019-12-01/2020-03-01
+?where=and(mperiod.eq.600,scode.eq."A22:1871:1")
+&select=scode,mvalue,tname
+&limit=20
+Authorization: Bearer {{token}}
