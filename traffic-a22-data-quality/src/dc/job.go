@@ -5,24 +5,26 @@
 package dc
 
 import (
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"time"
+	"traffic-a22-data-quality/bdplib"
 	"traffic-a22-data-quality/ninjalib"
 )
 
-var origin string = os.Getenv("ORIGIN")
-var queryLatest string = os.Getenv("NINJA_QUERY_LATEST")
 var ninjaLimit, _ = strconv.Atoi(os.Getenv("NINJA_QUERY_LIMIT"))
 
-const periodBase = 600
+var stationType = os.Getenv("EL_STATION_TYPE")
+var dataTypes = strings.Split(os.Getenv("EL_DATA_TYPES"), ",")
+var periodBase, _ = strconv.Atoi(os.Getenv("EL_BASE_PERIOD"))
+
 const periodAggregate = 86400
 
 type NinjaMeasurement struct {
-	Period int64              `json:"mperiod"`
+	Period uint64             `json:"mperiod"`
 	Time   ninjalib.NinjaTime `json:"mvalidtime"`
 	Since  ninjalib.NinjaTime `json:"mtransactiontime"`
 }
@@ -46,15 +48,19 @@ func Job() {
 	sumUpJob()
 }
 
-func debugLogJson(j any) {
-	s, _ := json.MarshalIndent(j, "", " ")
-	fmt.Println(string(s))
-}
-
 func sumJob() {
-	// ninja: get all the TrafficSensor stations with latest 3 datapoints, both period 10min and 1day
+	// Get current elaboration state from ninja. Both where we are with base data and with the sums
+
+	req := ninjalib.DefaultNinjaRequest()
+	req.Repr = ninjalib.TreeNode
+	req.StationTypes = append(req.StationTypes, stationType)
+	req.DataTypes = dataTypes
+	req.Limit = -1
+	req.Select = "mperiod,mvalidtime"
+	req.Where = fmt.Sprintf("mperiod.in.(%d,%d)", periodBase, periodAggregate)
+
 	var res ninjalib.NinjaResponse[NinjaTreeData]
-	err := ninjalib.GetRequest(queryLatest, &res)
+	err := ninjalib.LatestRequest(req, &res)
 	if err != nil {
 		slog.Error("error", err)
 		return
@@ -64,11 +70,12 @@ func sumJob() {
 
 	// 	get data history from starting point until last EOD
 	for stationCode, typeMap := range requestWindows {
+		recs := bdplib.DataMap{}
 		for typeName, todo := range typeMap {
 			// debugLogJson(res)
 			history, err := getBaseHistory(todo, stationCode, typeName)
 			if err != nil {
-				slog.Error("Error requesting history data from Ninja", err)
+				slog.Error("Error requesting history data from Ninja", "err", err)
 				return
 			}
 
@@ -79,17 +86,21 @@ func sumJob() {
 				date := stripToDay(m.Timestamp.Time)
 				sums[date] = sums[date] + m.Value
 			}
-			slog.Info(fmt.Sprint(sums))
+			for date, sum := range sums {
+				recs.AddRecord(stationCode, typeName, bdplib.CreateRecord(date.UnixMilli(), sum, periodAggregate))
+			}
 		}
+		bdplib.PushData(stationType, recs)
 	}
+
 }
 
 func getBaseHistory(todo todoStation, stationCode string, typeName string) ([]NinjaFlatData, error) {
 	var ret []NinjaFlatData
-	for offset := 0; ; offset += 1 {
+	for page := 0; ; page += 1 {
 		start, end := getRequestDates(todo)
 
-		res, err := getNinjaData(stationCode, typeName, start, end, offset)
+		res, err := getNinjaData(stationCode, typeName, start, end, page)
 		if err != nil {
 			return nil, err
 		}
@@ -103,6 +114,8 @@ func getBaseHistory(todo todoStation, stationCode string, typeName string) ([]Ni
 		// only if limit = length, there might be more data
 		if res.Limit != int64(len(res.Data)) {
 			break
+		} else {
+			slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", page, "firstDate", res.Data[0].Timestamp.Time)
 		}
 	}
 	return ret, nil
@@ -117,7 +130,7 @@ func getRequestWindows(res ninjalib.NinjaResponse[NinjaTreeData]) map[string]map
 					var firstBase time.Time
 					var lastBase time.Time
 					var lastAggregate time.Time
-					if m.Period == periodBase {
+					if m.Period == uint64(periodBase) {
 						lastBase = m.Time.Time
 						firstBase = m.Since.Time
 					}
@@ -172,7 +185,8 @@ func getNinjaData(stationCode string, typeName string, from time.Time, to time.T
 	req.Select = "mvalue"
 	req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", periodBase, stationCode)
 	req.Limit = int64(ninjaLimit)
-	req.Offset = uint64(offset)
+	req.Offset = uint64(offset * int(req.Limit))
+	req.Shownull = false
 
 	res := &ninjalib.NinjaResponse[[]NinjaFlatData]{}
 

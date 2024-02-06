@@ -19,7 +19,7 @@ import (
 
 const RequestTimeFormat = "2006-01-02T15:04:05.000-0700"
 
-var BaseUrl = os.Getenv("ODH_NINJA_URL")
+var BaseUrl = os.Getenv("NINJA_BASE_URL")
 var referer = os.Getenv("NINJA_REFERER")
 
 func ar2Path(ar []string) string {
@@ -45,6 +45,13 @@ func makeHistoryPath(req *NinjaRequest) string {
 		req.To.Format(RequestTimeFormat))
 }
 
+func makeLatestPath(req *NinjaRequest) string {
+	return fmt.Sprintf("/v2/%s/%s/%s/latest",
+		req.Repr,
+		ar2Path(req.StationTypes),
+		ar2Path(req.DataTypes))
+}
+
 func makeQueryParam(query *url.Values, name string, value any, defaultValue any) {
 	if value != defaultValue {
 		query.Add(name, fmt.Sprint(value))
@@ -67,9 +74,19 @@ func makeQuery(req *NinjaRequest) *url.Values {
 func HistoryRequest[T any](req *NinjaRequest, result *NinjaResponse[T]) error {
 	u, err := url.Parse(BaseUrl)
 	if err != nil {
-		return fmt.Errorf("Unable to parse Base URL form config: %w", err)
+		return fmt.Errorf("unable to parse Base URL from config: %w", err)
 	}
 	u.Path += makeHistoryPath(req)
+	u.RawQuery = makeQuery(req).Encode()
+	return GetRequestURL[T](u, result)
+}
+
+func LatestRequest[T any](req *NinjaRequest, result *NinjaResponse[T]) error {
+	u, err := url.Parse(BaseUrl)
+	if err != nil {
+		return fmt.Errorf("unable to parse Base URL from config: %w", err)
+	}
+	u.Path += makeLatestPath(req)
 	u.RawQuery = makeQuery(req).Encode()
 	return GetRequestURL[T](u, result)
 }
@@ -84,7 +101,7 @@ func GetRequestURL[T any](reqUrl *url.URL, result *NinjaResponse[T]) error {
 
 	req, err := http.NewRequest(http.MethodGet, reqUrl.String(), nil)
 	if err != nil {
-		return fmt.Errorf("Unable to create Ninja HTTP Request: %w", err)
+		return fmt.Errorf("unable to create Ninja HTTP Request: %w", err)
 	}
 
 	req.Header = http.Header{
@@ -95,21 +112,21 @@ func GetRequestURL[T any](reqUrl *url.URL, result *NinjaResponse[T]) error {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("Error performing ninja request: %w", err)
+		return fmt.Errorf("error performing ninja request: %w", err)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return errors.New("Ninja request returned non-OK status: " + strconv.Itoa(res.StatusCode))
+		return errors.New("ninja request returned non-OK status: " + strconv.Itoa(res.StatusCode))
 	}
 
 	bodyBytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		return fmt.Errorf("Unable to read response body: %w", err)
+		return fmt.Errorf("unable to read response body: %w", err)
 	}
 
 	err = json.Unmarshal(bodyBytes, result)
 	if err != nil {
-		return fmt.Errorf("Error unmarshalling response JSON to provided interface: %w", err)
+		return fmt.Errorf("error unmarshalling response JSON to provided interface: %w", err)
 	}
 
 	return nil

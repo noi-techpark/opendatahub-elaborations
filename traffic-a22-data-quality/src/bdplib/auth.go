@@ -26,7 +26,7 @@ type Token struct {
 	Scope            string
 }
 
-var tokenUri string = os.Getenv("ODH_TOKEN_URI")
+var tokenUrl string = os.Getenv("ODH_TOKEN_URL")
 var clientId string = os.Getenv("ODH_CLIENT_ID")
 var clientSecret string = os.Getenv("ODH_CLIENT_SECRET")
 
@@ -60,7 +60,7 @@ func newToken() {
 func authRequest(params url.Values) {
 	body := strings.NewReader(params.Encode())
 
-	req, err := http.NewRequest("POST", tokenUri, body)
+	req, err := http.NewRequest("POST", tokenUrl, body)
 	if err != nil {
 		slog.Error("error", err)
 		return
