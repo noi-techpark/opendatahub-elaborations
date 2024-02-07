@@ -20,7 +20,7 @@ import (
 const RequestTimeFormat = "2006-01-02T15:04:05.000-0700"
 
 var BaseUrl = os.Getenv("NINJA_BASE_URL")
-var Referer = os.Getenv("NINJA_REFERER")
+var referer = os.Getenv("NINJA_REFERER")
 
 func ar2Path(ar []string) string {
 	if len(ar) == 0 {
@@ -113,7 +113,7 @@ func requestUrl[T any](reqUrl *url.URL, result *NinjaResponse[T]) error {
 	}
 
 	req.Header = http.Header{
-		"Referer":       {Referer},
+		"Referer":       {referer},
 		"Authorization": {"Bearer " + bdplib.GetToken()},
 		"Accept":        {"application/json"},
 	}

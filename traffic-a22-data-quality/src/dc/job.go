@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 	"traffic-a22-data-quality/bdplib"
-	"traffic-a22-data-quality/ninjalib"
+	"traffic-a22-data-quality/ninja"
 )
 
 var ninjaLimit, _ = strconv.Atoi(os.Getenv("NINJA_QUERY_LIMIT"))
@@ -24,9 +24,9 @@ var periodBase, _ = strconv.Atoi(os.Getenv("EL_BASE_PERIOD"))
 const periodAggregate = 86400
 
 type NinjaMeasurement struct {
-	Period uint64             `json:"mperiod"`
-	Time   ninjalib.NinjaTime `json:"mvalidtime"`
-	Since  ninjalib.NinjaTime `json:"mtransactiontime"`
+	Period uint64          `json:"mperiod"`
+	Time   ninja.NinjaTime `json:"mvalidtime"`
+	Since  ninja.NinjaTime `json:"mtransactiontime"`
 }
 
 type NinjaTreeData = map[string]struct { // key = stationtype
@@ -38,12 +38,12 @@ type NinjaTreeData = map[string]struct { // key = stationtype
 }
 
 type NinjaFlatData = struct {
-	Timestamp ninjalib.NinjaTime `json:"_timestamp"`
-	Value     uint64             `json:"mvalue"`
+	Timestamp ninja.NinjaTime `json:"_timestamp"`
+	Value     uint64          `json:"mvalue"`
 }
 
 func Job() {
-	sumJob()
+	//sumJob()
 	combineJob()
 	sumUpJob()
 }
@@ -51,16 +51,16 @@ func Job() {
 func sumJob() {
 	// Get current elaboration state from ninja. Both where we are with base data and with the sums
 
-	req := ninjalib.DefaultNinjaRequest()
-	req.Repr = ninjalib.TreeNode
+	req := ninja.DefaultNinjaRequest()
+	req.Repr = ninja.TreeNode
 	req.StationTypes = append(req.StationTypes, stationType)
 	req.DataTypes = dataTypes
 	req.Limit = -1
 	req.Select = "mperiod,mvalidtime"
 	req.Where = fmt.Sprintf("mperiod.in.(%d,%d)", periodBase, periodAggregate)
 
-	var res ninjalib.NinjaResponse[NinjaTreeData]
-	err := ninjalib.LatestRequest(req, &res)
+	var res ninja.NinjaResponse[NinjaTreeData]
+	err := ninja.Latest(req, &res)
 	if err != nil {
 		slog.Error("error", err)
 		return
@@ -121,7 +121,7 @@ func getBaseHistory(todo todoStation, stationCode string, typeName string) ([]Ni
 	return ret, nil
 }
 
-func getRequestWindows(res ninjalib.NinjaResponse[NinjaTreeData]) map[string]map[string]todoStation {
+func getRequestWindows(res ninja.NinjaResponse[NinjaTreeData]) map[string]map[string]todoStation {
 	todos := make(map[string]map[string]todoStation)
 	for _, stations := range res.Data {
 		for stationCode, station := range stations.Stations {
@@ -177,8 +177,8 @@ func getRequestDates(todo todoStation) (time.Time, time.Time) {
 	return start, end
 }
 
-func getNinjaData(stationCode string, typeName string, from time.Time, to time.Time, offset int) (*ninjalib.NinjaResponse[[]NinjaFlatData], error) {
-	req := ninjalib.DefaultNinjaRequest()
+func getNinjaData(stationCode string, typeName string, from time.Time, to time.Time, offset int) (*ninja.NinjaResponse[[]NinjaFlatData], error) {
+	req := ninja.DefaultNinjaRequest()
 	req.AddDataType(typeName)
 	req.From = from
 	req.To = to
@@ -188,10 +188,20 @@ func getNinjaData(stationCode string, typeName string, from time.Time, to time.T
 	req.Offset = uint64(offset * int(req.Limit))
 	req.Shownull = false
 
-	res := &ninjalib.NinjaResponse[[]NinjaFlatData]{}
+	res := &ninja.NinjaResponse[[]NinjaFlatData]{}
 
-	err := ninjalib.HistoryRequest(req, res)
+	err := ninja.History(req, res)
 	return res, err
+}
+
+type NinjaStation struct {
+	Scode       string `json:"scode"`
+	Sname       string `json:"sname"`
+	Scoordinate struct {
+		x float32
+		y float32
+	} `json:"scoordinate"`
+	Meta string `json:"smetadata.a22_metadata"`
 }
 
 func combineJob() {
@@ -200,6 +210,26 @@ func combineJob() {
 		match them by gps point or metadata and determine groupings
 		create missing parent stations
 	*/
+
+	req := ninja.DefaultNinjaRequest()
+	req.StationTypes = append(req.StationTypes, "TrafficSensor")
+	req.Select = "smetadata.a22_metadata,sname,scoordinate,scode"
+	req.Where = fmt.Sprintf("and(sorigin.eq.%s,sactive.eq.true,pcode.eq.null)", "A22")
+	req.Limit = -1
+
+	res := &ninja.NinjaResponse[[]NinjaStation]{}
+
+	err := ninja.History(req, res)
+	if err != nil {
+		slog.Error("Error requesting potential child stations", "err", err)
+	}
+
+	parents := make(map[string][]NinjaStation)
+	for _, s := range res.Data {
+		parentId := s.Scode[0:strings.LastIndex(s.Scode, ":")]
+		fmt.Println(parentId)
+	}
+
 }
 
 func sumUpJob() {
