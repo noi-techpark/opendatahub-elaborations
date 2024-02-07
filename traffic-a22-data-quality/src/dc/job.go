@@ -66,11 +66,15 @@ func sumJob() {
 		return
 	}
 
+	totalType := bdplib.CreateDataType("total_vehicles", "vehicles", "Total number of vehicles", "count")
+	bdplib.SyncDataTypes(stationType, []bdplib.DataType{totalType})
+
 	requestWindows := getRequestWindows(res)
 
 	// 	get data history from starting point until last EOD
 	for stationCode, typeMap := range requestWindows {
 		recs := bdplib.DataMap{}
+		totals := make(map[time.Time]uint64)
 		for typeName, todo := range typeMap {
 			// debugLogJson(res)
 			history, err := getBaseHistory(todo, stationCode, typeName)
@@ -81,18 +85,25 @@ func sumJob() {
 
 			slog.Info(strconv.Itoa(len(history)))
 
+			if len(history) == 0 {
+				continue
+			}
+
 			sums := make(map[time.Time]uint64)
 			for _, m := range history {
 				date := stripToDay(m.Timestamp.Time)
 				sums[date] = sums[date] + m.Value
+				totals[date] = totals[date] + m.Value
 			}
 			for date, sum := range sums {
 				recs.AddRecord(stationCode, typeName, bdplib.CreateRecord(date.UnixMilli(), sum, periodAggregate))
 			}
 		}
+		for date, total := range totals {
+			recs.AddRecord(stationCode, totalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAggregate))
+		}
 		bdplib.PushData(stationType, recs)
 	}
-
 }
 
 func getBaseHistory(todo todoStation, stationCode string, typeName string) ([]NinjaFlatData, error) {
