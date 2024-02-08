@@ -32,7 +32,7 @@ type NinjaFlatData = struct {
 	Value     uint64          `json:"mvalue"`
 }
 
-func sumJob() {
+func sumSingleTypes() {
 	// Get current elaboration state from ninja. Both where we are with base data and with the sums
 
 	req := ninja.DefaultNinjaRequest()
@@ -49,9 +49,6 @@ func sumJob() {
 		slog.Error("error", err)
 		return
 	}
-
-	totalType := bdplib.CreateDataType("Nr. Vehicles", "", "Number of vehicles", "total")
-	bdplib.SyncDataTypes(stationType, []bdplib.DataType{totalType})
 
 	requestWindows := getRequestWindows(res)
 
@@ -82,9 +79,6 @@ func sumJob() {
 			for date, sum := range sums {
 				recs.AddRecord(stationCode, typeName, bdplib.CreateRecord(date.UnixMilli(), sum, periodAggregate))
 			}
-		}
-		for date, total := range totals {
-			recs.AddRecord(stationCode, totalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAggregate))
 		}
 		bdplib.PushData(stationType, recs)
 	}
@@ -187,4 +181,61 @@ func getNinjaData(stationCode string, typeName string, from time.Time, to time.T
 
 	err := ninja.History(req, res)
 	return res, err
+}
+
+func totalJob() {
+	totalType := bdplib.CreateDataType("Nr. Vehicles", "", "Number of vehicles", "total")
+	bdplib.SyncDataTypes(stationType, []bdplib.DataType{totalType})
+
+	req := ninja.DefaultNinjaRequest()
+	req.Repr = ninja.TreeNode
+	req.StationTypes = append(req.StationTypes, stationType, parentStationType)
+	req.DataTypes = append(dataTypes, totalType.Name)
+	req.Limit = -1
+	req.Select = "mperiod,mvalidtime"
+	req.Where = fmt.Sprintf("mperiod.in.(%d,%d)", periodBase, periodAggregate)
+
+	var res ninja.NinjaResponse[NinjaTreeData]
+	err := ninja.Latest(req, &res)
+	if err != nil {
+		slog.Error("error", err)
+		return
+	}
+
+	requestWindows := getRequestWindows(res)
+
+	// 	get data history from starting point until last EOD
+	for stationCode, typeMap := range requestWindows {
+		recs := bdplib.DataMap{}
+		totals := make(map[time.Time]uint64)
+		for typeName, todo := range typeMap {
+			// debugLogJson(res)
+			history, err := getBaseHistory(todo, stationCode, typeName)
+			if err != nil {
+				slog.Error("Error requesting history data from Ninja", "err", err)
+				return
+			}
+
+			slog.Info(strconv.Itoa(len(history)))
+
+			if len(history) == 0 {
+				continue
+			}
+
+			sums := make(map[time.Time]uint64)
+			for _, m := range history {
+				date := stripToDay(m.Timestamp.Time)
+				sums[date] = sums[date] + m.Value
+				totals[date] = totals[date] + m.Value
+			}
+			for date, sum := range sums {
+				recs.AddRecord(stationCode, typeName, bdplib.CreateRecord(date.UnixMilli(), sum, periodAggregate))
+			}
+		}
+		for date, total := range totals {
+			recs.AddRecord(stationCode, totalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAggregate))
+		}
+		bdplib.PushData(stationType, recs)
+	}
+
 }

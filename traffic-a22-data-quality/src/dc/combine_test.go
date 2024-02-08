@@ -36,4 +36,8 @@ func TestCombine(t *testing.T) {
 	if !reflect.DeepEqual(r[0], s1871_nord) {
 		t.Fail()
 	}
+	r = combine([]bdplib.Station{s1872_3, s1872_4})
+	if !reflect.DeepEqual(r[0], s1872_sud) {
+		t.Fail()
+	}
 }
