@@ -83,11 +83,11 @@ func SyncDataTypes(stationType string, dataTypes []DataType) {
 	slog.Debug("Syncing data types done.")
 }
 
-func SyncStations(stationType string, stations []Station) {
+func SyncStations(stationType string, stations []Station, syncState bool, onlyActivate bool) {
 	pushProvenance()
 
 	slog.Info("Syncing " + strconv.Itoa(len(stations)) + " " + stationType + " stations...")
-	url := baseUrl + syncStationsPath + "/" + stationType + "?prn=" + prn + "&prv=" + prv
+	url := baseUrl + syncStationsPath + "/" + stationType + "?prn=" + prn + "&prv=" + prv + "&syncState=" + strconv.FormatBool(syncState) + "&onlyActivation=" + strconv.FormatBool(onlyActivate)
 	postToWriter(stations, url)
 	slog.Info("Syncing stations done.")
 }

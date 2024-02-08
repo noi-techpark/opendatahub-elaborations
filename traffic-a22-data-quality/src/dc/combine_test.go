@@ -13,12 +13,12 @@ import (
 func TestMangleName(t *testing.T) {
 	r := "SEZIONE DI RILEVAMENTO KM. 228+200 (direzione sud)"
 
-	if mangleName(s1872_3.Name) != r {
+	if nameWithoutLane(s1872_3.Name) != r {
 		t.Fail()
 	}
 }
 func TestDirection(t *testing.T) {
-	if getDirection(s1871_1.Name) != "nord" || getDirection(s1872_3.Name) != "sud" {
+	if nameDirection(s1871_1.Name) != "nord" || nameDirection(s1872_3.Name) != "sud" {
 		t.Fail()
 	}
 }
@@ -32,9 +32,8 @@ var s1872_sud = bdplib.CreateStation("A22:1872:sud", "SEZIONE DI RILEVAMENTO KM.
 
 func TestCombine(t *testing.T) {
 	parentStationType = "TrafficDirection"
-	r := combine([]bdplib.Station{s1871_1, s1871_2})[0]
-	if !reflect.DeepEqual(r, s1871_nord) {
+	r := combine([]bdplib.Station{s1871_1, s1871_2})
+	if !reflect.DeepEqual(r[0], s1871_nord) {
 		t.Fail()
 	}
-
 }
