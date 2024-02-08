@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -244,4 +245,41 @@ func pushProvenance() {
 	provenanceUuid = res
 
 	slog.Info("Pushing provenance done", "uuid", provenanceUuid)
+}
+
+func GetStations(stationType string, origin string) ([]Station, error) {
+	slog.Debug("Fetching stations", "stationType", stationType, "origin", origin)
+
+	url := baseUrl + stationsPath + fmt.Sprintf("/%s/?origin=%s&prn=%s&prv=%s", stationType, origin, prn, prv)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create BDP HTTP Request: %w", err)
+	}
+
+	req.Header = http.Header{
+		"Content-Type":  {"application/json"},
+		"Authorization": {"Bearer " + GetToken()},
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error performing ninja request: %w", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("ninja request returned non-OK status: " + strconv.Itoa(res.StatusCode))
+	}
+
+	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read response body: %w", err)
+	}
+
+	result := []Station{}
+	err = json.Unmarshal(bodyBytes, &result)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling response JSON to provided interface: %w", err)
+	}
+
+	return result, nil
 }

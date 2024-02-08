@@ -13,26 +13,26 @@ import (
 )
 
 func combineJob() error {
-	children, err := bdplib.GetStations(baseStationType, origin)
+	children, err := bdplib.GetStations(stationType, "A22")
 	if err != nil {
 		return err
 	}
 
 	parents := combine(children)
 
-	bdplib.SyncStations(parentStationType, parents, true, false)
-	bdplib.SyncStations(baseStationType, children, false, false)
+	bdplib.SyncStations(parentStationType, parents)
+	bdplib.SyncStations(stationType, children)
 
 	return nil
 }
 
 func combine(children []bdplib.Station) []bdplib.Station {
 	parents := make(map[string]bdplib.Station)
-	for i, c := range children {
-		pId := c.Id[0:strings.LastIndex(c.Id, ":")] + ":" + nameDirection(c.Name)
+	for _, c := range children {
+		pId := c.Id[0:strings.LastIndex(c.Id, ":")] + ":" + getDirection(c.Name)
 		p, ok := parents[pId]
 		if !ok {
-			name := nameWithoutLane(c.Name)
+			name := mangleName(c.Name)
 
 			p = bdplib.CreateStation(pId, name, parentStationType, c.Latitude, c.Longitude, c.Origin)
 			// merge metadata
@@ -40,20 +40,20 @@ func combine(children []bdplib.Station) []bdplib.Station {
 			parents[pId] = p
 		}
 
-		c.ParentStation = pId
-		children[i] = c
+		c.ParentStation = p.Id
 	}
 	return maps.Values(parents)
 }
 
 var reName = regexp.MustCompile(`\(corsia di (\w|\s)+, `)
 
-func nameWithoutLane(n string) string {
+func mangleName(n string) string {
+	// remove lane string from name, since we are aggregating all lanes of the same direction
 	return reName.ReplaceAllString(n, "(")
 }
 
 var reDirection = regexp.MustCompile(`direzione (\w+)\)`)
 
-func nameDirection(n string) string {
+func getDirection(n string) string {
 	return reDirection.FindStringSubmatch(n)[1]
 }

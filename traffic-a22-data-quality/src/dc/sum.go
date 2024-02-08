@@ -11,8 +11,6 @@ import (
 	"time"
 	"traffic-a22-data-quality/bdplib"
 	"traffic-a22-data-quality/ninja"
-
-	"golang.org/x/exp/maps"
 )
 
 type NinjaMeasurement struct {
@@ -39,11 +37,11 @@ func sumJob() {
 
 	req := ninja.DefaultNinjaRequest()
 	req.Repr = ninja.TreeNode
-	req.AddStationType(baseStationType)
-	req.DataTypes = baseDataTypes
+	req.StationTypes = append(req.StationTypes, stationType)
+	req.DataTypes = dataTypes
 	req.Limit = -1
-	req.Select = "mperiod,mvalidtime,pcode"
-	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d,%d))", basePeriod, periodAggregate)
+	req.Select = "mperiod,mvalidtime"
+	req.Where = fmt.Sprintf("mperiod.in.(%d,%d)", periodBase, periodAggregate)
 
 	var res ninja.NinjaResponse[NinjaTreeData]
 	err := ninja.Latest(req, &res)
@@ -52,14 +50,18 @@ func sumJob() {
 		return
 	}
 
-	requestWindows := requestWindows(res)
+	totalType := bdplib.CreateDataType("Nr. Vehicles", "", "Number of vehicles", "total")
+	bdplib.SyncDataTypes(stationType, []bdplib.DataType{totalType})
+
+	requestWindows := getRequestWindows(res)
 
 	// 	get data history from starting point until last EOD
 	for stationCode, typeMap := range requestWindows {
 		recs := bdplib.DataMap{}
 		totals := make(map[time.Time]uint64)
 		for typeName, todo := range typeMap {
-			history, err := getHistoryPaged(todo, stationCode, typeName)
+			// debugLogJson(res)
+			history, err := getBaseHistory(todo, stationCode, typeName)
 			if err != nil {
 				slog.Error("Error requesting history data from Ninja", "err", err)
 				return
@@ -82,13 +84,13 @@ func sumJob() {
 			}
 		}
 		for date, total := range totals {
-			recs.AddRecord(stationCode, TotalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAggregate))
+			recs.AddRecord(stationCode, totalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAggregate))
 		}
-		bdplib.PushData(baseStationType, recs)
+		bdplib.PushData(stationType, recs)
 	}
 }
 
-func getHistoryPaged(todo todoStation, stationCode string, typeName string) ([]NinjaFlatData, error) {
+func getBaseHistory(todo todoStation, stationCode string, typeName string) ([]NinjaFlatData, error) {
 	var ret []NinjaFlatData
 	for page := 0; ; page += 1 {
 		start, end := getRequestDates(todo)
@@ -98,7 +100,11 @@ func getHistoryPaged(todo todoStation, stationCode string, typeName string) ([]N
 			return nil, err
 		}
 
-		ret = append(ret, res.Data...)
+		if len(ret) == 0 {
+			ret = res.Data
+		} else {
+			ret = append(ret, res.Data...)
+		}
 
 		// only if limit = length, there might be more data
 		if res.Limit != int64(len(res.Data)) {
@@ -110,7 +116,7 @@ func getHistoryPaged(todo todoStation, stationCode string, typeName string) ([]N
 	return ret, nil
 }
 
-func requestWindows(res ninja.NinjaResponse[NinjaTreeData]) map[string]map[string]todoStation {
+func getRequestWindows(res ninja.NinjaResponse[NinjaTreeData]) map[string]map[string]todoStation {
 	todos := make(map[string]map[string]todoStation)
 	for _, stations := range res.Data {
 		for stationCode, station := range stations.Stations {
@@ -119,7 +125,7 @@ func requestWindows(res ninja.NinjaResponse[NinjaTreeData]) map[string]map[strin
 					var firstBase time.Time
 					var lastBase time.Time
 					var lastAggregate time.Time
-					if m.Period == uint64(basePeriod) {
+					if m.Period == uint64(periodBase) {
 						lastBase = m.Time.Time
 						firstBase = m.Since.Time
 					}
@@ -129,7 +135,7 @@ func requestWindows(res ninja.NinjaResponse[NinjaTreeData]) map[string]map[strin
 
 					// only consider stations that don't have up to date aggregates
 					if lastBase.Sub(lastAggregate).Seconds() > periodAggregate {
-						if _, exists := todos[stationCode]; !exists {
+						if todos[stationCode] == nil {
 							todos[stationCode] = make(map[string]todoStation)
 						}
 						todos[stationCode][typeName] = todoStation{
@@ -172,113 +178,13 @@ func getNinjaData(stationCode string, typeName string, from time.Time, to time.T
 	req.From = from
 	req.To = to
 	req.Select = "mvalue"
-	req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", basePeriod, stationCode)
-	req.Limit = int64(sumRequestLimit)
+	req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", periodBase, stationCode)
+	req.Limit = int64(ninjaLimit)
 	req.Offset = uint64(offset * int(req.Limit))
+	req.Shownull = false
 
 	res := &ninja.NinjaResponse[[]NinjaFlatData]{}
 
 	err := ninja.History(req, res)
 	return res, err
-}
-
-func sumParentJob() {
-	req := ninja.DefaultNinjaRequest()
-	req.DataTypes = append(baseDataTypes, TotalType.Name)
-	req.Select = "tname,mvalue,pcode,stype"
-	req.Where = fmt.Sprintf("sorigin.eq.%s,sactive.eq.true,mperiod.eq.%d", origin, periodAggregate)
-	req.Limit = -1
-
-	res := &ninja.NinjaResponse[[]struct {
-		Tstamp ninja.NinjaTime `json:"_timestamp"`
-		DType  string          `json:"tname"`
-		Value  uint64          `json:"mvalue"`
-		Parent string          `json:"pcode"`
-		Stype  string          `json:"stype"`
-	}]{}
-
-	err := ninja.Latest(req, res)
-	if err != nil {
-		slog.Error("sumParent: Error in ninja call. aborting", "err", err)
-		return
-	}
-
-	type window = struct {
-		from time.Time
-		to   time.Time
-	}
-
-	// parentId / datatype
-	parents := make(map[string]map[string]window)
-
-	// For each parent/type find out where the elaboration window starts/ends
-	for _, m := range res.Data {
-		if _, exists := parents[m.Parent]; !exists {
-			parents[m.Parent] = make(map[string]window)
-		}
-		t := parents[m.Parent][m.DType]
-		// There is only one parent record per data type
-		if m.Stype == parentStationType {
-			t.from = m.Tstamp.Time
-		} else {
-			if m.Tstamp.Time.After(t.to) {
-				t.to = m.Tstamp.Time
-			}
-		}
-		parents[m.Parent][m.DType] = t
-	}
-
-	for parId, types := range parents {
-		// Do only a single request per parent. So we determine the max window.
-		// Note that when a data type does not exist yet on parent station, but in a child station, the window defaults to from = 0000-00-00...
-		var from time.Time
-		var to time.Time
-		for _, tp := range types {
-			if tp.from.Before(from) {
-				from = tp.from
-			}
-			if tp.to.After(to) {
-				to = tp.to
-			}
-		}
-
-		req := ninja.DefaultNinjaRequest()
-		req.DataTypes = maps.Keys(types) // Any data type we found base data for
-		req.AddStationType(baseStationType)
-		req.Select = "tname,mvalue"
-		req.From = from
-		req.To = to.Add(time.Minute) // Ninja is open interval, need to get the exact timestamp, too
-		req.Where = fmt.Sprintf("sorigin.eq.%s,sactive.eq.true,mperiod.eq.86400,pcode.eq.%s", origin, parId)
-		req.Limit = -1
-
-		res := &ninja.NinjaResponse[[]struct {
-			Tstamp ninja.NinjaTime `json:"_timestamp"`
-			DType  string          `json:"tname"`
-			Value  uint64          `json:"mvalue"`
-		}]{}
-
-		err := ninja.History(req, res)
-		if err != nil {
-			slog.Error("sumParent: Error in ninja call. aborting", "err", err)
-			return
-		}
-
-		sums := make(map[string]map[time.Time]uint64) // datatype / timestamp / sum value
-
-		// build sums per datatype and timestamp (should be full days)
-		for _, m := range res.Data {
-			if _, exists := sums[m.DType]; !exists {
-				sums[m.DType] = make(map[time.Time]uint64)
-			}
-			sums[m.DType][m.Tstamp.Time] = sums[m.DType][m.Tstamp.Time] + m.Value
-		}
-
-		recs := bdplib.DataMap{}
-		for dType, times := range sums {
-			for timestamp, value := range times {
-				recs.AddRecord(parId, dType, bdplib.CreateRecord(timestamp.UnixMilli(), value, periodAggregate))
-			}
-		}
-		bdplib.PushData(parentStationType, recs)
-	}
 }

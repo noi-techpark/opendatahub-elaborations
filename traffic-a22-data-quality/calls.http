@@ -42,6 +42,6 @@ Authorization: Bearer {{token}}
 ### Get candidate stations for parent aggregation
 GET {{ninja_url}}/v2/flat/TrafficSensor
 ?limit=200
-&where=and(sorigin.eq.A22,sactive.eq.true,pcode.eq.null)
-&select=smetadata.a22_metadata,sname,scoordinate,scode
+&where=and(sorigin.eq.A22,sactive.eq.true)
+&select=smetadata.a22_metadata,sname,scoordinate,scode,pcode
 Authorization: Bearer {{token}}
