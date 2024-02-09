@@ -281,5 +281,10 @@ func GetStations(stationType string, origin string) ([]Station, error) {
 		return nil, fmt.Errorf("error unmarshalling response JSON to provided interface: %w", err)
 	}
 
+	// For some reason when getting stations by type, the field is not set
+	for i := range result {
+		result[i].StationType = stationType
+	}
+
 	return result, nil
 }
