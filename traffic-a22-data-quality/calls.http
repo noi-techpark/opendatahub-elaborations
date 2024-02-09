@@ -26,11 +26,10 @@ Content-Type: application/x-www-form-urlencoded
 
 ### Get candidate stations for sums
 GET {{ninja_url}}/v2/tree/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/latest
-?where=mperiod.in.(600,86400)
-&select=mperiod,mvalidtime,mtransactiontime
+?where=and(mperiod.in.(600,86400),sactive.eq.true)
+&select=mperiod,mvalidtime,mtransactiontime,pcode
 &limit=-1	
 Authorization: Bearer {{token}}
-
 
 ### Get single station measurement history
 GET {{ninja_url}}/v2/flat/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses/2019-12-01/2020-03-01
@@ -40,8 +39,8 @@ GET {{ninja_url}}/v2/flat/TrafficSensor/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr
 Authorization: Bearer {{token}}
 
 ### Get candidate stations for parent aggregation
-GET {{ninja_url}}/v2/flat/TrafficSensor
+GET {{ninja_url}}/v2/flat/TrafficSensor,TrafficDirection/Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses,Nr. Vehicles/latest
 ?limit=200
-&where=and(sorigin.eq.A22,sactive.eq.true)
-&select=smetadata.a22_metadata,sname,scoordinate,scode,pcode
+&where=sorigin.eq.A22,sactive.eq.true,mperiod.eq.86400
+&select=stype,tname,mvalue,pcode
 Authorization: Bearer {{token}}

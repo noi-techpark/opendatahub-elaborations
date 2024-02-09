@@ -34,11 +34,11 @@ type DataType struct {
 type Station struct {
 	Id            string                 `json:"id"`
 	Name          string                 `json:"name"`
-	StationType   string                 `json:"stationType"`
+	StationType   string                 `json:"stationType,omitempty"` // when syncing, this needs to be null, blank string fails
 	Latitude      float64                `json:"latitude"`
 	Longitude     float64                `json:"longitude"`
 	Origin        string                 `json:"origin"`
-	ParentStation string                 `json:"parentStation"`
+	ParentStation string                 `json:"parentStation,omitempty"`
 	MetaData      map[string]interface{} `json:"metaData"`
 }
 
@@ -64,19 +64,19 @@ const provenancePath string = "/provenance"
 
 var provenanceUuid string
 
-var baseUrl string = os.Getenv("BDP_BASE_URL") + "/json"
+var BaseUrl string = os.Getenv("BDP_BASE_URL") + "/json"
 
-var prv string = os.Getenv("BDP_PROVENANCE_VERSION")
-var prn string = os.Getenv("BDP_PROVENANCE_NAME")
+var Prv string = os.Getenv("BDP_PROVENANCE_VERSION")
+var Prn string = os.Getenv("BDP_PROVENANCE_NAME")
 
-var origin string = os.Getenv("BDP_ORIGIN")
+var Origin string = os.Getenv("BDP_ORIGIN")
 
 func SyncDataTypes(stationType string, dataTypes []DataType) {
 	pushProvenance()
 
 	slog.Debug("Syncing data types...")
 
-	url := baseUrl + syncDataTypesPath + "?stationType=" + stationType + "&prn=" + prn + "&prv=" + prv
+	url := BaseUrl + syncDataTypesPath + "?stationType=" + stationType + "&prn=" + Prn + "&prv=" + Prv
 
 	postToWriter(dataTypes, url)
 
@@ -87,7 +87,7 @@ func SyncStations(stationType string, stations []Station, syncState bool, onlyAc
 	pushProvenance()
 
 	slog.Info("Syncing " + strconv.Itoa(len(stations)) + " " + stationType + " stations...")
-	url := baseUrl + syncStationsPath + "/" + stationType + "?prn=" + prn + "&prv=" + prv + "&syncState=" + strconv.FormatBool(syncState) + "&onlyActivation=" + strconv.FormatBool(onlyActivate)
+	url := BaseUrl + syncStationsPath + "/" + stationType + "?prn=" + Prn + "&prv=" + Prv + "&syncState=" + strconv.FormatBool(syncState) + "&onlyActivation=" + strconv.FormatBool(onlyActivate)
 	postToWriter(stations, url)
 	slog.Info("Syncing stations done.")
 }
@@ -99,7 +99,7 @@ func PushData(stationType string, dataMap DataMap) {
 	}
 
 	slog.Info("Pushing records...")
-	url := baseUrl + pushRecordsPath + "/" + stationType + "?prn=" + prn + "&prv=" + prv
+	url := BaseUrl + pushRecordsPath + "/" + stationType + "?prn=" + Prn + "&prv=" + Prv
 	postToWriter(dataMap, url)
 	slog.Info("Pushing records done.")
 }
@@ -226,15 +226,15 @@ func pushProvenance() {
 	}
 
 	slog.Info("Pushing provenance...")
-	slog.Info("prv: " + prv + " prn: " + prn)
+	slog.Info("prv: " + Prv + " prn: " + Prn)
 
 	var provenance = Provenance{
-		DataCollector:        prn,
-		DataCollectorVersion: prv,
-		Lineage:              origin,
+		DataCollector:        Prn,
+		DataCollectorVersion: Prv,
+		Lineage:              Origin,
 	}
 
-	url := baseUrl + provenancePath + "?&prn=" + prn + "&prv=" + prv
+	url := BaseUrl + provenancePath + "?&prn=" + Prn + "&prv=" + Prv
 
 	res, err := postToWriter(provenance, url)
 
@@ -250,7 +250,7 @@ func pushProvenance() {
 func GetStations(stationType string, origin string) ([]Station, error) {
 	slog.Debug("Fetching stations", "stationType", stationType, "origin", origin)
 
-	url := baseUrl + stationsPath + fmt.Sprintf("/%s/?origin=%s&prn=%s&prv=%s", stationType, origin, prn, prv)
+	url := BaseUrl + stationsPath + fmt.Sprintf("/%s/?origin=%s&prn=%s&prv=%s", stationType, origin, Prn, Prv)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create BDP HTTP Request: %w", err)

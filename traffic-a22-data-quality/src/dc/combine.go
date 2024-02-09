@@ -13,7 +13,7 @@ import (
 )
 
 func combineJob() error {
-	children, err := bdplib.GetStations(stationType, "A22")
+	children, err := bdplib.GetStations(baseStationType, origin)
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func combineJob() error {
 	parents := combine(children)
 
 	bdplib.SyncStations(parentStationType, parents, true, false)
-	bdplib.SyncStations(stationType, children, false, false)
+	bdplib.SyncStations(baseStationType, children, false, false)
 
 	return nil
 }
