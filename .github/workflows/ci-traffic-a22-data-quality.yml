@@ -53,6 +53,7 @@ jobs:
 
           X_EL_DATA_TYPES: Nr. Light Vehicles,Nr. Heavy Vehicles,Nr. Buses
           X_EL_STATION_TYPE: TrafficSensor
+          X_EL_PARENT_STATION_TYPE: TrafficDirection
           X_EL_BASE_PERIOD: 600
 
           X_LOG_LEVEL: DEBUG
