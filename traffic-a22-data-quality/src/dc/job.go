@@ -29,6 +29,6 @@ func syncDataTypes() {
 func Job() {
 	syncDataTypes()
 	combineJob()
-	// sumJob()
+	sumJob()
 	sumParentJob()
 }
