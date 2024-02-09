@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -33,11 +34,11 @@ type DataType struct {
 type Station struct {
 	Id            string                 `json:"id"`
 	Name          string                 `json:"name"`
-	StationType   string                 `json:"stationType"`
+	StationType   string                 `json:"stationType,omitempty"` // when syncing, this needs to be null, blank string fails
 	Latitude      float64                `json:"latitude"`
 	Longitude     float64                `json:"longitude"`
 	Origin        string                 `json:"origin"`
-	ParentStation string                 `json:"parentStation"`
+	ParentStation string                 `json:"parentStation,omitempty"`
 	MetaData      map[string]interface{} `json:"metaData"`
 }
 
@@ -63,30 +64,30 @@ const provenancePath string = "/provenance"
 
 var provenanceUuid string
 
-var baseUrl string = os.Getenv("BDP_BASE_URL") + "/json"
+var BaseUrl string = os.Getenv("BDP_BASE_URL") + "/json"
 
-var prv string = os.Getenv("BDP_PROVENANCE_VERSION")
-var prn string = os.Getenv("BDP_PROVENANCE_NAME")
+var Prv string = os.Getenv("BDP_PROVENANCE_VERSION")
+var Prn string = os.Getenv("BDP_PROVENANCE_NAME")
 
-var origin string = os.Getenv("BDP_ORIGIN")
+var Origin string = os.Getenv("BDP_ORIGIN")
 
 func SyncDataTypes(stationType string, dataTypes []DataType) {
 	pushProvenance()
 
 	slog.Debug("Syncing data types...")
 
-	url := baseUrl + syncDataTypesPath + "?stationType=" + stationType + "&prn=" + prn + "&prv=" + prv
+	url := BaseUrl + syncDataTypesPath + "?stationType=" + stationType + "&prn=" + Prn + "&prv=" + Prv
 
 	postToWriter(dataTypes, url)
 
 	slog.Debug("Syncing data types done.")
 }
 
-func SyncStations(stationType string, stations []Station) {
+func SyncStations(stationType string, stations []Station, syncState bool, onlyActivate bool) {
 	pushProvenance()
 
 	slog.Info("Syncing " + strconv.Itoa(len(stations)) + " " + stationType + " stations...")
-	url := baseUrl + syncStationsPath + "/" + stationType + "?prn=" + prn + "&prv=" + prv
+	url := BaseUrl + syncStationsPath + "/" + stationType + "?prn=" + Prn + "&prv=" + Prv + "&syncState=" + strconv.FormatBool(syncState) + "&onlyActivation=" + strconv.FormatBool(onlyActivate)
 	postToWriter(stations, url)
 	slog.Info("Syncing stations done.")
 }
@@ -98,7 +99,7 @@ func PushData(stationType string, dataMap DataMap) {
 	}
 
 	slog.Info("Pushing records...")
-	url := baseUrl + pushRecordsPath + "/" + stationType + "?prn=" + prn + "&prv=" + prv
+	url := BaseUrl + pushRecordsPath + "/" + stationType + "?prn=" + Prn + "&prv=" + Prv
 	postToWriter(dataMap, url)
 	slog.Info("Pushing records done.")
 }
@@ -225,15 +226,15 @@ func pushProvenance() {
 	}
 
 	slog.Info("Pushing provenance...")
-	slog.Info("prv: " + prv + " prn: " + prn)
+	slog.Info("prv: " + Prv + " prn: " + Prn)
 
 	var provenance = Provenance{
-		DataCollector:        prn,
-		DataCollectorVersion: prv,
-		Lineage:              origin,
+		DataCollector:        Prn,
+		DataCollectorVersion: Prv,
+		Lineage:              Origin,
 	}
 
-	url := baseUrl + provenancePath + "?&prn=" + prn + "&prv=" + prv
+	url := BaseUrl + provenancePath + "?&prn=" + Prn + "&prv=" + Prv
 
 	res, err := postToWriter(provenance, url)
 
@@ -244,4 +245,41 @@ func pushProvenance() {
 	provenanceUuid = res
 
 	slog.Info("Pushing provenance done", "uuid", provenanceUuid)
+}
+
+func GetStations(stationType string, origin string) ([]Station, error) {
+	slog.Debug("Fetching stations", "stationType", stationType, "origin", origin)
+
+	url := BaseUrl + stationsPath + fmt.Sprintf("/%s/?origin=%s&prn=%s&prv=%s", stationType, origin, Prn, Prv)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create BDP HTTP Request: %w", err)
+	}
+
+	req.Header = http.Header{
+		"Content-Type":  {"application/json"},
+		"Authorization": {"Bearer " + GetToken()},
+	}
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("error performing ninja request: %w", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("ninja request returned non-OK status: " + strconv.Itoa(res.StatusCode))
+	}
+
+	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read response body: %w", err)
+	}
+
+	result := []Station{}
+	err = json.Unmarshal(bodyBytes, &result)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling response JSON to provided interface: %w", err)
+	}
+
+	return result, nil
 }
