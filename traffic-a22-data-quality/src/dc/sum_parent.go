@@ -18,7 +18,7 @@ func sumParentJob() {
 	req := ninja.DefaultNinjaRequest()
 	req.DataTypes = append(baseDataTypes, TotalType.Name)
 	req.Select = "tname,mvalue,pcode,stype"
-	req.Where = fmt.Sprintf("sorigin.eq.%s,sactive.eq.true,mperiod.eq.%d", origin, periodAggregate)
+	req.Where = fmt.Sprintf("sorigin.eq.%s,sactive.eq.true,mperiod.eq.%d", origin, periodAgg)
 	req.Limit = -1
 
 	res := &ninja.NinjaResponse[[]struct {
@@ -108,7 +108,7 @@ func sumParentJob() {
 		recs := bdplib.DataMap{}
 		for dType, times := range sums {
 			for timestamp, value := range times {
-				recs.AddRecord(parId, dType, bdplib.CreateRecord(timestamp.UnixMilli(), value, periodAggregate))
+				recs.AddRecord(parId, dType, bdplib.CreateRecord(timestamp.UnixMilli(), value, periodAgg))
 			}
 		}
 		bdplib.PushData(parentStationType, recs)

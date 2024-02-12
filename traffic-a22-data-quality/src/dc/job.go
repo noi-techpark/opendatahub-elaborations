@@ -17,7 +17,7 @@ var baseStationType = os.Getenv("EL_STATION_TYPE")
 var baseDataTypes = strings.Split(os.Getenv("EL_DATA_TYPES"), ",")
 var basePeriod, _ = strconv.Atoi(os.Getenv("EL_BASE_PERIOD"))
 
-const periodAggregate = 86400
+const periodAgg = 86400
 const origin = "A22"
 
 var TotalType = bdplib.CreateDataType("Nr. Vehicles", "", "Number of vehicles", "total")

@@ -7,10 +7,11 @@ package dc
 import (
 	"fmt"
 	"log/slog"
-	"strconv"
 	"time"
 	"traffic-a22-data-quality/bdplib"
 	"traffic-a22-data-quality/ninja"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type NinjaMeasurement struct {
@@ -32,16 +33,28 @@ type NinjaFlatData = struct {
 	Value     uint64          `json:"mvalue"`
 }
 
+type tv = struct {
+	dt time.Time
+	v  uint64
+}
+
+type rec = struct {
+	st string
+	t  string
+	r  bdplib.Record
+}
+
+const numJobs = 5
+
 func sumJob() {
 	// Get current elaboration state from ninja. Both where we are with base data and with the sums
-
 	req := ninja.DefaultNinjaRequest()
 	req.Repr = ninja.TreeNode
 	req.AddStationType(baseStationType)
 	req.DataTypes = baseDataTypes
 	req.Limit = -1
 	req.Select = "mperiod,mvalidtime,pcode"
-	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d,%d))", basePeriod, periodAggregate)
+	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d,%d))", basePeriod, periodAgg)
 
 	var res ninja.NinjaResponse[NinjaTreeData]
 	err := ninja.Latest(req, &res)
@@ -50,43 +63,81 @@ func sumJob() {
 		return
 	}
 
-	requestWindows := requestWindows(res)
+	stationWindows := requestWindows(res.Data)
 
 	// 	get data history from starting point until last EOD
-	for stationCode, typeMap := range requestWindows {
-		recs := bdplib.DataMap{}
-		totals := make(map[time.Time]uint64)
-		for typeName, todo := range typeMap {
-			history, err := getHistoryPaged(todo, stationCode, typeName)
-			if err != nil {
-				slog.Error("Error requesting history data from Ninja", "err", err)
-				return
-			}
+	for scode, typeMap := range stationWindows {
+		total := make(chan tv, 50)
+		recs := make(chan rec, 50)
+		errs := make(chan error)
 
-			slog.Info(strconv.Itoa(len(history)))
+		eg := errgroup.Group{}
+		eg.SetLimit(numJobs)
 
-			if len(history) == 0 {
-				continue
-			}
-
-			sums := make(map[time.Time]uint64)
-			for _, m := range history {
-				date := stripToDay(m.Timestamp.Time)
-				sums[date] = sums[date] + m.Value
-				totals[date] = totals[date] + m.Value
-			}
-			for date, sum := range sums {
-				recs.AddRecord(stationCode, typeName, bdplib.CreateRecord(date.UnixMilli(), sum, periodAggregate))
-			}
+		// spin off to worker
+		for tname, win := range typeMap {
+			tname, win := tname, win // avoid closure over loop variables
+			eg.Go(func() error {
+				return sumHistory(win, scode, tname, total, recs)
+			})
 		}
-		for date, total := range totals {
-			recs.AddRecord(stationCode, TotalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAggregate))
+
+		// wait for all workers to finish
+		go func() {
+			if err := eg.Wait(); err != nil {
+				errs <- err
+			}
+			close(errs)
+			close(total)
+		}()
+
+		// capture the single data type sums and make one total
+		go func() {
+			defer close(recs)
+
+			totals := make(map[time.Time]uint64)
+			for t := range total {
+				totals[t.dt] += t.v
+			}
+			for date, total := range totals {
+				recs <- rec{scode, TotalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAgg)}
+			}
+		}()
+
+		bdpMap := bdplib.DataMap{}
+		for r := range recs {
+			bdpMap.AddRecord(r.st, r.t, r.r)
 		}
-		bdplib.PushData(baseStationType, recs)
+
+		if err := <-errs; err != nil {
+			slog.Error("Error. Not pushing data", "station", scode, "error", err)
+			continue
+		}
+
+		bdplib.PushData(baseStationType, bdpMap)
 	}
 }
 
-func getHistoryPaged(todo todoStation, stationCode string, typeName string) ([]NinjaFlatData, error) {
+func sumHistory(win window, scode string, tname string, total chan tv, recs chan rec) error {
+	history, err := getHistoryPaged(win, scode, tname)
+	if err != nil {
+		slog.Error("Error requesting history data from Ninja", "err", err, "station", scode, "type", tname)
+		return err
+	}
+
+	sums := make(map[time.Time]uint64)
+	for _, m := range history {
+		date := stripToDay(m.Timestamp.Time)
+		sums[date] = sums[date] + m.Value
+		total <- tv{date, m.Value}
+	}
+	for date, sum := range sums {
+		recs <- rec{scode, tname, bdplib.CreateRecord(date.UnixMilli(), sum, periodAgg)}
+	}
+	return nil
+}
+
+func getHistoryPaged(todo window, stationCode string, typeName string) ([]NinjaFlatData, error) {
 	var ret []NinjaFlatData
 	for page := 0; ; page += 1 {
 		start, end := getRequestDates(todo)
@@ -108,11 +159,11 @@ func getHistoryPaged(todo todoStation, stationCode string, typeName string) ([]N
 	return ret, nil
 }
 
-func requestWindows(res ninja.NinjaResponse[NinjaTreeData]) map[string]map[string]todoStation {
-	todos := make(map[string]map[string]todoStation)
-	for _, stations := range res.Data {
+func requestWindows(dt NinjaTreeData) map[string]map[string]window {
+	todos := make(map[string]map[string]window)
+	for _, stations := range dt {
 		for stationCode, station := range stations.Stations {
-			for typeName, dataType := range station.Datatypes {
+			for tname, dataType := range station.Datatypes {
 				for _, m := range dataType.Measurements {
 					var firstBase time.Time
 					var lastBase time.Time
@@ -121,16 +172,16 @@ func requestWindows(res ninja.NinjaResponse[NinjaTreeData]) map[string]map[strin
 						lastBase = m.Time.Time
 						firstBase = m.Since.Time
 					}
-					if m.Period == periodAggregate {
+					if m.Period == periodAgg {
 						lastAggregate = m.Time.Time
 					}
 
 					// only consider stations that don't have up to date aggregates
-					if lastBase.Sub(lastAggregate).Seconds() > periodAggregate {
+					if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
 						if _, exists := todos[stationCode]; !exists {
-							todos[stationCode] = make(map[string]todoStation)
+							todos[stationCode] = make(map[string]window)
 						}
-						todos[stationCode][typeName] = todoStation{
+						todos[stationCode][tname] = window{
 							firstBase:     firstBase,
 							lastBase:      lastBase,
 							lastAggregate: lastAggregate,
@@ -147,13 +198,13 @@ func stripToDay(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
-type todoStation struct {
+type window struct {
 	firstBase     time.Time
 	lastBase      time.Time
 	lastAggregate time.Time
 }
 
-func getRequestDates(todo todoStation) (time.Time, time.Time) {
+func getRequestDates(todo window) (time.Time, time.Time) {
 	start := todo.lastAggregate
 	if start.Before(todo.firstBase) {
 		start = todo.firstBase
