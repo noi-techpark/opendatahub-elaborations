@@ -265,6 +265,7 @@ func GetStations(stationType string, origin string) ([]Station, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error performing ninja request: %w", err)
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.New("ninja request returned non-OK status: " + strconv.Itoa(res.StatusCode))

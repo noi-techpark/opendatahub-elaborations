@@ -122,6 +122,7 @@ func requestUrl[T any](reqUrl *url.URL, result *NinjaResponse[T]) error {
 	if err != nil {
 		return fmt.Errorf("error performing ninja request: %w", err)
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		return errors.New("ninja request returned non-OK status: " + strconv.Itoa(res.StatusCode))
