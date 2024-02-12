@@ -68,11 +68,7 @@ func mergeMeta(p, c bdplib.Station) map[string]any {
 	if err != nil {
 		return ret
 	}
-	str, err := json.Marshal(m)
-	if err != nil {
-		return ret
-	}
-	ret[a22metadata] = string(str)
+	ret[a22metadata] = m
 
 	return ret
 }
