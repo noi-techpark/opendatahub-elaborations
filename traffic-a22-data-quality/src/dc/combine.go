@@ -5,6 +5,7 @@
 package dc
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 	"traffic-a22-data-quality/bdplib"
@@ -36,6 +37,7 @@ func combine(children []bdplib.Station) []bdplib.Station {
 
 			p = bdplib.CreateStation(pId, name, parentStationType, c.Latitude, c.Longitude, c.Origin)
 			// merge metadata
+			p.MetaData = mergeMeta(p, c)
 
 			parents[pId] = p
 		}
@@ -44,6 +46,35 @@ func combine(children []bdplib.Station) []bdplib.Station {
 		children[i] = c
 	}
 	return maps.Values(parents)
+}
+
+const a22metadata = "a22_metadata"
+
+func mergeMeta(p, c bdplib.Station) map[string]any {
+	ret := map[string]any{}
+
+	metaStr, found := c.MetaData[a22metadata].(string)
+	if !found {
+		return ret
+	}
+	m := struct {
+		Autostrada  string `json:"autostrada"`
+		Iddirezione string `json:"iddirezione"`
+		Idspira     string `json:"idspira"`
+		Metro       string `json:"metro"`
+	}{}
+
+	err := json.Unmarshal([]byte(metaStr), &m)
+	if err != nil {
+		return ret
+	}
+	str, err := json.Marshal(m)
+	if err != nil {
+		return ret
+	}
+	ret[a22metadata] = string(str)
+
+	return ret
 }
 
 var reName = regexp.MustCompile(`\(corsia di (\w|\s)+, `)
