@@ -11,6 +11,7 @@ import (
 	"traffic-a22-data-quality/bdplib"
 	"traffic-a22-data-quality/ninja"
 
+	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -51,7 +52,7 @@ func sumJob() {
 	req := ninja.DefaultNinjaRequest()
 	req.Repr = ninja.TreeNode
 	req.AddStationType(baseStationType)
-	req.DataTypes = baseDataTypes
+	req.DataTypes = maps.Keys(aggrDataTypes)
 	req.Limit = -1
 	req.Select = "mperiod,mvalidtime,pcode"
 	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d,%d))", basePeriod, periodAgg)
@@ -129,7 +130,9 @@ func sumHistory(win window, scode string, tname string, total chan tv, recs chan
 	for _, m := range history {
 		date := stripToDay(m.Timestamp.Time)
 		sums[date] = sums[date] + m.Value
-		total <- tv{date, m.Value}
+		if _, ok := totalDataTypes[tname]; ok {
+			total <- tv{date, m.Value}
+		}
 	}
 	for date, sum := range sums {
 		recs <- rec{scode, tname, bdplib.CreateRecord(date.UnixMilli(), sum, periodAgg)}

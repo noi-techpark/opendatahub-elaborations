@@ -16,7 +16,7 @@ import (
 
 func sumParentJob() {
 	req := ninja.DefaultNinjaRequest()
-	req.DataTypes = append(baseDataTypes, TotalType.Name)
+	req.DataTypes = append(maps.Keys(aggrDataTypes), TotalType.Name)
 	req.Select = "tname,mvalue,pcode,stype"
 	req.Where = fmt.Sprintf("sorigin.eq.%s,sactive.eq.true,mperiod.eq.%d", origin, periodAgg)
 	req.Limit = -1
