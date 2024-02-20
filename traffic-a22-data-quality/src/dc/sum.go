@@ -31,12 +31,12 @@ type NinjaTreeData = map[string]struct { // key = stationtype
 
 type NinjaFlatData = struct {
 	Timestamp ninja.NinjaTime `json:"_timestamp"`
-	Value     uint64          `json:"mvalue"`
+	Value     float64         `json:"mvalue"`
 }
 
 type tv = struct {
 	dt time.Time
-	v  uint64
+	v  float64
 }
 
 type rec = struct {
@@ -96,7 +96,7 @@ func sumJob() {
 		go func() {
 			defer close(recs)
 
-			totals := make(map[time.Time]uint64)
+			totals := make(map[time.Time]float64)
 			for t := range total {
 				totals[t.dt] += t.v
 			}
@@ -126,7 +126,7 @@ func sumHistory(win window, scode string, tname string, total chan tv, recs chan
 		return err
 	}
 
-	sums := make(map[time.Time]uint64)
+	sums := make(map[time.Time]float64)
 	for _, m := range history {
 		date := stripToDay(m.Timestamp.Time)
 		sums[date] = sums[date] + m.Value

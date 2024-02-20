@@ -24,7 +24,7 @@ func sumParentJob() {
 	res := &ninja.NinjaResponse[[]struct {
 		Tstamp ninja.NinjaTime `json:"_timestamp"`
 		DType  string          `json:"tname"`
-		Value  uint64          `json:"mvalue"`
+		Value  float64         `json:"mvalue"`
 		Parent string          `json:"pcode"`
 		Stype  string          `json:"stype"`
 	}]{}
@@ -86,7 +86,7 @@ func sumParentJob() {
 		res := &ninja.NinjaResponse[[]struct {
 			Tstamp ninja.NinjaTime `json:"_timestamp"`
 			DType  string          `json:"tname"`
-			Value  uint64          `json:"mvalue"`
+			Value  float64         `json:"mvalue"`
 		}]{}
 
 		err := ninja.History(req, res)
@@ -95,12 +95,12 @@ func sumParentJob() {
 			return
 		}
 
-		sums := make(map[string]map[time.Time]uint64) // datatype / timestamp / sum value
+		sums := make(map[string]map[time.Time]float64) // datatype / timestamp / sum value
 
 		// build sums per datatype and timestamp (should be full days)
 		for _, m := range res.Data {
 			if _, exists := sums[m.DType]; !exists {
-				sums[m.DType] = make(map[time.Time]uint64)
+				sums[m.DType] = make(map[time.Time]float64)
 			}
 			sums[m.DType][m.Tstamp.Time] = sums[m.DType][m.Tstamp.Time] + m.Value
 		}
