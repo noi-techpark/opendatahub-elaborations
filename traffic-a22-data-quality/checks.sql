@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+-- SPDX-License-Identifier: CC0-1.0
+
 /* Check consistency for total and equiv data types */
 select ml.timestamp, s.stationcode, s.stationtype,
 ml.double_value as "light", 
