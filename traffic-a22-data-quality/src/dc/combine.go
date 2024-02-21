@@ -37,7 +37,7 @@ func combine(children []bdplib.Station) []bdplib.Station {
 
 			p = bdplib.CreateStation(pId, name, parentStationType, c.Latitude, c.Longitude, c.Origin)
 			// merge metadata
-			p.MetaData = mergeMeta(p, c)
+			p.MetaData = makeMetaData(c)
 
 			parents[pId] = p
 		}
@@ -50,12 +50,10 @@ func combine(children []bdplib.Station) []bdplib.Station {
 
 const a22metadata = "a22_metadata"
 
-func mergeMeta(p, c bdplib.Station) map[string]any {
-	ret := map[string]any{}
-
+func makeMetaData(c bdplib.Station) map[string]any {
 	metaStr, found := c.MetaData[a22metadata].(string)
 	if !found {
-		return ret
+		return nil
 	}
 	m := struct {
 		Autostrada  string `json:"autostrada"`
@@ -66,8 +64,10 @@ func mergeMeta(p, c bdplib.Station) map[string]any {
 
 	err := json.Unmarshal([]byte(metaStr), &m)
 	if err != nil {
-		return ret
+		return nil
 	}
+
+	ret := map[string]any{}
 	ret[a22metadata] = m
 
 	return ret

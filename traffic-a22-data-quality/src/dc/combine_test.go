@@ -34,10 +34,10 @@ func TestCombine(t *testing.T) {
 	parentStationType = "TrafficDirection"
 	r := combine([]bdplib.Station{s1871_1, s1871_2})
 	if !reflect.DeepEqual(r[0], s1871_nord) {
-		t.Fail()
+		t.Error("Combined station not equal: ", r[0], s1871_nord)
 	}
 	r = combine([]bdplib.Station{s1872_3, s1872_4})
 	if !reflect.DeepEqual(r[0], s1872_sud) {
-		t.Fail()
+		t.Error("Combined station not equal: ", r[0], s1872_sud)
 	}
 }
