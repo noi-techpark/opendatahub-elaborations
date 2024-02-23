@@ -8,6 +8,11 @@ SPDX-License-Identifier: CC0-1.0
 
 [[_TOC_]]
 
-## Version 0.*
+## Version 2024.*
 
-### 0.1.0
+### 2024.02.23
+
+:rocket: New features
+* Airflow as workflow management.
+* Draft for data validation workflow.
+* Deployment on https://noi.u-hopper.com.
