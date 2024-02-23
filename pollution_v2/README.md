@@ -25,6 +25,8 @@ The TrafficData is periodically pulled from the A22 collection, data validation 
 
 The following sequence diagram describes how Airflow and the DAGs (validation or pollution computing) interact in order to process ODH data.
 
+![sequence diagram](./documentation/UML Sequence Diagram.png)
+
 Please note the following, apparently contrasting with Airflow capabilities of scheduling
 DAGs in backfill mode.
 

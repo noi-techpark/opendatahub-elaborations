@@ -161,7 +161,7 @@ class Station:
 
 
 @dataclass
-class StationLatestMeasure():
+class StationLatestMeasure:
 
     def __init__(self, station_code, latest_time):
         self.station_code = station_code

@@ -4,12 +4,13 @@
 
 from __future__ import absolute_import, annotations
 
+import itertools
 import logging
 from datetime import datetime
 from typing import List
 
 from common.connector.collector import ConnectorCollector
-from common.data_model import TrafficMeasureCollection, TrafficSensorStation
+from common.data_model import TrafficMeasureCollection, TrafficSensorStation, StationLatestMeasure
 from common.settings import ODH_MINIMUM_STARTING_DATE
 
 logger = logging.getLogger("common.manager.traffic_station")
@@ -27,9 +28,26 @@ class TrafficStationManager:
             self._traffic_stations = self._get_station_list()
         return self._traffic_stations
 
-    def get_latest_date_for_station(self, traffic_station: TrafficSensorStation) -> datetime:
-        measures = self._connector_collector.traffic.get_latest_measures(station=traffic_station)
-        return max(list(map(lambda m: m.valid_time, measures)), default=ODH_MINIMUM_STARTING_DATE)
+    def get_all_latest_measures(self) -> List[StationLatestMeasure]:
+        """
+        Returns a list of stations with its latest measure date.
+
+        :return: List of stations with its latest measure date.
+        """
+        all_measures = self._connector_collector.traffic.get_latest_measures()
+
+        grouped = {}
+        for station_code, values in itertools.groupby(all_measures, lambda m: m.station.code):
+            tmp = list(values)
+            if len(tmp) > 0:
+                grouped[station_code] = tmp
+
+        res = []
+        for key, value in grouped.items():
+            res.append(StationLatestMeasure(key, max(list(map(lambda m: m.valid_time, value)),
+                                                     default=ODH_MINIMUM_STARTING_DATE)))
+
+        return res
 
     def _get_station_list(self) -> List[TrafficSensorStation]:
         """

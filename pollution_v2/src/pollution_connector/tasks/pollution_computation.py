@@ -4,7 +4,6 @@
 
 from __future__ import absolute_import, annotations
 
-import itertools
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -14,7 +13,7 @@ from redis.client import Redis
 from common.manager.traffic_station import TrafficStationManager
 from pollution_connector.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
 from common.connector.collector import ConnectorCollector
-from common.data_model.common import Provenance, StationLatestMeasure
+from common.data_model.common import Provenance
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
 from common.data_model import TrafficMeasureCollection, TrafficSensorStation
 from pollution_connector.pollution_computation_model.pollution_computation_model import PollutionComputationModel
@@ -109,6 +108,10 @@ class PollutionComputationManager(TrafficStationManager):
                            f"which is after the minimum starting date [{min_from_date.isoformat()}]")
 
         return from_date
+
+    def _get_latest_date_for_station(self, traffic_station: TrafficSensorStation) -> datetime:
+        measures = self._connector_collector.traffic.get_latest_measures(station=traffic_station)
+        return max(list(map(lambda m: m.valid_time, measures)), default=ODH_MINIMUM_STARTING_DATE)
 
     @staticmethod
     def _compute_pollution_data(traffic_data: TrafficMeasureCollection) -> List[PollutionEntry]:
