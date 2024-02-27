@@ -157,7 +157,6 @@ jobs:
           # Force python to not buffer stdout
           X_PYTHONUNBUFFERED: "true"
 
-
       - name: Build and push images
         uses: noi-techpark/github-actions/docker-build-and-push@v2
         with:
