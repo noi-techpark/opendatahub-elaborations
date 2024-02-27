@@ -1,0 +1,12 @@
+/roles
+/airflow
+/logs
+
+venv*
+.venv
+*.pyc
+.idea
+*.log
+celerybeat-schedule.db
+/sample_data/input/odh.db
+docker-compose.yaml.custom
