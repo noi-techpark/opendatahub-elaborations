@@ -14,9 +14,9 @@ import pandas as pd
 from common.data_model.common import VehicleClass
 from common.data_model.pollution import PollutionEntry, PollutantClass
 from common.data_model import TrafficMeasureCollection, TrafficEntry, TrafficSensorStation
-from pollution_connector.pollution_computation_model.CopertEmissions import copert_emissions
+from pollution_connector.model.CopertEmissions import copert_emissions
 
-logger = logging.getLogger("pollution_connector.pollution_computation_model.pollution_computation_model")
+logger = logging.getLogger("pollution_connector.model.pollution_computation_model")
 
 
 class PollutionComputationModel:

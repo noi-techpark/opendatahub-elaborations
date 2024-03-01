@@ -14,7 +14,7 @@ from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
 from common.data_model import TrafficMeasureCollection, TrafficSensorStation
-from pollution_connector.pollution_computation_model.pollution_computation_model import PollutionComputationModel
+from pollution_connector.model.pollution_computation_model import PollutionComputationModel
 from common.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, ODH_COMPUTATION_BATCH_SIZE
 
 logger = logging.getLogger("pollution_connector.tasks.pollution_computation")
