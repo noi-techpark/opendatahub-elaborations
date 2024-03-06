@@ -1,7 +1,8 @@
 version: "3.4"
     
 
-services:
+x-airflow-common:
+  &airflow-common
   postgres:
     image: postgres:13
     environment:
@@ -30,7 +31,6 @@ services:
     restart: always
 
   airflow-webserver:
-    <<: *airflow-common
     command: webserver
     ports:
       - "8080:8080"
