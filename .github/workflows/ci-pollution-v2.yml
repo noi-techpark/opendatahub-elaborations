@@ -36,10 +36,6 @@ jobs:
 
           X_LOG_LEVEL: INFO
           X_LOG_LEVEL_LIBS: INFO
-
-          X_CELERY_BROKER_URL: redis://pollution-v2-connector-redis:6379/1
-          X_CELERY_BACKEND_URL: redis://pollution-v2-connector-redis:6379/2
-          X_CELERY_RESULT_EXPIRATION_SECONDS: "604800"
           
           X_pollution-v2_TASK_SCHEDULING_MINUTE: "*/10"
           X_pollution-v2_TASK_SCHEDULING_HOUR: "*"

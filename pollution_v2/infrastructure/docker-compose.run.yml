@@ -5,9 +5,10 @@ services:
   x-airflow-common:
     &airflow-common
     image: ${DOCKER_IMAGE}:${DOCKER_TAG}
-    volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/dags
-      - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
+    # temporarly disabled: permission denied
+    # volumes:
+    #   - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/dags
+    #   - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
     user: "${AIRFLOW_UID:-50000}:0"
     env_file:
     - .env
