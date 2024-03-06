@@ -89,8 +89,9 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    env_file:
+    - .env
     environment:
-      <<: *airflow-common-env
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
@@ -166,8 +167,9 @@ services:
         fi
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
+    env_file:
+    - .env
     environment:
-      <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
@@ -181,8 +183,9 @@ services:
     <<: *airflow-common
     profiles:
       - debug
+    env_file:
+    - .env
     environment:
-      <<: *airflow-common-env
       CONNECTION_CHECK_MAX_COUNT: "0"
     # Workaround for entrypoint issue. See: https://github.com/apache/airflow/issues/16252
     command:
