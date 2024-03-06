@@ -82,8 +82,8 @@ jobs:
           X_AIRFLOW_VAR_ODH_PAGINATION_SIZE: '10000'
           
           # username/pass not needed with client_credentials
-          # X_AIRFLOW_VAR_ODH_PASSWORD: '<your_odh_password>'
-          # X_AIRFLOW_VAR_ODH_USERNAME: '<your_odh_username>'
+          X_AIRFLOW_VAR_ODH_PASSWORD: 'ODH_PASSWORD'
+          X_AIRFLOW_VAR_ODH_USERNAME: 'ODH_USERNAME'
           X_AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE: "2017-01-01 00:00:00+00:00"
           X_AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_HOST: 'pollution-v2-connector-redis'
           X_AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
