@@ -47,7 +47,9 @@
 #                                Default: ''
 #
 # Feel free to modify this file to suit your needs.
----
+version: "3.7"
+
+
 x-airflow-common:
   &airflow-common
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
@@ -82,17 +84,17 @@ x-airflow-common:
     AIRFLOW_VAR_ODH_GRANT_TYPE: '<your_odh_grant_type>'
     AIRFLOW_VAR_ODH_MAX_POST_BATCH_SIZE: '10000'
     AIRFLOW_VAR_ODH_PAGINATION_SIZE: '10000'
-    AIRFLOW_VAR_ODH_PASSWORD: '<your_odh_password>'
-    AIRFLOW_VAR_ODH_USERNAME: '<your_odh_username>'
-    AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE: '<your_odh_minimum_starting_date>'
-    AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_HOST: '<your_computation_checkpoint_redis_host>'
-    AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_PORT: '<your_computation_checkpoint_redis_port>'
-    AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_DB: '<your_computation_checkpoint_redis_db>'
-    AIRFLOW__CORE__REMOTE_LOGGING: '<your_choice_on_remote_logging>'
-    AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER: '<your_bucket_for_remote_logging>'
-    AIRFLOW__CORE__REMOTE_LOG_CONN_ID: '<your_connection_id_for_remote_logging>'
-    AIRFLOW__CORE__ENCRYPT_S3_LOGS: '<your_choice_on_encrypt_logs>'
-    AIRFLOW_CONN_MINIO_S3_CONN: '<your_connection_details_for_remote_logging>'
+    # AIRFLOW_VAR_ODH_PASSWORD: '<your_odh_password>'
+    # AIRFLOW_VAR_ODH_USERNAME: '<your_odh_username>'
+    # AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE: '<your_odh_minimum_starting_date>'
+    # AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_HOST: '<your_computation_checkpoint_redis_host>'
+    # AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_PORT: '<your_computation_checkpoint_redis_port>'
+    # AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_DB: '<your_computation_checkpoint_redis_db>'
+    # AIRFLOW__CORE__REMOTE_LOGGING: '<your_choice_on_remote_logging>'
+    # AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER: '<your_bucket_for_remote_logging>'
+    # AIRFLOW__CORE__REMOTE_LOG_CONN_ID: '<your_connection_id_for_remote_logging>'
+    # AIRFLOW__CORE__ENCRYPT_S3_LOGS: '<your_choice_on_encrypt_logs>'
+    # AIRFLOW_CONN_MINIO_S3_CONN: '<your_connection_details_for_remote_logging>'
     NO_PROXY: '*'
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/dags
