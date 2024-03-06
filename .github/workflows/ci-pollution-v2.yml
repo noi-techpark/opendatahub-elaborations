@@ -55,6 +55,7 @@ jobs:
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
 
+          X_AIRFLOW_UID: 5000
           X_AIRFLOW__CORE__EXECUTOR: CeleryExecutor
           X_AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
           X_AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
