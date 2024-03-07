@@ -17,7 +17,7 @@ from common.data_model import TrafficMeasureCollection, TrafficSensorStation
 from pollution_connector.model.pollution_computation_model import PollutionComputationModel
 from common.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, ODH_COMPUTATION_BATCH_SIZE
 
-logger = logging.getLogger("pollution_connector.tasks.pollution_computation")
+logger = logging.getLogger("pollution_connector.manager.pollution_computation")
 
 
 class PollutionComputationManager(TrafficStationManager):

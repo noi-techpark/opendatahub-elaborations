@@ -18,7 +18,7 @@ from common.settings import ODH_MINIMUM_STARTING_DATE, \
     COMPUTATION_CHECKPOINT_REDIS_DB, COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST, \
     PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION, DAG_POLLUTION_EXECUTION_CRONTAB, \
     DEFAULT_TIMEZONE, DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
-from pollution_connector.tasks.pollution_computation import PollutionComputationManager
+from pollution_connector.manager.pollution_computation import PollutionComputationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
 

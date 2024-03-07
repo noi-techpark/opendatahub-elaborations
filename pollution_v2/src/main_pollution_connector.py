@@ -24,7 +24,7 @@ from common.data_model.common import Provenance
 from common.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE, \
     PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_HOST, \
     COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB, SENTRY_SAMPLE_RATE
-from pollution_connector.tasks.pollution_computation import PollutionComputationManager
+from pollution_connector.manager.pollution_computation import PollutionComputationManager
 
 logging.config.dictConfig(get_logging_configuration("main_pollution_connector"))
 logger = logging.getLogger("main_pollution_connector")

@@ -12,7 +12,7 @@ from tests.test_common import TestPollutionComputerCommon
 
 class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_is_called(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
@@ -29,7 +29,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
         get_traffic_stations_mock.assert_called_once()
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_gets_stations_from_cache(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
@@ -55,7 +55,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
         # Test that the return value contains the entire list of stations
         self.assertEqual(return_value, [self.station_dict, station_dict_2])
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_retrieves_passed_stations(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
@@ -81,7 +81,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
         # Test that the return value contains only the passed station
         self.assertEqual(return_value, [self.station_dict])
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.run_computation_for_station")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation_for_station")
     def test_run_computation_for_station_is_called(self, run_computation_for_station_mock):
         """
         Test that the run_computation_for_station method is called when the process_station task is run.
@@ -94,7 +94,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
         run_computation_for_station_mock.assert_called_once()
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.run_computation_for_station")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation_for_station")
     def test_run_computation_for_station_gets_correct_input(self, run_computation_for_station_mock):
         """
         Test that the run_computation_for_station method is called when the process_station task is run.
@@ -113,7 +113,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.execute")
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.__init__")
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_all_latest_measures")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_all_latest_measures")
     def test_trigger_next_dag_run_triggers_task_with_station(self, get_all_latest_measure_mock, trigger_dag_run_mock,
                                                              trigger_dag_run_execute_mock):
         """
@@ -147,7 +147,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.execute")
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.__init__")
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_all_latest_measures")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_all_latest_measures")
     def test_trigger_next_dag_run_passes_correct_stations(self, get_all_latest_measures_mock, trigger_dag_run_mock,
                                                           trigger_dag_run_execute_mock):
         """
