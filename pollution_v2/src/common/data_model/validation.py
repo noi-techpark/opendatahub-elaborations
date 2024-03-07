@@ -57,7 +57,7 @@ class ValidationMeasureCollection(MeasureCollection[ValidationMeasure, TrafficSe
         for validation_entry in validation_entries:
             validation_measures.append(ValidationMeasure(
                 station=validation_entry.station,
-                data_type=data_types_dict[f"{validation_entry.vehicle_class.name}-{validation_entry.validation_class.name}-emissions"],
+                data_type=data_types_dict[f"{validation_entry.vehicle_class.name}-{validation_entry.validation_class.name}"],
                 provenance=provenance,
                 period=validation_entry.period,
                 transaction_time=None,
