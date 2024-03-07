@@ -11,4 +11,4 @@ COPY requirements.txt .
 RUN pip install apache-airflow==${AIRFLOW_VERSION} -r requirements.txt
 # providers for writing logs on S3
 RUN pip install apache-airflow-providers-amazon
-ADD src/ /opt/airflow/dags
+ADD src/dags /opt/airflow/dags
