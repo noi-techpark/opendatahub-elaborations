@@ -25,6 +25,9 @@ class PollutionComputationManager(TrafficStationManager):
         return self._connector_collector.pollution
 
     def _get_date_reference_collector(self) -> ODHBaseConnector:
+        # use this for old behaviour (pollution_v1, before validation)
+        # return self._connector_collector.traffic
+        # use this for new behaviour (pollution_v2, with validation)
         return self._connector_collector.validation
 
     def _get_data_types(self) -> List[DataType]:

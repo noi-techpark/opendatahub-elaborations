@@ -216,7 +216,7 @@ class TrafficStationManager(ABC):
         :param min_from_date: Starting date for interval.
         :param max_to_date: Ending date for interval.
         """
-        start_date = self._get_starting_date(self._get_date_reference_collector(), traffic_station, min_from_date)
+        start_date = self._get_starting_date(self._get_data_collector(), traffic_station, min_from_date)
 
         # Detect inactive stations:
         # If we're about to request more than one window of measurements, do a check first if there even is any new data
@@ -239,7 +239,7 @@ class TrafficStationManager(ABC):
             if to_date > max_to_date:
                 to_date = max_to_date
 
-            logger.info(f"Computing data for station [{traffic_station}] in interval "
+            logger.info(f"Computing data for station [{traffic_station.code}] in interval "
                         f"[{start_date.isoformat()} - {to_date.isoformat()}]")
 
             traffic_data = []

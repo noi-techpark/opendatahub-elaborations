@@ -131,6 +131,7 @@ with TrafficStationsDAG(
         manager = _init_manager()
 
         def has_remaining_data(measure: StationLatestMeasure) -> bool:
+            # TODO change now with last validated data
             now = datetime.now(tz=DEFAULT_TIMEZONE)
             date = measure.latest_time
             if date.tzinfo is None:
