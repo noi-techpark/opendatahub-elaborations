@@ -13,7 +13,7 @@ from common.data_model.validation import ValidationEntry, ValidationMeasure, Val
 from common.manager.traffic_station import TrafficStationManager
 from validator.model.validatation_model import ValidationModel
 
-logger = logging.getLogger("validator.manager.validation")
+logger = logging.getLogger("pollution_v2.validator.manager.validation")
 
 
 class ValidationManager(TrafficStationManager):

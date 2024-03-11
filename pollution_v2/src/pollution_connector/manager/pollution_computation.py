@@ -14,7 +14,7 @@ from common.manager.traffic_station import TrafficStationManager
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
 from pollution_connector.model.pollution_computation_model import PollutionComputationModel
 
-logger = logging.getLogger("pollution_connector.manager.pollution_computation")
+logger = logging.getLogger("pollution_v2.pollution_connector.manager.pollution_computation")
 
 
 class PollutionComputationManager(TrafficStationManager):

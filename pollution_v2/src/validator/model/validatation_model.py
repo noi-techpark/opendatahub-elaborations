@@ -18,7 +18,7 @@ from common.data_model.validation import ValidationEntry
 from common.model.model import GenericModel
 from pollution_connector.model.CopertEmissions import copert_emissions
 
-logger = logging.getLogger("validator.model.validation_model")
+logger = logging.getLogger("pollution_v2.validator.model.validation_model")
 
 
 class ValidationModel(GenericModel):

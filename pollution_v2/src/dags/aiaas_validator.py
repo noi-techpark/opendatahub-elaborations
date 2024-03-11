@@ -16,7 +16,7 @@ from common.settings import ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION_
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
 
-logger = logging.getLogger("dags.aiaas_validator")
+logger = logging.getLogger("pollution_v2.dags.aiaas_validator")
 
 default_args = {
     'owner': 'airflow',

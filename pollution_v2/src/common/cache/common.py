@@ -12,7 +12,7 @@ from typing import Optional, TypeVar, Generic, Type
 
 import redis
 
-logger = logging.getLogger("pollution_connector.cache.redis_cache")
+logger = logging.getLogger("pollution_v2.common.cache.common")
 
 
 class CacheData(ABC):

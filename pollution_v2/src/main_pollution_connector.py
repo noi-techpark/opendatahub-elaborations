@@ -26,8 +26,8 @@ from common.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, PROVENA
     COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB, SENTRY_SAMPLE_RATE
 from pollution_connector.manager.pollution_computation import PollutionComputationManager
 
-logging.config.dictConfig(get_logging_configuration("main_pollution_connector"))
-logger = logging.getLogger("main_pollution_connector")
+# logging.config.dictConfig(get_logging_configuration("pollution_v2"))
+logger = logging.getLogger("pollution_v2.main_pollution_connector")
 
 sentry_sdk.init(
     traces_sample_rate=SENTRY_SAMPLE_RATE,

@@ -16,7 +16,7 @@ from keycloak import KeycloakOpenID
 
 from common.data_model.common import MeasureType, StationType, Station, Provenance, DataType
 
-logger = logging.getLogger("pollution_connector.connector.common")
+logger = logging.getLogger("pollution_v2.common.connector.common")
 
 
 @dataclass

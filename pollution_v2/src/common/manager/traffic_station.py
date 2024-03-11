@@ -19,7 +19,7 @@ from common.data_model.entry import GenericEntry
 from common.model.model import GenericModel
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
 
-logger = logging.getLogger("common.manager.traffic_station")
+logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
 
 
 def _get_latest_date(connector: ODHBaseConnector, traffic_station: TrafficSensorStation) -> datetime:

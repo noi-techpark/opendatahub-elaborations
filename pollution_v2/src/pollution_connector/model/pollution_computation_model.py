@@ -17,7 +17,7 @@ from common.data_model import TrafficMeasureCollection, TrafficEntry, TrafficSen
 from common.model.model import GenericModel
 from pollution_connector.model.CopertEmissions import copert_emissions
 
-logger = logging.getLogger("pollution_connector.model.pollution_computation_model")
+logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_computation_model")
 
 
 class PollutionComputationModel(GenericModel):

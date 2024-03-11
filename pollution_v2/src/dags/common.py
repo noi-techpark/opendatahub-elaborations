@@ -12,7 +12,7 @@ from common.data_model import StationLatestMeasure
 from common.manager.traffic_station import TrafficStationManager
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
 
-logger = logging.getLogger("dags.common")
+logger = logging.getLogger("pollution_v2.dags.common")
 
 
 class TrafficStationsDAG(DAG):

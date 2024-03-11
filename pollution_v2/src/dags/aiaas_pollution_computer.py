@@ -22,7 +22,7 @@ from pollution_connector.manager.pollution_computation import PollutionComputati
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
 
-logger = logging.getLogger("dags.aiaas_pollution_computer")
+logger = logging.getLogger("pollution_v2.dags.aiaas_pollution_computer")
 
 default_args = {
     'owner': 'airflow',
