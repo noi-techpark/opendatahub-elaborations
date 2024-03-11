@@ -21,10 +21,10 @@ class ValidationManager(TrafficStationManager):
     def _get_model(self) -> ValidationModel:
         return ValidationModel()
 
-    def _get_main_collector(self) -> ODHBaseConnector:
+    def _get_data_collector(self) -> ODHBaseConnector:
         return self._connector_collector.validation
 
-    def _get_latest_date_collector(self) -> ODHBaseConnector:
+    def _get_date_reference_collector(self) -> ODHBaseConnector:
         return self._connector_collector.traffic
 
     def _get_data_types(self) -> List[DataType]:

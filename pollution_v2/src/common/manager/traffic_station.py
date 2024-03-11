@@ -52,11 +52,11 @@ class TrafficStationManager(ABC):
         pass
 
     @abstractmethod
-    def _get_main_collector(self) -> ODHBaseConnector:
+    def _get_data_collector(self) -> ODHBaseConnector:
         pass
 
     @abstractmethod
-    def _get_latest_date_collector(self) -> ODHBaseConnector:
+    def _get_date_reference_collector(self) -> ODHBaseConnector:
         pass
 
     @abstractmethod
@@ -145,7 +145,7 @@ class TrafficStationManager(ABC):
 
         :return: List of stations with its latest measure date.
         """
-        all_measures = self._get_main_collector().get_latest_measures()
+        all_measures = self._get_data_collector().get_latest_measures()
 
         grouped = {}
         for station_code, values in itertools.groupby(all_measures, lambda m: m.station.code):
@@ -195,15 +195,15 @@ class TrafficStationManager(ABC):
 
         logger.debug(f"Posting provenance {self._provenance}")
         if not self._provenance.provenance_id:
-            self._provenance.provenance_id = self._get_main_collector().post_provenance(self._provenance)
+            self._provenance.provenance_id = self._get_data_collector().post_provenance(self._provenance)
 
         logger.debug(f"Posting data types {self._get_data_types()}")
         if self._create_data_types:
-            self._get_main_collector().post_data_types(self._get_data_types(), self._provenance)
+            self._get_data_collector().post_data_types(self._get_data_types(), self._provenance)
 
         data = self._build_from_entries(input_entries)
         logger.debug(f"Posting measures {len(data.measures)}")
-        self._get_main_collector().post_measures(data.measures)
+        self._get_data_collector().post_measures(data.measures)
 
     def run_computation_for_station(self,
                                     traffic_station: TrafficSensorStation,
@@ -216,19 +216,21 @@ class TrafficStationManager(ABC):
         :param min_from_date: Starting date for interval.
         :param max_to_date: Ending date for interval.
         """
-        start_date = self._get_starting_date(self._get_main_collector(), traffic_station, min_from_date)
+        start_date = self._get_starting_date(self._get_date_reference_collector(), traffic_station, min_from_date)
 
         # Detect inactive stations:
         # If we're about to request more than one window of measurements, do a check first if there even is any new data
         if (max_to_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
-            latest_measurement_date = _get_latest_date(self._get_latest_date_collector(), traffic_station)
+            latest_measurement_date = _get_latest_date(self._get_date_reference_collector(), traffic_station)
             # traffic data request range end is the latest measurement
             # For inactive stations, this latest measurement date will be < start_date,
             # thus no further requests will be made. In general, it makes no sense to ask for data beyond
             # the latest measurement, if we already know which date that is.
-            logger.info(f"Station [{traffic_station.code}] has a large elaboration range. "
-                        f"Latest measurement date: {latest_measurement_date}")
             max_to_date = min(max_to_date, latest_measurement_date)
+
+            if (max_to_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
+                logger.info(f"Station [{traffic_station.code}] has a large elaboration range. "
+                            f"Latest measurement date: {latest_measurement_date}")
 
         to_date = start_date
 
@@ -254,8 +256,8 @@ class TrafficStationManager(ABC):
                     computed_entries = self._compute_data(traffic_data)
                     self._upload_data(computed_entries)
                 except Exception as e:
-                    logger.exception(f"Unable to compute data from station [{traffic_station}] in the interval "
-                                     f"[{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
+                    logger.exception(f"Unable to compute data from station [{traffic_station.code}] in the "
+                                     f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
 
                 if self._checkpoint_cache is not None:
                     self._checkpoint_cache.set(
@@ -264,6 +266,9 @@ class TrafficStationManager(ABC):
                             checkpoint_dt=to_date
                         )
                     )
+        else:
+            logger.info(f"Nothing to process for station [{traffic_station.code}] in interval "
+                        f"[{start_date.isoformat()} - {to_date.isoformat()}]")
 
     def run_computation_and_upload_results(self,
                                            min_from_date: datetime,
