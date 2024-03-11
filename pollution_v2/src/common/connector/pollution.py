@@ -30,7 +30,7 @@ class PollutionODHConnector(ODHBaseConnector[PollutionMeasure, TrafficSensorStat
                  requests_retry_sleep_time: float) -> None:
 
         station_type = "TrafficSensor"
-        measure_types = PollutionMeasure.get_pollution_data_types()
+        measure_types = PollutionMeasure.get_data_types()
         measure_types = [measure_type.name for measure_type in measure_types]
 
         super().__init__(base_reader_url,

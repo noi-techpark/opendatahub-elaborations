@@ -25,8 +25,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
         self.latest_date = DEFAULT_TIMEZONE.localize(datetime(2024, 1, 30))
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_pollution_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_pollution_data")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
@@ -66,8 +66,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
             upload_mock.assert_called_once()
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_pollution_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_pollution_data")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
@@ -116,8 +116,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
             upload_mock.assert_called_once()
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_pollution_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_pollution_data")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")

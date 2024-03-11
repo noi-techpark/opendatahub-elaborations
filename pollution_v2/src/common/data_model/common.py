@@ -219,3 +219,6 @@ class MeasureCollection(Generic[MeasureType, StationType]):
             if measure.station.code not in stations_dict:
                 stations_dict[measure.station.code] = measure.station
         return stations_dict
+
+
+MeasureCollectionType = TypeVar("MeasureCollectionType", bound=MeasureCollection)

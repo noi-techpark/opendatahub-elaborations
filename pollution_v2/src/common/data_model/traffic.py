@@ -6,7 +6,7 @@ from __future__ import absolute_import, annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict, Iterator
+from typing import Optional, Dict, Iterator, TypeVar
 
 import dateutil.parser
 
@@ -57,6 +57,9 @@ class TrafficSensorStation(Station):
         )
 
 
+TrafficSensorStationType = TypeVar("TrafficSensorStationType", bound=TrafficSensorStation)
+
+
 @dataclass
 class TrafficMeasure(Measure):
     station: TrafficSensorStation
@@ -68,7 +71,8 @@ class TrafficMeasure(Measure):
             data_type=DataType.from_odh_repr(raw_data),
             provenance=Provenance.from_odh_repr(raw_data),
             period=raw_data.get("mperiod"),
-            transaction_time=dateutil.parser.parse(raw_data["mtransactiontime"]) if raw_data.get("mtransactiontime") else None,
+            transaction_time=dateutil.parser.parse(raw_data["mtransactiontime"]) if raw_data.get(
+                "mtransactiontime") else None,
             valid_time=dateutil.parser.parse(raw_data["mvalidtime"]),
             value=raw_data["mvalue"],
         )
@@ -97,6 +101,9 @@ class TrafficMeasure(Measure):
             "AVERAGE SPEED HEAVY VEHICLES",
             "AVERAGE SPEED LIGHT VEHICLES"
         ]
+
+
+TrafficMeasureType = TypeVar("TrafficMeasureType", bound=TrafficMeasure)
 
 
 @dataclass
@@ -139,11 +146,13 @@ class TrafficMeasureCollection(MeasureCollection[TrafficMeasure, TrafficSensorSt
 
             if measure.is_vehicle_counting_measure:
                 if entry.nr_of_vehicles is not None:
-                    raise ValueError(f"Duplicated measure for type [{measure.data_type.name}] on station [{measure.station.code} for date [{measure.valid_time}]")
+                    raise ValueError(
+                        f"Duplicated measure for type [{measure.data_type.name}] on station [{measure.station.code} for date [{measure.valid_time}]")
                 entry.nr_of_vehicles = measure.value
             elif measure.is_average_speed_measure:
                 if entry.average_speed is not None:
-                    raise ValueError(f"Duplicated measure for type [{measure.data_type.name}] on station [{measure.station.code} for date [{measure.valid_time}]")
+                    raise ValueError(
+                        f"Duplicated measure for type [{measure.data_type.name}] on station [{measure.station.code} for date [{measure.valid_time}]")
                 entry.average_speed = measure.value
 
         return result

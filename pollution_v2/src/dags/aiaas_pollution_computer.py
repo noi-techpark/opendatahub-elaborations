@@ -10,7 +10,7 @@ from airflow.utils.trigger_rule import TriggerRule
 from redis.client import Redis
 
 from dags.common import TrafficStationsDAG
-from pollution_connector.cache.computation_checkpoint import ComputationCheckpointCache
+from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance, StationLatestMeasure
 from common.data_model import TrafficSensorStation

@@ -10,6 +10,7 @@ import logging.config
 import dateutil.parser
 import sentry_sdk
 
+from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.logging import get_logging_configuration
 
 import logging
@@ -18,7 +19,6 @@ from typing import Optional
 
 from redis.client import Redis
 
-from pollution_connector.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
 from common.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE, \
@@ -35,9 +35,7 @@ sentry_sdk.init(
 )
 
 
-def compute_pollution_data(min_from_date: Optional[datetime] = None,
-                           max_to_date: Optional[datetime] = None
-                           ) -> None:
+def compute_data(min_from_date: Optional[datetime] = None, max_to_date: Optional[datetime] = None) -> None:
     """
     Start the computation of a batch of pollution data measures. As starting date for the batch is used the latest
     pollution measure available on the ODH, if no pollution measures are available min_from_date is used.
@@ -94,10 +92,10 @@ if __name__ == "__main__":
     else:
         to_date = None
 
-    compute_pollution_data(min_from_date=from_date, max_to_date=to_date)
+    compute_data(min_from_date=from_date, max_to_date=to_date)
     '''if args.run_async:
-        task: AsyncResult = compute_pollution_data.delay(min_from_date=from_date, max_to_date=to_date)
+        task: AsyncResult = compute_data.delay(min_from_date=from_date, max_to_date=to_date)
         logger.info(f"Scheduled async pollution computation. Task ID: [{task.task_id}]")
     else:
         logger.info("Staring pollution computation")
-        compute_pollution_data(min_from_date=from_date, max_to_date=to_date)'''
+        compute_data(min_from_date=from_date, max_to_date=to_date)'''

@@ -10,7 +10,7 @@ from typing import Union
 
 import redis
 
-from pollution_connector.cache.common import CacheData, RedisCache
+from common.cache.common import CacheData, RedisCache
 from common.data_model.common import Station
 
 

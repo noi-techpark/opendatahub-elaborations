@@ -14,12 +14,13 @@ import pandas as pd
 from common.data_model.common import VehicleClass
 from common.data_model.pollution import PollutionEntry, PollutantClass
 from common.data_model import TrafficMeasureCollection, TrafficEntry, TrafficSensorStation
+from common.model.model import GenericModel
 from pollution_connector.model.CopertEmissions import copert_emissions
 
 logger = logging.getLogger("pollution_connector.model.pollution_computation_model")
 
 
-class PollutionComputationModel:
+class PollutionComputationModel(GenericModel):
 
     def __init__(self):
         pass
@@ -79,13 +80,13 @@ class PollutionComputationModel:
                 station=stations_dict[f"{row['Location']}:{row['Station']}:{row['Lane']}"],
                 valid_time=datetime.datetime.fromisoformat(f"{row['date']}T{row['time']}"),
                 vehicle_class=VehicleClass(row["Category"]),
-                pollutant_class=PollutantClass(row["Pollutant"]),
-                pollutant_value=row["E"],
+                entry_class=PollutantClass(row["Pollutant"]),
+                entry_value=row["E"],
                 period=row["Period"]
             ))
         return pollution_entries
 
-    def compute_pollution_data(self, traffic_measure_collection: TrafficMeasureCollection) -> List[PollutionEntry]:
+    def compute_data(self, traffic_measure_collection: TrafficMeasureCollection) -> List[PollutionEntry]:
         """
         Compute the pollution measure given the available traffic measures
         :param traffic_measure_collection: A collection which contain all the available traffic measures
