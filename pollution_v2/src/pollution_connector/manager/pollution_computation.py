@@ -15,7 +15,7 @@ from common.data_model.common import Provenance
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
 from common.data_model import TrafficMeasureCollection, TrafficSensorStation
 from pollution_connector.model.pollution_computation_model import PollutionComputationModel
-from common.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, ODH_COMPUTATION_BATCH_SIZE
+from common.settings import DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
 
 logger = logging.getLogger("pollution_connector.manager.pollution_computation")
 
@@ -23,59 +23,9 @@ logger = logging.getLogger("pollution_connector.manager.pollution_computation")
 class PollutionComputationManager(TrafficStationManager):
 
     def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance, checkpoint_cache: Optional[ComputationCheckpointCache] = None):
-        super().__init__(connector_collector)
-        self._checkpoint_cache = checkpoint_cache
+        super().__init__(connector_collector, checkpoint_cache)
         self._provenance = provenance
         self._create_data_types = True
-
-    def _get_latest_pollution_measure(self, traffic_station: TrafficSensorStation) -> Optional[PollutionMeasure]:
-        """
-        Retrieve the latest pollution measure for a given station. It will be the oldest one among all the measure types
-        (CO-emissions, CO2-emissions, ...) even though should be the same for all the types.
-
-        :param traffic_station: The station for which retrieve the latest pollution measure.
-        :return: The latest pollution measure for a given station.
-        """
-        latest_pollution_measures = self._connector_collector.pollution.get_latest_measures(traffic_station)
-        if latest_pollution_measures:
-            self._create_data_types = False
-            latest_pollution_measures.sort(key=lambda x: x.valid_time)
-            return latest_pollution_measures[0]
-
-    def _get_starting_date_for_station(self, traffic_station: TrafficSensorStation, min_from_date: datetime) -> datetime:
-        latest_pollution_measure = self._get_latest_pollution_measure(traffic_station)
-        if latest_pollution_measure is None:
-            logger.info(f"No pollution measures available for station [{traffic_station.code}]")
-            if self._checkpoint_cache is not None:
-                checkpoint = self._checkpoint_cache.get(ComputationCheckpoint.get_id_for_station(traffic_station))
-                if checkpoint is not None:
-                    logger.info(f"Using checkpoint date [{checkpoint.checkpoint_dt.isoformat()}] as starting date for station [{traffic_station.code}]")
-                    from_date = checkpoint.checkpoint_dt
-                else:
-                    from_date = min_from_date  # If there isn't any latest pollution measure available, the min_from_date is used as starting date for the batch
-            else:
-                from_date = min_from_date  # If there isn't any latest pollution measure available, the min_from_date is used as starting date for the batch
-        else:
-            from_date = latest_pollution_measure.valid_time
-
-        if from_date.tzinfo is None:
-            from_date = DEFAULT_TIMEZONE.localize(from_date)
-
-        if from_date.microsecond:
-            from_date = from_date.replace(microsecond=0)
-
-        if from_date < min_from_date:
-            logger.warning(f"Using latest pollution measure date [{from_date.isoformat()}] as starting date, "
-                           f"but it's before the minimum starting date [{min_from_date.isoformat()}]")
-        elif from_date > min_from_date:
-            logger.warning(f"Using latest pollution measure date [{from_date.isoformat()}] as starting date, "
-                           f"which is after the minimum starting date [{min_from_date.isoformat()}]")
-
-        return from_date
-
-    def _get_latest_date_for_station(self, traffic_station: TrafficSensorStation) -> datetime:
-        measures = self._connector_collector.traffic.get_latest_measures(station=traffic_station)
-        return max(list(map(lambda m: m.valid_time, measures)), default=ODH_MINIMUM_STARTING_DATE)
 
     @staticmethod
     def _compute_pollution_data(traffic_data: TrafficMeasureCollection) -> List[PollutionEntry]:
@@ -112,12 +62,12 @@ class PollutionComputationManager(TrafficStationManager):
                                     min_from_date: datetime,
                                     max_to_date: datetime):
 
-        start_date = self._get_starting_date_for_station(traffic_station, min_from_date)
+        start_date = self._get_starting_date(self._connector_collector.pollution, traffic_station, min_from_date)
 
         # Detect inactive stations:
         # If we're about to request more than one window of measurements, do a check first if there even is any new data
         if (max_to_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
-            latest_measurement_date = self._get_latest_date_for_station(traffic_station)
+            latest_measurement_date = self._get_latest_date(self._connector_collector.validation, traffic_station)
             # traffic data request range end is the latest measurement
             # For inactive stations, this latest measurement date will be < start_date, thus no further requests will be made
             # In general, it makes no sense to ask for data beyond the latest measurement, if we already know which date that is.

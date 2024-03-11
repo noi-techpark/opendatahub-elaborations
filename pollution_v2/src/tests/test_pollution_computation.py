@@ -27,8 +27,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_pollution_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_pollution_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date_for_station")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date_for_station")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_daily(self, download_mock, latest_date_mock, get_start_date_mock,
                                               compute_mock, upload_mock, init_date_range_mock):
@@ -68,8 +68,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_pollution_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_pollution_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date_for_station")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date_for_station")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_when_more_data(self, download_mock, latest_date_mock, get_start_date_mock,
                                                        compute_mock, upload_mock, init_date_range_mock):
@@ -118,8 +118,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_pollution_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_pollution_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date_for_station")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date_for_station")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_when_few_data(self, download_mock, latest_date_mock, get_start_date_mock,
                                                       compute_mock, upload_mock, init_date_range_mock):
