@@ -9,7 +9,7 @@ from common.data_model.common import MeasureCollectionType
 from common.data_model.entry import GenericEntry
 
 
-class GenericModel(ABC, Generic[MeasureCollectionType]):
+class GenericModel(ABC):
 
     @abstractmethod
     def compute_data(self, traffic_measure_collection: MeasureCollection) -> List[GenericEntry]:

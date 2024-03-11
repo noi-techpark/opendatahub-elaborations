@@ -58,7 +58,7 @@ class TrafficStationsDAG(DAG):
             logger.info(f"{len(stations_from_prev_dag)} stations with unprocessed data from previous run, using them")
             traffic_stations = list(filter(lambda station: station.code in stations_from_prev_dag, traffic_stations))
 
-        logger.info(f"found {len(traffic_stations)} traffic stations")
+        logger.info(f"Found {len(traffic_stations)} traffic stations")
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
@@ -80,13 +80,15 @@ class TrafficStationsDAG(DAG):
         all_latest = manager.get_all_latest_measures()
         stations = []
         for item in all_latest:
+            logger.debug(f"Check if {item.station_code} has more data...")
             if has_remaining_data(item):
+                logger.debug(f"Forwarding station {item.station_code} to next execution")
                 stations.append(item.station_code)
 
         # True if on ODH there are lots of data to be processed (e.g. new station with old unprocessed data)
         run_again = len(stations) > 0
 
-        logger.info(f"{'' if run_again else 'NOT '}starting another self-triggered run as {len(stations)} "
+        logger.info(f"{'S' if run_again else 'NOT s'}tarting another self-triggered run as {len(stations)} "
                     f"stations have still unprocessed data")
 
         if run_again:

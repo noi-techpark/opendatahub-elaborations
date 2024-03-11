@@ -14,8 +14,8 @@ from common.cache.computation_checkpoint import ComputationCheckpointCache, Comp
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficMeasureCollection, TrafficSensorStation, StationLatestMeasure, Measure
-from common.data_model.common import MeasureType, MeasureCollectionType, Provenance
-from common.data_model.entry import GenericEntry, GenericEntryType
+from common.data_model.common import Provenance, DataType
+from common.data_model.entry import GenericEntry
 from common.model.model import GenericModel
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
 
@@ -34,7 +34,7 @@ def _get_latest_date(connector: ODHBaseConnector, traffic_station: TrafficSensor
     return max(list(map(lambda m: m.valid_time, measures)), default=ODH_MINIMUM_STARTING_DATE)
 
 
-class TrafficStationManager(ABC, Generic[GenericEntryType, MeasureType, MeasureCollectionType]):
+class TrafficStationManager(ABC):
     """
     Abstract manager for interactions on traffic stations
     """
@@ -57,6 +57,14 @@ class TrafficStationManager(ABC, Generic[GenericEntryType, MeasureType, MeasureC
 
     @abstractmethod
     def _get_latest_date_collector(self) -> ODHBaseConnector:
+        pass
+
+    @abstractmethod
+    def _get_data_types(self) -> List[DataType]:
+        pass
+
+    @abstractmethod
+    def _build_from_entries(self, input_entries: List[GenericEntry]):
         pass
 
     def _compute_data(self, input_data: TrafficMeasureCollection) -> List[GenericEntry]:
@@ -137,7 +145,7 @@ class TrafficStationManager(ABC, Generic[GenericEntryType, MeasureType, MeasureC
 
         :return: List of stations with its latest measure date.
         """
-        all_measures = self._connector_collector.traffic.get_latest_measures()
+        all_measures = self._get_main_collector().get_latest_measures()
 
         grouped = {}
         for station_code, values in itertools.groupby(all_measures, lambda m: m.station.code):
@@ -147,6 +155,7 @@ class TrafficStationManager(ABC, Generic[GenericEntryType, MeasureType, MeasureC
 
         res = []
         for key, value in grouped.items():
+            logger.debug(f"Latest date for {key} is {max(list(map(lambda m: m.valid_time, value)),  default=ODH_MINIMUM_STARTING_DATE)}")
             res.append(StationLatestMeasure(key, max(list(map(lambda m: m.valid_time, value)),
                                                      default=ODH_MINIMUM_STARTING_DATE)))
 
@@ -184,16 +193,16 @@ class TrafficStationManager(ABC, Generic[GenericEntryType, MeasureType, MeasureC
         :param input_entries: The input entries.
         """
 
-        print(f"posting provenance {self._provenance}")
+        logger.debug(f"Posting provenance {self._provenance}")
         if not self._provenance.provenance_id:
             self._provenance.provenance_id = self._get_main_collector().post_provenance(self._provenance)
 
-        print(f"posting data types {MeasureType.get_data_types()}")
+        logger.debug(f"Posting data types {self._get_data_types()}")
         if self._create_data_types:
-            self._get_main_collector().post_data_types(MeasureType.get_data_types(), self._provenance)
+            self._get_main_collector().post_data_types(self._get_data_types(), self._provenance)
 
-        data = MeasureCollectionType.build_from_pollution_entries(input_entries, self._provenance)
-        print(f"posting measures {len(data.measures)}")
+        data = self._build_from_entries(input_entries)
+        logger.debug(f"Posting measures {len(data.measures)}")
         self._get_main_collector().post_measures(data.measures)
 
     def run_computation_for_station(self,

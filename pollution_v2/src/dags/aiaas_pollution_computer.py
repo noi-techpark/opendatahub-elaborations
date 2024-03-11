@@ -114,7 +114,7 @@ with TrafficStationsDAG(
 
         computation_start_dt = datetime.now()
 
-        logger.info(f"running computation from {min_from_date} to {max_to_date}")
+        logger.info(f"Running computation from {min_from_date} to {max_to_date}")
         manager.run_computation_for_station(station, min_from_date, max_to_date)
 
         computation_end_dt = datetime.now()

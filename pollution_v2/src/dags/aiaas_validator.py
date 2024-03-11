@@ -94,7 +94,7 @@ with TrafficStationsDAG(
 
         computation_start_dt = datetime.now()
 
-        logger.info(f"running validation from {min_from_date} to {max_to_date}")
+        logger.info(f"Running validation from {min_from_date} to {max_to_date}")
 
         # TODO: implement validation
 
