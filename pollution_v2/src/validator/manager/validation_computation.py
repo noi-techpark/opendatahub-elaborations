@@ -8,7 +8,6 @@ import logging
 
 from common.connector.common import ODHBaseConnector
 from common.manager.traffic_station import TrafficStationManager
-# TODO move cache to common
 from validator.model.validatation_model import ValidationModel
 
 logger = logging.getLogger("validator.manager.validation_computation")

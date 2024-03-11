@@ -256,9 +256,6 @@ class TrafficStationManager(ABC, Generic[GenericEntryType, MeasureType, MeasureC
                         )
                     )
 
-            # TODO togliere, probabile retaggio da quando si aveva il while
-            start_date = to_date
-
     def run_computation_and_upload_results(self,
                                            min_from_date: datetime,
                                            max_to_date: datetime
