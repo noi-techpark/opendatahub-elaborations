@@ -5,11 +5,9 @@ services:
   x-airflow-common:
     &airflow-common
     image: ${DOCKER_IMAGE}:${DOCKER_TAG}
-    # temporarly disabled: permission denied
     volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
-      - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/dags
-    # user: "${AIRFLOW_UID:-50000}:0"
+      - pollution-logs:/opt/airflow/logs
+    user: "${AIRFLOW_UID:-50000}:0"
     env_file:
     - .env
     depends_on:
@@ -218,3 +216,4 @@ services:
 
 volumes:
   postgres-db-volume:
+  pollution-logs:
