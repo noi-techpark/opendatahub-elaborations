@@ -7,12 +7,19 @@ from __future__ import absolute_import, annotations
 import json
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 from json import JSONDecodeError
 from typing import Optional, TypeVar, Generic, Type
 
 import redis
 
 logger = logging.getLogger("pollution_v2.common.cache.common")
+
+
+class TrafficManagerClass(Enum):
+
+    POLLUTION = "POLLUTION"
+    VALIDATION = "VALIDATION"
 
 
 class CacheData(ABC):

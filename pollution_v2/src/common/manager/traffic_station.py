@@ -8,9 +8,9 @@ import itertools
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from enum import Enum
-from typing import List, Optional, Generic
+from typing import List, Optional
 
+from common.cache.common import TrafficManagerClass
 from common.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
@@ -21,12 +21,6 @@ from common.model.model import GenericModel
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
-
-
-class TrafficManagerClass(Enum):
-
-    POLLUTION = "POLLUTION"
-    VALIDATION = "VALIDATION"
 
 
 def _get_latest_date(connector: ODHBaseConnector, traffic_station: TrafficSensorStation) -> datetime:
