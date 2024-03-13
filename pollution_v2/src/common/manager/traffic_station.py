@@ -8,6 +8,7 @@ import itertools
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
+from enum import Enum
 from typing import List, Optional, Generic
 
 from common.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
@@ -20,6 +21,12 @@ from common.model.model import GenericModel
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
+
+
+class TrafficManagerClass(Enum):
+
+    POLLUTION = "POLLUTION"
+    VALIDATION = "VALIDATION"
 
 
 def _get_latest_date(connector: ODHBaseConnector, traffic_station: TrafficSensorStation) -> datetime:
@@ -46,6 +53,10 @@ class TrafficStationManager(ABC):
         self._provenance = provenance
         self._traffic_stations: List[TrafficSensorStation] = []
         self._create_data_types = True
+
+    @abstractmethod
+    def _get_type(self) -> TrafficManagerClass:
+        pass
 
     @abstractmethod
     def _get_model(self) -> GenericModel:
@@ -83,7 +94,8 @@ class TrafficStationManager(ABC):
         if latest_measure is None:
             logger.info(f"No measures available for station [{traffic_station.code}]")
             if self._checkpoint_cache is not None:
-                checkpoint = self._checkpoint_cache.get(ComputationCheckpoint.get_id_for_station(traffic_station))
+                checkpoint = self._checkpoint_cache.get(ComputationCheckpoint.get_id_for_station(traffic_station,
+                                                                                                 self._get_type()))
                 if checkpoint is not None:
                     logger.info(f"Using checkpoint date [{checkpoint.checkpoint_dt.isoformat()}] "
                                 f"as starting date for station [{traffic_station.code}]")

@@ -9,7 +9,7 @@ from typing import List
 
 from common.connector.common import ODHBaseConnector
 from common.data_model import DataType
-from common.manager.traffic_station import TrafficStationManager
+from common.manager.traffic_station import TrafficStationManager, TrafficManagerClass
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
 from pollution_connector.model.pollution_computation_model import PollutionComputationModel
 
@@ -17,6 +17,9 @@ logger = logging.getLogger("pollution_v2.pollution_connector.manager.pollution_c
 
 
 class PollutionComputationManager(TrafficStationManager):
+
+    def _get_type(self) -> TrafficManagerClass:
+        return TrafficManagerClass.POLLUTION
 
     def _get_model(self) -> PollutionComputationModel:
         return PollutionComputationModel()
