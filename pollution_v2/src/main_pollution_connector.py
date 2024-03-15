@@ -6,27 +6,22 @@ from __future__ import absolute_import, annotations
 
 import argparse
 import logging.config
-
-import dateutil.parser
-import sentry_sdk
-
-from common.cache.computation_checkpoint import ComputationCheckpointCache
-from common.logging import get_logging_configuration
-
-import logging
 from datetime import datetime
 from typing import Optional
 
+import dateutil.parser
+import sentry_sdk
 from redis.client import Redis
 
+from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
-from common.data_model.common import Provenance
-from common.settings import DEFAULT_TIMEZONE, ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE, \
-    PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_HOST, \
-    COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB, SENTRY_SAMPLE_RATE
+from common.data_model import Provenance
+from common.logging import get_logging_configuration
+from common.settings import DEFAULT_TIMEZONE, SENTRY_SAMPLE_RATE, ODH_MINIMUM_STARTING_DATE, \
+    COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT, PROVENANCE_ID, PROVENANCE_LINEAGE, \
+    PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_DB
 from pollution_connector.manager.pollution_computation import PollutionComputationManager
 
-# logging.config.dictConfig(get_logging_configuration("pollution_v2"))
 logger = logging.getLogger("pollution_v2.main_pollution_connector")
 
 sentry_sdk.init(
@@ -35,7 +30,10 @@ sentry_sdk.init(
 )
 
 
-def compute_data(min_from_date: Optional[datetime] = None, max_to_date: Optional[datetime] = None) -> None:
+# not used anymore after refactoring from Celery to Airflow
+def compute_data(min_from_date: Optional[datetime] = None,
+                 max_to_date: Optional[datetime] = None
+                 ) -> None:
     """
     Start the computation of a batch of pollution data measures. As starting date for the batch is used the latest
     pollution measure available on the ODH, if no pollution measures are available min_from_date is used.
@@ -54,7 +52,9 @@ def compute_data(min_from_date: Optional[datetime] = None, max_to_date: Optional
     checkpoint_cache = None
     if COMPUTATION_CHECKPOINT_REDIS_HOST:
         logger.info("Enabled checkpoint cache")
-        checkpoint_cache = ComputationCheckpointCache(Redis(host=COMPUTATION_CHECKPOINT_REDIS_HOST, port=COMPUTATION_CHECKPOINT_REDIS_PORT, db=COMPUTATION_CHECKPOINT_REDIS_DB))
+        checkpoint_cache = ComputationCheckpointCache(Redis(host=COMPUTATION_CHECKPOINT_REDIS_HOST,
+                                                            port=COMPUTATION_CHECKPOINT_REDIS_PORT,
+                                                            db=COMPUTATION_CHECKPOINT_REDIS_DB))
     else:
         logger.info("Checkpoint cache disabled")
 
@@ -68,10 +68,13 @@ if __name__ == "__main__":
 
     arg_parser = argparse.ArgumentParser(description="Manually run a pollution (v2) computation")
     arg_parser.add_argument("-f", "--from-date", type=str, required=False,
-                            help="The starting date[time] in isoformat (up to one second level of precision, milliseconds for the from date field are not supported in ODH) for downloading data from ODH if no pollution measures are available")
+                            help="The starting date[time] in isoformat (up to one second level of precision, "
+                                 "milliseconds for the from date field are not supported in ODH) for downloading data "
+                                 "from ODH if no pollution measures are available")
 
     arg_parser.add_argument("-t", "--to-date", type=str, required=False,
-                            help="The end date[time] in isoformat for downloading the traffic measures. If not specified, the default will be the current datetime")
+                            help="The end date[time] in isoformat for downloading the traffic measures. "
+                                 "If not specified, the default will be the current datetime")
 
     arg_parser.add_argument("--run-async", action="store_true", help="If set it run the task in the celery cluster")
     args = arg_parser.parse_args()

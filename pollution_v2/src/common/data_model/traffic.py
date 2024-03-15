@@ -6,7 +6,7 @@ from __future__ import absolute_import, annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict, Iterator, TypeVar
+from typing import Optional, Dict, Iterator
 
 import dateutil.parser
 
@@ -57,9 +57,6 @@ class TrafficSensorStation(Station):
         )
 
 
-TrafficSensorStationType = TypeVar("TrafficSensorStationType", bound=TrafficSensorStation)
-
-
 @dataclass
 class TrafficMeasure(Measure):
     station: TrafficSensorStation
@@ -101,9 +98,6 @@ class TrafficMeasure(Measure):
             "AVERAGE SPEED HEAVY VEHICLES",
             "AVERAGE SPEED LIGHT VEHICLES"
         ]
-
-
-TrafficMeasureType = TypeVar("TrafficMeasureType", bound=TrafficMeasure)
 
 
 @dataclass

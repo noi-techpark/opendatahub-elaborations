@@ -12,12 +12,12 @@ from redis.client import Redis
 from dags.common import TrafficStationsDAG
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
-from common.data_model.common import Provenance, StationLatestMeasure
+from common.data_model.common import Provenance
 from common.data_model import TrafficSensorStation
 from common.settings import ODH_MINIMUM_STARTING_DATE, \
     COMPUTATION_CHECKPOINT_REDIS_DB, COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST, \
     PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION, DAG_POLLUTION_EXECUTION_CRONTAB, \
-    DEFAULT_TIMEZONE, DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
+    DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
 from pollution_connector.manager.pollution_computation import PollutionComputationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -62,6 +62,7 @@ with TrafficStationsDAG(
 
     default_args=default_args
 ) as dag:
+
     def _init_manager() -> PollutionComputationManager:
         """
         Inits what needed for the computation of a batch of pollution data measures.
@@ -76,11 +77,10 @@ with TrafficStationsDAG(
         else:
             logger.info("Checkpoint cache disabled")
 
-        collector_connector = ConnectorCollector.build_from_env()
+        connector_collector = ConnectorCollector.build_from_env()
         provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION)
-        manager = PollutionComputationManager(collector_connector, provenance, checkpoint_cache)
+        manager = PollutionComputationManager(connector_collector, provenance, checkpoint_cache)
         return manager
-
 
     @task
     def get_stations_list(**kwargs) -> list[dict]:
@@ -89,10 +89,14 @@ with TrafficStationsDAG(
 
         :return: list of strings containing stations list
         """
-
         manager = _init_manager()
 
-        station_dicts = dag.get_stations_list(manager, **kwargs)
+        stations_list = dag.get_stations_list(manager, **kwargs)
+
+        # Serialization and deserialization is dependent on speed.
+        # Use built-in functions like dict as much as you can and stay away
+        # from using classes and other complex structures.
+        station_dicts = [station.to_json() for station in stations_list]
 
         return station_dicts
 
@@ -114,7 +118,7 @@ with TrafficStationsDAG(
 
         computation_start_dt = datetime.now()
 
-        logger.info(f"Running computation from {min_from_date} to {max_to_date}")
+        logger.info(f"Running computation from [{min_from_date}] to [{max_to_date}]")
         manager.run_computation_for_station(station, min_from_date, max_to_date)
 
         computation_end_dt = datetime.now()
@@ -130,13 +134,15 @@ with TrafficStationsDAG(
         """
         manager = _init_manager()
 
-        def has_remaining_data(measure: StationLatestMeasure) -> bool:
-            # TODO change now with last validated data
-            now = datetime.now(tz=DEFAULT_TIMEZONE)
-            date = measure.latest_time
-            if date.tzinfo is None:
-                date = DEFAULT_TIMEZONE.localize(date)
-            return (now - date).total_seconds() / 3600 > DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
+        def has_remaining_data(starting_date: datetime, ending_date: datetime) -> bool:
+            """
+            Determines if there are still enought data to be processed for another DAG run on the specific station.
+
+            :param starting_date: the date on which data availability starts
+            :param ending_date: the date on which data availability ends
+            :return: true if there are enought data to run another DAG on this station
+            """
+            return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
 
         dag.trigger_next_dag_run(manager, dag, has_remaining_data, **kwargs)
 

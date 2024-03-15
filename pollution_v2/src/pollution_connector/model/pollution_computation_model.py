@@ -21,6 +21,9 @@ logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_com
 
 
 class PollutionComputationModel(GenericModel):
+    """
+    The model for computing pollution data.
+    """
 
     def __init__(self):
         pass

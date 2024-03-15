@@ -314,7 +314,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
             else:
                 raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
             query_params["where"] = f'scode.eq."{code}"'
-            logger.info(f"Retrieving latest measures for station [{code}]")
+            logger.info(f"Retrieving latest measures for station [{code}] on [{type(self).__name__}]")
         else:
             logger.info("Retrieving latest measures for all stations")
 

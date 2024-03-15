@@ -14,7 +14,8 @@ from common.settings import ODH_AUTHENTICATION_URL, ODH_USERNAME, ODH_PASSWORD, 
 
 class ConnectorCollector:
 
-    def __init__(self, traffic: TrafficODHConnector, validation: ValidationODHConnector, pollution: PollutionODHConnector):
+    def __init__(self, traffic: TrafficODHConnector, validation: ValidationODHConnector,
+                 pollution: PollutionODHConnector):
         self.traffic = traffic
         self.validation = validation
         self.pollution = pollution

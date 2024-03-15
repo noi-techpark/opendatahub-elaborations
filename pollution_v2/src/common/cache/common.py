@@ -66,7 +66,6 @@ class RedisCache(Generic[CacheDataType], ABC):
         Cache the data in dict format inside the redis db.
 
         :param data: the data to cache
-        :param key: the key to save the data
         :param ttl: the time to live of the data entry (expressed in seconds)
         """
         logger.info(f"Caching data for key [{data.unique_id()}] and ttl [{ttl}].")

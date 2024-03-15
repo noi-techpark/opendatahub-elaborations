@@ -7,7 +7,7 @@ from __future__ import absolute_import, annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TypeVar, Generic, List, Iterable, Optional, Dict, Any, ClassVar
+from typing import TypeVar, Generic, List, Iterable, Optional, Dict, ClassVar
 
 import dateutil.parser
 
@@ -219,6 +219,3 @@ class MeasureCollection(Generic[MeasureType, StationType]):
             if measure.station.code not in stations_dict:
                 stations_dict[measure.station.code] = measure.station
         return stations_dict
-
-
-MeasureCollectionType = TypeVar("MeasureCollectionType", bound=MeasureCollection)
