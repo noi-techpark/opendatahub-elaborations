@@ -21,11 +21,6 @@ from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COM
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
 
 
-def _get_latest_date(connector: ODHBaseConnector, traffic_station: TrafficSensorStation) -> datetime:
-    measures = connector.get_latest_measures(station=traffic_station)
-    return max(list(map(lambda m: m.valid_time, measures)), default=ODH_MINIMUM_STARTING_DATE)
-
-
 class TrafficStationManager(ABC):
     """
     Abstract class generalising traffic managers, in charge of computing the data given the traffic data.
@@ -90,6 +85,10 @@ class TrafficStationManager(ABC):
         model = self._get_model()
         return model.compute_data(input_data)
 
+    def _get_latest_date(self, connector: ODHBaseConnector, traffic_station: TrafficSensorStation) -> datetime:
+        measures = connector.get_latest_measures(station=traffic_station)
+        return max(list(map(lambda m: m.valid_time, measures)), default=ODH_MINIMUM_STARTING_DATE)
+
     def get_starting_date(self, connector: ODHBaseConnector, traffic_station: TrafficSensorStation,
                           min_from_date: datetime) -> datetime:
         """
@@ -106,7 +105,8 @@ class TrafficStationManager(ABC):
         if latest_measure is None:
             logger.info(f"No measures available for station [{traffic_station.code}] on [{type(connector).__name__}]")
             if self._checkpoint_cache is not None:
-                logger.info(f"Looking on checkpoints for station [{traffic_station.code}] on [{type(connector).__name__}]")
+                logger.info(
+                    f"Looking on checkpoints for station [{traffic_station.code}] on [{type(connector).__name__}]")
                 checkpoint = self._checkpoint_cache.get(ComputationCheckpoint.get_id_for_station(traffic_station,
                                                                                                  self._get_manager_code()))
                 if checkpoint is not None:
@@ -141,12 +141,12 @@ class TrafficStationManager(ABC):
                            f"but it's before the minimum starting date [{min_from_date.isoformat()}]")
         elif from_date > min_from_date:
             logger.info(f"Using latest measure date [{from_date.isoformat()}] as starting date, "
-                           f"which is after the minimum starting date [{min_from_date.isoformat()}]")
+                        f"which is after the minimum starting date [{min_from_date.isoformat()}]")
 
         return from_date
 
     def __get_latest_measure(self, connector: ODHBaseConnector,
-                            traffic_station: TrafficSensorStation) -> Optional[Measure]:
+                             traffic_station: TrafficSensorStation) -> Optional[Measure]:
         """
         Retrieve the latest measure for a given station. It will be the oldest one among all the measure types
         (for pollution, CO-emissions, CO2-emissions, ...) even though should be the same for all the types.
@@ -177,11 +177,11 @@ class TrafficStationManager(ABC):
         """
         return self._connector_collector.traffic.get_station_list()
 
-    def __download_traffic_data(self,
-                                from_date: datetime,
-                                to_date: datetime,
-                                traffic_station: TrafficSensorStation
-                                ) -> TrafficMeasureCollection:
+    def _download_traffic_data(self,
+                               from_date: datetime,
+                               to_date: datetime,
+                               traffic_station: TrafficSensorStation
+                               ) -> TrafficMeasureCollection:
         """
         Download traffic data measures in the given interval.
 
@@ -194,7 +194,7 @@ class TrafficStationManager(ABC):
                                                                                                 to_date=to_date,
                                                                                                 station=traffic_station))
 
-    def __upload_data(self, input_entries: List[GenericEntry]) -> None:
+    def _upload_data(self, input_entries: List[GenericEntry]) -> None:
         """
         Upload the input data on ODH.
         If a data is already present it will be not overridden and
@@ -238,7 +238,7 @@ class TrafficStationManager(ABC):
         # Detect inactive stations:
         # If we're about to request more than one window of measurements, do a check first if there even is any new data
         if (max_to_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
-            latest_measurement_date = _get_latest_date(self.get_date_reference_collector(), traffic_station)
+            latest_measurement_date = self._get_latest_date(self.get_date_reference_collector(), traffic_station)
             # traffic data request range end is the latest measurement
             # For inactive stations, this latest measurement date will be < start_date,
             # thus no further requests will be made. In general, it makes no sense to ask for data
@@ -263,7 +263,7 @@ class TrafficStationManager(ABC):
 
             traffic_data = []
             try:
-                traffic_data = self.__download_traffic_data(start_date, to_date, traffic_station)
+                traffic_data = self._download_traffic_data(start_date, to_date, traffic_station)
             except Exception as e:
                 logger.exception(
                     f"Unable to download traffic data for station [{traffic_station.code}] "
@@ -273,7 +273,7 @@ class TrafficStationManager(ABC):
             if traffic_data:
                 try:
                     entries = self._compute_data(traffic_data)
-                    self.__upload_data(entries)
+                    self._upload_data(entries)
                 except Exception as e:
                     logger.exception(f"Unable to compute data from station [{traffic_station.code}] in the "
                                      f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)

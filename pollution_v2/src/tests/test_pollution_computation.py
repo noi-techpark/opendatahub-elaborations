@@ -5,7 +5,7 @@
 import importlib
 from datetime import datetime, timedelta
 from unittest import mock
-from unittest.mock import patch
+from unittest.mock import patch, ANY
 
 from airflow.models import Variable
 
@@ -27,8 +27,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
+    @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_daily(self, download_mock, latest_date_mock, get_start_date_mock,
                                               compute_mock, upload_mock, init_date_range_mock):
@@ -56,7 +56,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
             station = TrafficSensorStation.from_json(self.station_dict)
 
-            get_start_date_mock.assert_called_once_with(station, self.min_date)
+            get_start_date_mock.assert_called_once_with(ANY, station, self.min_date)
             latest_date_mock.assert_not_called()
 
             # Test that the run_computation_for_station method is called with the correct daily date range
@@ -68,8 +68,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
+    @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_when_more_data(self, download_mock, latest_date_mock, get_start_date_mock,
                                                        compute_mock, upload_mock, init_date_range_mock):
@@ -103,9 +103,9 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
             station = TrafficSensorStation.from_json(self.station_dict)
 
-            get_start_date_mock.assert_called_once_with(station, self.min_date)
+            get_start_date_mock.assert_called_once_with(ANY, station, self.min_date)
             if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
-                latest_date_mock.assert_called_once_with(station)
+                latest_date_mock.assert_called_once_with(ANY, station)
             else:
                 latest_date_mock.assert_not_called()
 
@@ -118,8 +118,8 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_starting_date")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._get_latest_date")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
+    @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_when_few_data(self, download_mock, latest_date_mock, get_start_date_mock,
                                                       compute_mock, upload_mock, init_date_range_mock):
@@ -149,8 +149,11 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
             task_function(self.station_dict)
 
             station = TrafficSensorStation.from_json(self.station_dict)
-            get_start_date_mock.assert_called_once_with(station, self.min_date)
-            latest_date_mock.assert_not_called()
+            get_start_date_mock.assert_called_once_with(ANY, station, self.min_date)
+            if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
+                latest_date_mock.assert_called_once_with(ANY, station)
+            else:
+                latest_date_mock.assert_not_called()
 
             # Test that the run_computation_for_station method is called with the correct batch date range
             # Few data is available, so the end date is the max date
