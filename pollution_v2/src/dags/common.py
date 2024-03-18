@@ -60,8 +60,7 @@ class TrafficStationsDAG(DAG):
 
         logger.info(f"Found {len(traffic_stations)} traffic stations")
 
-        # TODO remove if
-        return [station for station in traffic_stations if station.code == "A22:1871:1"]
+        return [station for station in traffic_stations]
 
     @staticmethod
     def trigger_next_dag_run(manager: TrafficStationManager, originator_dag: DAG,
