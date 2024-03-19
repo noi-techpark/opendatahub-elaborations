@@ -15,7 +15,7 @@ from common.connector.collector import ConnectorCollector
 from common.data_model import TrafficSensorStation, Provenance
 from common.settings import ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION_CRONTAB, PROVENANCE_ID, \
     PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_HOST, \
-    COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB
+    COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE
 from validator.manager.validation import ValidationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -44,7 +44,7 @@ with TrafficStationsDAG(
     schedule=DAG_VALIDATION_EXECUTION_CRONTAB,
 
     # execution date starting at (if needed, backfill)
-    start_date=ODH_MINIMUM_STARTING_DATE,
+    start_date=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE),
 
     # if True, the scheduler creates a DAG Run for each completed interval between start_date and end_date
     # and the scheduler will execute them sequentially
