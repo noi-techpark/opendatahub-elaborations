@@ -87,7 +87,7 @@ class TrafficStationManager(ABC):
 
     def _get_latest_date(self, connector: ODHBaseConnector, traffic_station: TrafficSensorStation) -> datetime:
         measures = connector.get_latest_measures(station=traffic_station)
-        return max(list(map(lambda m: m.valid_time, measures)), default=ODH_MINIMUM_STARTING_DATE)
+        return max(list(map(lambda m: m.valid_time, measures)), default=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE))
 
     def get_starting_date(self, connector: ODHBaseConnector, traffic_station: TrafficSensorStation,
                           min_from_date: datetime) -> datetime:
