@@ -29,10 +29,10 @@ class PollutionComputationManager(TrafficStationManager):
     def _get_model(self) -> GenericModel:
         return PollutionComputationModel()
 
-    def get_data_collector(self) -> ODHBaseConnector:
+    def get_output_collector(self) -> ODHBaseConnector:
         return self._connector_collector.pollution
 
-    def get_date_reference_collector(self) -> ODHBaseConnector:
+    def get_input_collector(self) -> ODHBaseConnector:
         # on v1 it would have been self._connector_collector.traffic
         return self._connector_collector.validation
 
