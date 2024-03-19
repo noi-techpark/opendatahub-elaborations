@@ -4,6 +4,7 @@
 
 from __future__ import absolute_import, annotations
 
+from common.connector.history import HistoryODHConnector
 from common.connector.pollution import PollutionODHConnector
 from common.connector.traffic import TrafficODHConnector
 from common.connector.validation import ValidationODHConnector
@@ -14,9 +15,10 @@ from common.settings import ODH_AUTHENTICATION_URL, ODH_USERNAME, ODH_PASSWORD, 
 
 class ConnectorCollector:
 
-    def __init__(self, traffic: TrafficODHConnector, validation: ValidationODHConnector,
+    def __init__(self, traffic: TrafficODHConnector, history: HistoryODHConnector, validation: ValidationODHConnector,
                  pollution: PollutionODHConnector):
         self.traffic = traffic
+        self.history = history
         self.validation = validation
         self.pollution = pollution
 
@@ -39,6 +41,22 @@ class ConnectorCollector:
 
         return ConnectorCollector(
             traffic=TrafficODHConnector(
+                base_reader_url=base_reader_url,
+                base_writer_url=base_writer_url,
+                authentication_url=authentication_url,
+                username=user_name,
+                password=password,
+                client_id=client_id,
+                client_secret=client_secret,
+                grant_type=grant_type,
+                pagination_size=pagination_size,
+                max_post_batch_size=max_post_batch_size,
+                requests_timeout=requests_timeout,
+                requests_max_retries=requests_max_retries,
+                requests_sleep_time=requests_sleep_time,
+                requests_retry_sleep_time=requests_retry_sleep_time
+            ),
+            history=HistoryODHConnector(
                 base_reader_url=base_reader_url,
                 base_writer_url=base_writer_url,
                 authentication_url=authentication_url,

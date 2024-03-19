@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 # Il metodo utilizzato per validare i dati per il giorno specificato
-def validator(day, raw_data, history, km, station_type, config = '../../config/validator.yaml'):
+def validator(day, raw_data, history, km, station_type, config='../../config/validator.yaml'):
     """
     :param day: data per la quale validare i dati
     :param raw_data: dataframe con i dati grezzi
@@ -42,7 +42,8 @@ def validator(day, raw_data, history, km, station_type, config = '../../config/v
     for index, row in data.station_list.iterrows():
         if data.station_type[row['station']] != 'TVCC' or data.station_type[row['station']] != 'RADAR':
             # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
-            s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche, params.layer1('n'))
+            s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
+                        params.layer1('n'))
             A22.add_station(s)
     print('-----------------------')
     # -------------------------------------------------------------------------

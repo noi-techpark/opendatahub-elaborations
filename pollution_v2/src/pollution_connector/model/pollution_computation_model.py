@@ -89,18 +89,18 @@ class PollutionComputationModel(GenericModel):
             ))
         return pollution_entries
 
-    def compute_data(self, traffic_measure_collection: TrafficMeasureCollection) -> List[PollutionEntry]:
+    def compute_data(self, validated_measure_collection: TrafficMeasureCollection) -> List[PollutionEntry]:
         """
         Compute the pollution measure given the available traffic measures
-        :param traffic_measure_collection: A collection which contain all the available traffic measures
+        :param validated_measure_collection: A collection which contain all the available and validated traffic measures
         :return: A list of the new computed pollution measures
         """
-        traffic_entries = list(traffic_measure_collection.get_traffic_entries())
+        validated_entries = list(validated_measure_collection.get_traffic_entries())
 
-        if len(traffic_entries) > 0:
-            traffic_df = self._get_traffic_dataframe(traffic_entries)
-            pollution_df = self._compute(traffic_df)
-            return self._get_pollution_entries_from_df(pollution_df, traffic_measure_collection.get_stations())
+        if len(validated_entries) > 0:
+            validated_df = self._get_traffic_dataframe(validated_entries)
+            pollution_df = self._compute(validated_df)
+            return self._get_pollution_entries_from_df(pollution_df, validated_measure_collection.get_stations())
         else:
-            logger.info("0 traffic entries found skipping pollution computation")
+            logger.info("0 validated entries found skipping pollution computation")
             return []
