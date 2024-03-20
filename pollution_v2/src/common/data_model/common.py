@@ -4,12 +4,17 @@
 
 from __future__ import absolute_import, annotations
 
+import ast
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import TypeVar, Generic, List, Iterable, Optional, Dict, ClassVar
 
 import dateutil.parser
+
+import logging
+
+logger = logging.getLogger("pollution_v2.common.data_model.common")
 
 
 class VehicleClass(Enum):
@@ -118,6 +123,18 @@ class Station:
     name: str
     station_type: str
     origin: Optional[str]
+
+    @property
+    def km(self) -> float:
+        """
+        Returns station mileage.
+        """
+        if self.metadata.get("a22_metadata"):
+            metadata = ast.literal_eval(self.metadata["a22_metadata"])
+            if metadata.get("metro"):
+                return (int(metadata["metro"])) / 1000
+        logger.warning(f"Mileage not defined for station [{self.code}]")
+        return -1000
 
     __version__: ClassVar[int] = 1
 
