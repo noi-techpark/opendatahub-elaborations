@@ -47,7 +47,8 @@ class PollutionMeasure(Measure):
 class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSensorStation]):
 
     @staticmethod
-    def build_from_pollution_entries(pollution_entries: List[PollutionEntry], provenance: Provenance) -> PollutionMeasureCollection:
+    def build_from_pollution_entries(pollution_entries: List[PollutionEntry],
+                                     provenance: Provenance) -> PollutionMeasureCollection:
         """
         Build a PollutionMeasureCollection from the list of pollution entries.
 

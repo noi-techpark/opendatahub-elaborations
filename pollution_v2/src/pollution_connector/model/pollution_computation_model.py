@@ -14,23 +14,15 @@ import pandas as pd
 from common.data_model.common import VehicleClass
 from common.data_model.pollution import PollutionEntry, PollutantClass
 from common.data_model import TrafficMeasureCollection, TrafficEntry, TrafficSensorStation
-from common.model.model import GenericModel
 from pollution_connector.model.CopertEmissions import copert_emissions
 
 logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_computation_model")
 
 
-class PollutionComputationModel(GenericModel):
+class PollutionComputationModel:
     """
     The model for computing pollution data.
     """
-
-    def __init__(self):
-        pass
-
-    def _compute(self, traffic_df: pd.DataFrame) -> pd.DataFrame:
-        emissions_df = copert_emissions(traffic_df)
-        return emissions_df
 
     @staticmethod
     def _get_traffic_dataframe(traffic_entries: Iterable[TrafficEntry]) -> pd.DataFrame:
@@ -89,6 +81,7 @@ class PollutionComputationModel(GenericModel):
             ))
         return pollution_entries
 
+    # TODO should become ValidationMeasureCollection
     def compute_data(self, validated_measure_collection: TrafficMeasureCollection) -> List[PollutionEntry]:
         """
         Compute the pollution measure given the available traffic measures
@@ -99,7 +92,7 @@ class PollutionComputationModel(GenericModel):
 
         if len(validated_entries) > 0:
             validated_df = self._get_traffic_dataframe(validated_entries)
-            pollution_df = self._compute(validated_df)
+            pollution_df = copert_emissions(validated_df)
             return self._get_pollution_entries_from_df(pollution_df, validated_measure_collection.get_stations())
         else:
             logger.info("0 validated entries found skipping pollution computation")

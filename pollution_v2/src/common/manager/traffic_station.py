@@ -15,7 +15,6 @@ from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficMeasureCollection, TrafficSensorStation, MeasureCollection, \
     Provenance, DataType, Measure
 from common.data_model.entry import GenericEntry
-from common.model.model import GenericModel
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
@@ -36,13 +35,6 @@ class TrafficStationManager(ABC):
 
     @abstractmethod
     def _get_manager_code(self) -> str:
-        pass
-
-    @abstractmethod
-    def _get_model(self) -> GenericModel:
-        """
-        Returns the model specific for the implementing manager class.
-        """
         pass
 
     @abstractmethod
@@ -76,19 +68,15 @@ class TrafficStationManager(ABC):
         """
         pass
 
-    def _compute_data(self, input_data: MeasureCollection) -> List[GenericEntry]:
-        """
-        Compute the output data given the input data.
-
-        :param input_data: The input data.
-        :return: The output entries.
-        """
-        model = self._get_model()
-        return model.compute_data(input_data)
+    @abstractmethod
+    def _download_data_and_compute(self, start_date: datetime, to_date: datetime,
+                                   traffic_station: TrafficSensorStation) -> List[GenericEntry]:
+        pass
 
     def _get_latest_date(self, connector: ODHBaseConnector, traffic_station: TrafficSensorStation) -> datetime:
         measures = connector.get_latest_measures(station=traffic_station)
-        return max(list(map(lambda m: m.valid_time, measures)), default=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE))
+        return max(list(map(lambda m: m.valid_time, measures)),
+                   default=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE))
 
     def get_starting_date(self, connector: ODHBaseConnector, traffic_station: TrafficSensorStation,
                           min_from_date: datetime) -> datetime:
@@ -178,11 +166,11 @@ class TrafficStationManager(ABC):
         """
         return self._connector_collector.traffic.get_station_list()
 
-    def _download_traffic_data(self,
-                               from_date: datetime,
-                               to_date: datetime,
-                               traffic_station: TrafficSensorStation
-                               ) -> TrafficMeasureCollection:
+    def _download_input_data(self,
+                             from_date: datetime,
+                             to_date: datetime,
+                             traffic_station: TrafficSensorStation
+                             ) -> MeasureCollection:
         """
         Download traffic data measures in the given interval.
 
@@ -191,9 +179,9 @@ class TrafficStationManager(ABC):
         :return: The resulting TrafficMeasureCollection containing the traffic data.
         """
 
-        return TrafficMeasureCollection(measures=self._connector_collector.traffic.get_measures(from_date=from_date,
-                                                                                                to_date=to_date,
-                                                                                                station=traffic_station))
+        return MeasureCollection(
+            measures=self.get_input_collector().get_measures(from_date=from_date, to_date=to_date,
+                                                             station=traffic_station))
 
     def _upload_data(self, input_entries: List[GenericEntry]) -> None:
         """
@@ -262,31 +250,21 @@ class TrafficStationManager(ABC):
             logger.info(f"Computing data for station [{traffic_station.code}] in interval "
                         f"[{start_date.isoformat()} - {to_date.isoformat()}]")
 
-            traffic_data = []
             try:
-                traffic_data = self._download_traffic_data(start_date, to_date, traffic_station)
+                entries = self._download_data_and_compute(start_date, to_date, traffic_station)
+                self._upload_data(entries)
             except Exception as e:
-                logger.exception(
-                    f"Unable to download traffic data for station [{traffic_station.code}] "
-                    f"in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]",
-                    exc_info=e)
+                logger.exception(f"Unable to compute data from station [{traffic_station.code}] in the "
+                                 f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
 
-            if traffic_data:
-                try:
-                    entries = self._compute_data(traffic_data)
-                    self._upload_data(entries)
-                except Exception as e:
-                    logger.exception(f"Unable to compute data from station [{traffic_station.code}] in the "
-                                     f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
-
-                if self._checkpoint_cache is not None:
-                    self._checkpoint_cache.set(
-                        ComputationCheckpoint(
-                            station_code=traffic_station.code,
-                            checkpoint_dt=to_date,
-                            manager_code=self._get_manager_code()
-                        )
+            if self._checkpoint_cache is not None:
+                self._checkpoint_cache.set(
+                    ComputationCheckpoint(
+                        station_code=traffic_station.code,
+                        checkpoint_dt=to_date,
+                        manager_code=self._get_manager_code()
                     )
+                )
         else:
             logger.info(f"Nothing to process for station [{traffic_station.code}] in interval "
                         f"[{start_date} - {to_date}]")
