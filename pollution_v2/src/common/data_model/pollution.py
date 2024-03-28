@@ -11,7 +11,7 @@ from typing import Optional, List, Dict
 
 from common.data_model.common import VehicleClass, MeasureCollection, Measure, Provenance, DataType
 from common.data_model.entry import GenericEntry
-from common.data_model.traffic import TrafficSensorStation
+from common.data_model.station import TrafficSensorStation
 
 
 class PollutantClass(Enum):
@@ -28,8 +28,10 @@ class PollutionEntry(GenericEntry):
 
     def __init__(self, station: TrafficSensorStation, valid_time: datetime, vehicle_class: VehicleClass,
                  entry_class: PollutantClass, entry_value: Optional[float], period: Optional[int]):
-        super().__init__(station, valid_time, vehicle_class, entry_value, period)
+        super().__init__(station, valid_time, period)
         self.entry_class = entry_class
+        self.vehicle_class = vehicle_class
+        self.entry_value = entry_value
 
 
 class PollutionMeasure(Measure):

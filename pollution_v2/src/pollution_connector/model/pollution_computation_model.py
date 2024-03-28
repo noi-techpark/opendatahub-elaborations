@@ -14,6 +14,7 @@ import pandas as pd
 from common.data_model.common import VehicleClass
 from common.data_model.pollution import PollutionEntry, PollutantClass
 from common.data_model import TrafficMeasureCollection, TrafficEntry, TrafficSensorStation
+from common.model.helper import ModelHelper
 from pollution_connector.model.CopertEmissions import copert_emissions
 
 logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_computation_model")
@@ -23,41 +24,6 @@ class PollutionComputationModel:
     """
     The model for computing pollution data.
     """
-
-    @staticmethod
-    def _get_traffic_dataframe(traffic_entries: Iterable[TrafficEntry]) -> pd.DataFrame:
-        """
-        Get a dataframe from the given traffic entries. The resulting dataframe will have the following columns:
-        date,time,Location,Station,Lane,Category,Transits,Speed,km
-
-        :param traffic_entries: the traffic entries
-        :return: the traffic dataframe
-        """
-        temp = []
-        for entry in traffic_entries:
-
-            km = None
-            if "a22_metadata" in entry.station.metadata:
-                try:
-                    meta: dict = json.loads(entry.station.metadata["a22_metadata"])
-                    km = meta.get("metro")
-                except Exception as e:
-                    logger.warning(f"Unable to parse the KM data for station [{entry.station.code}], error [{e}]")
-
-            temp.append({
-                "date": entry.valid_time.date().isoformat(),
-                "time": entry.valid_time.time().isoformat(),
-                "Location": entry.station.id_strada,
-                "Station": entry.station.id_stazione,
-                "Lane": entry.station.id_corsia,
-                "Category": entry.vehicle_class.value,
-                "Transits": entry.nr_of_vehicles,
-                "Speed": entry.average_speed,
-                "Period": entry.period,
-                "KM": km
-            })
-
-        return pd.DataFrame(temp)
 
     @staticmethod
     def _get_pollution_entries_from_df(pollution_df: pd.DataFrame, stations_dict: Dict[str, TrafficSensorStation]) -> List[PollutionEntry]:
@@ -88,10 +54,10 @@ class PollutionComputationModel:
         :param validated_measure_collection: A collection which contain all the available and validated traffic measures
         :return: A list of the new computed pollution measures
         """
-        validated_entries = list(validated_measure_collection.get_traffic_entries())
+        validated_entries = validated_measure_collection.get_entries()
 
         if len(validated_entries) > 0:
-            validated_df = self._get_traffic_dataframe(validated_entries)
+            validated_df = ModelHelper.get_traffic_dataframe(validated_entries)
             pollution_df = copert_emissions(validated_df)
             return self._get_pollution_entries_from_df(pollution_df, validated_measure_collection.get_stations())
         else:

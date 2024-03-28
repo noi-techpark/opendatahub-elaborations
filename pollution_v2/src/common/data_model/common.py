@@ -8,7 +8,7 @@ import ast
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TypeVar, Generic, List, Iterable, Optional, Dict, ClassVar
+from typing import TypeVar, Generic, List, Optional, Dict, ClassVar
 
 import dateutil.parser
 
@@ -196,34 +196,35 @@ class MeasureCollection(Generic[MeasureType, StationType]):
 
     measures: List[MeasureType] = field(default_factory=list)
 
-    def with_measure(self, measure: MeasureType) -> MeasureCollection:
-        """
-        Add a new traffic sensor to the collection
-
-        :param measure: the measure to add
-        :return: the updated collection
-        """
-        self.measures.append(measure)
-        return self
-
-    def with_measures(self, measures: Iterable[MeasureType]) -> MeasureCollection:
-        """
-        Add a new traffic sensor to the collection
-
-        :param measures: the measures to add
-        :return: the updated collection
-        """
-        self.measures.extend(measures)
-        return self
-
-    def get_measures_by_station(self, station: StationType) -> List[MeasureType]:
-        """
-        Filter the available measure by the given station
-
-        :param station: the station on which filter the measures
-        :return: the measures filtered by the given station
-        """
-        return list(filter(lambda x: x.station == station, self.measures))
+    # apparently unused
+    # def with_measure(self, measure: MeasureType) -> MeasureCollection:
+    #     """
+    #     Add a new traffic sensor to the collection
+    #
+    #     :param measure: the measure to add
+    #     :return: the updated collection
+    #     """
+    #     self.measures.append(measure)
+    #     return self
+    #
+    # def with_measures(self, measures: Iterable[MeasureType]) -> MeasureCollection:
+    #     """
+    #     Add a new traffic sensor to the collection
+    #
+    #     :param measures: the measures to add
+    #     :return: the updated collection
+    #     """
+    #     self.measures.extend(measures)
+    #     return self
+    #
+    # def get_measures_by_station(self, station: StationType) -> List[MeasureType]:
+    #     """
+    #     Filter the available measure by the given station
+    #
+    #     :param station: the station on which filter the measures
+    #     :return: the measures filtered by the given station
+    #     """
+    #     return list(filter(lambda x: x.station == station, self.measures))
 
     def get_stations(self) -> Dict[str, StationType]:
         """

@@ -15,12 +15,10 @@ from redis.client import Redis
 
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
-from common.data_model import Provenance
-from common.logging import get_logging_configuration
+from common.data_model.common import Provenance
 from common.settings import DEFAULT_TIMEZONE, SENTRY_SAMPLE_RATE, ODH_MINIMUM_STARTING_DATE, \
     COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT, PROVENANCE_ID, PROVENANCE_LINEAGE, \
     PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_DB
-from pollution_connector.manager.pollution_computation import PollutionComputationManager
 from validator.manager.validation import ValidationManager
 
 logger = logging.getLogger("pollution_v2.main_validation")

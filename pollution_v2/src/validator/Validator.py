@@ -2,8 +2,16 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import pandas as pd
+
+from validator.Dominio import Dominio
+from validator.Input import Input
+from validator.Parametri import Parametri
+from validator.Station import Station
+
+
 # Il metodo utilizzato per validare i dati per il giorno specificato
-def validator(day, raw_data, history, km, station_type, config='../../config/validator.yaml'):
+def validator(day, raw_data, history, km, station_type, config='../config/validator.yaml'):
     """
     :param day: data per la quale validare i dati
     :param raw_data: dataframe con i dati grezzi
@@ -16,11 +24,6 @@ def validator(day, raw_data, history, km, station_type, config='../../config/val
     # -------------------------------------------------------------------------
     # Import Moduli
     # -------------------------------------------------------------------------
-    from Parametri import Parametri
-    from Input import Input
-    from Dominio import Dominio
-    from Station import Station
-    import pandas as pd
     pd.options.mode.chained_assignment = None
 
     # -------------------------------------------------------------------------
@@ -40,7 +43,8 @@ def validator(day, raw_data, history, km, station_type, config='../../config/val
     print(f'...initializing data for day {day}')
     A22 = Dominio(data)
     for index, row in data.station_list.iterrows():
-        if data.station_type[row['station']] != 'TVCC' or data.station_type[row['station']] != 'RADAR':
+        if (data.station_type.loc[row['station']]['station_type'] != 'TVCC' or
+                data.station_type.loc[row['station']]['station_type'] != 'RADAR'):
             # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
             s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
                         params.layer1('n'))

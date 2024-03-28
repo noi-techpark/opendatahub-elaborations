@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import List
 
 from common.cache.common import TrafficManagerClass
-from common.cache.computation_checkpoint import ComputationCheckpoint
 from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation, TrafficMeasureCollection
 from common.data_model.entry import GenericEntry

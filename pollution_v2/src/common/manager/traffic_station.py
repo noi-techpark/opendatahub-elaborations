@@ -9,12 +9,15 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import List, Optional
 
+from pandas import DataFrame
+
 from common.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
-from common.data_model import TrafficMeasureCollection, TrafficSensorStation, MeasureCollection, \
-    Provenance, DataType, Measure
+from common.data_model import TrafficSensorStation
+from common.data_model.common import MeasureType, Provenance, DataType, MeasureCollection, Measure
 from common.data_model.entry import GenericEntry
+from common.model.helper import ModelHelper
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
@@ -170,7 +173,7 @@ class TrafficStationManager(ABC):
                              from_date: datetime,
                              to_date: datetime,
                              traffic_station: TrafficSensorStation
-                             ) -> MeasureCollection:
+                             ) -> List[MeasureType]:
         """
         Download traffic data measures in the given interval.
 
@@ -179,9 +182,7 @@ class TrafficStationManager(ABC):
         :return: The resulting TrafficMeasureCollection containing the traffic data.
         """
 
-        return MeasureCollection(
-            measures=self.get_input_collector().get_measures(from_date=from_date, to_date=to_date,
-                                                             station=traffic_station))
+        return self.get_input_collector().get_measures(from_date=from_date, to_date=to_date, station=traffic_station)
 
     def _upload_data(self, input_entries: List[GenericEntry]) -> None:
         """

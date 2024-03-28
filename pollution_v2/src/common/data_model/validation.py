@@ -24,8 +24,10 @@ class ValidationEntry(GenericEntry):
 
     def __init__(self, station: TrafficSensorStation, valid_time: datetime, vehicle_class: VehicleClass,
                  entry_class: ValidationTypeClass, entry_value: Optional[float], period: Optional[int]):
-        super().__init__(station, valid_time, vehicle_class, entry_value, period)
+        super().__init__(station, valid_time, period)
         self.entry_class = entry_class
+        self.vehicle_class = vehicle_class
+        self.entry_value = entry_value
 
 
 class ValidationMeasure(Measure):

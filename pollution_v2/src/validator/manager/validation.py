@@ -8,11 +8,14 @@ import logging
 from datetime import datetime
 from typing import List
 
+from pandas import DataFrame
+
 from common.cache.common import TrafficManagerClass
 from common.connector.common import ODHBaseConnector
-from common.data_model import TrafficSensorStation, TrafficMeasureCollection
+from common.data_model import TrafficSensorStation
 from common.data_model.entry import GenericEntry
 from common.data_model.history import HistoryMeasureCollection
+from common.data_model.traffic import TrafficMeasureCollection
 from common.data_model.validation import ValidationMeasure, ValidationMeasureCollection, ValidationEntry
 from common.manager.traffic_station import TrafficStationManager
 from common.data_model.common import DataType, MeasureCollection
@@ -68,7 +71,7 @@ class ValidationManager(TrafficStationManager):
 
         if history_data and traffic_data:
             model = ValidationModel()
-            return model.compute_data(history_data, TrafficMeasureCollection(traffic_data))
+            return model.compute_data(history_data, TrafficMeasureCollection(traffic_data), traffic_station)
 
         return []
 

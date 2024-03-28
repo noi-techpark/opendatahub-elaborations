@@ -6,55 +6,14 @@ from __future__ import absolute_import, annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, Dict, Iterator
+from typing import Optional, Dict, Iterator, List
 
 import dateutil.parser
 
-from common.data_model.common import VehicleClass, Measure, MeasureCollection, Station, DataType, \
+from common.data_model.common import VehicleClass, Measure, MeasureCollection, DataType, \
     Provenance
-
-
-@dataclass
-class TrafficSensorStation(Station):
-
-    def split_station_code(self) -> (str, int, int):
-        """
-        splits the station code using the pattern ID_strada:ID_stazione:ID_corsia and returns a tuple
-        with the following structure (ID_strada, ID_stazione, ID_corsia)
-        :return:
-        """
-        splits = self.code.split(":")
-        if len(splits) != 3:
-            raise ValueError(f"Unable to split [{self.code}] in ID_strada:ID_stazione:ID_corsia")
-        return splits[0], int(splits[1]), int(splits[2])
-
-    @property
-    def id_strada(self) -> str:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
-        return id_strada
-
-    @property
-    def id_stazione(self) -> int:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
-        return id_stazione
-
-    @property
-    def id_corsia(self) -> int:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
-        return id_corsia
-
-    @classmethod
-    def from_json(cls, dict_data) -> TrafficSensorStation:
-        return TrafficSensorStation(
-            code=dict_data["code"],
-            active=dict_data["active"],
-            available=dict_data["available"],
-            coordinates=dict_data["coordinates"],
-            metadata=dict_data["metadata"],
-            name=dict_data["name"],
-            station_type=dict_data["station_type"],
-            origin=dict_data["origin"]
-        )
+from common.data_model.entry import GenericEntry
+from common.data_model.station import TrafficSensorStation
 
 
 @dataclass
@@ -101,20 +60,21 @@ class TrafficMeasure(Measure):
 
 
 @dataclass
-class TrafficEntry:
-    station: TrafficSensorStation
-    transaction_time: datetime
-    valid_time: datetime
-    vehicle_class: VehicleClass
-    nr_of_vehicles: Optional[int]
-    average_speed: Optional[float]
-    period: Optional[int]
+class TrafficEntry(GenericEntry):
+
+    def __init__(self, station: TrafficSensorStation, transaction_time: datetime, valid_time: datetime,
+                 vehicle_class: VehicleClass, nr_of_vehicles: Optional[int], average_speed: Optional[float], period: Optional[int]):
+        super().__init__(station, valid_time, period)
+        self.transaction_time = transaction_time
+        self.vehicle_class = vehicle_class
+        self.nr_of_vehicles = nr_of_vehicles
+        self.average_speed = average_speed
 
 
 @dataclass
 class TrafficMeasureCollection(MeasureCollection[TrafficMeasure, TrafficSensorStation]):
 
-    def _build_traffic_entries_dictionary(self) -> Dict[str, Dict[datetime, Dict[VehicleClass, TrafficEntry]]]:
+    def _build_entries_dictionary(self) -> Dict[str, Dict[datetime, Dict[VehicleClass, TrafficEntry]]]:
         # A temporary dictionary used for faster aggregation of the results
         # The dictionary will have the following structure
         # StationCode -> (measure valid time -> (vehicle class -> TrafficEntry))
@@ -151,13 +111,21 @@ class TrafficMeasureCollection(MeasureCollection[TrafficMeasure, TrafficSensorSt
 
         return result
 
-    def get_traffic_entries(self) -> Iterator[TrafficEntry]:
+    def _get_entries_iterator(self) -> Iterator[TrafficEntry]:
         """
-        Build and retrieve the list of traffic entry from the available measures
+        Build and retrieve the iterator for list of traffic entry from the available measures
 
         :return: an iterator of traffic entries
         """
-        for station_dict in self._build_traffic_entries_dictionary().values():
+        for station_dict in self._build_entries_dictionary().values():
             for date_dict in station_dict.values():
                 for traffic_entry in date_dict.values():
                     yield traffic_entry
+
+    def get_entries(self) -> List[TrafficEntry]:
+        """
+        Build and retrieve the list of traffic entry from the available measures
+
+        :return: a list of traffic entries
+        """
+        return list(self._get_entries_iterator())
