@@ -19,6 +19,7 @@ from common.data_model.traffic import TrafficMeasureCollection
 from common.data_model.validation import ValidationMeasure, ValidationMeasureCollection, ValidationEntry
 from common.manager.traffic_station import TrafficStationManager
 from common.data_model.common import DataType, MeasureCollection
+from common.settings import DEFAULT_TIMEZONE
 from validator.model.validation_model import ValidationModel
 
 logger = logging.getLogger("pollution_v2.validator.manager.validation")
@@ -51,6 +52,8 @@ class ValidationManager(TrafficStationManager):
         :return: The resulting HistoryMeasureCollection containing the traffic data.
         """
 
+        # set time to midnight otherwise you'll miss today's value
+        from_date = DEFAULT_TIMEZONE.localize(datetime.combine(from_date, datetime.min.time()))
         return HistoryMeasureCollection(measures=self._connector_collector.history.get_measures(from_date=from_date,
                                                                                                 to_date=to_date,
                                                                                                 station=traffic_station))

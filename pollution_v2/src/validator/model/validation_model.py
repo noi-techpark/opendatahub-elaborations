@@ -40,15 +40,20 @@ class ValidationModel:
         traffic_dates = {measure.valid_time.date() for measure in traffic.measures}
 
         if len(history_dates.difference(traffic_dates)) > 0:
+            unprocessed_records = [measure.valid_time.date() for measure in traffic.measures
+                                   if measure.valid_time.date() in history_dates.difference(traffic_dates)]
             logger.warning(f"Missing traffic data for the following dates [{history_dates.difference(traffic_dates)}] "
-                           f"on station [{station.code}]")
+                           f"on station [{station.code}]: {len(unprocessed_records)} "
+                           f"records will not be processed")
         if len(traffic_dates.difference(history_dates)) > 0:
+            unprocessed_records = [measure.valid_time.date() for measure in traffic.measures
+                                   if measure.valid_time.date() in traffic_dates.difference(history_dates)]
             logger.warning(f"Missing history data for the following dates [{traffic_dates.difference(history_dates)}] "
-                           f"on station [{station.code}]")
+                           f"on station [{station.code}]: {len(unprocessed_records)} "
+                           f"records will not be processed")
 
         run_on_dates = history_dates.intersection(traffic_dates)
-        logger.info(f"Ready for processing validation on the following dates "
-                    f"[{run_on_dates}] on station [{station.code}]")
+        logger.info(f"Ready to process validation on the following dates [{run_on_dates}]")
 
         traffic_entries = traffic.get_entries()
         history_entries = history.get_entries()
@@ -56,14 +61,18 @@ class ValidationModel:
         stations_df = ModelHelper.get_stations_dataframe(traffic.get_stations())
         stations_df_validator = stations_df.copy().set_index("station_id")
 
+        # TODO coming from algorithm?
+        period = 600
+
         res = []
         if len(traffic_entries) > 0 and len(history_entries) > 0:
-            traffic_df = ModelHelper.get_traffic_dataframe_for_validation(traffic_entries)
-            history_df = ModelHelper.get_history_dataframe(history_entries)
             for date in run_on_dates:
+                traffic_df = ModelHelper.get_traffic_dataframe_for_validation(traffic_entries, date)
+                logger.info(f"Startig validation on {len(traffic_df)} traffic records on station [{station.code}]")
+                history_df = ModelHelper.get_history_dataframe(history_entries, date)
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,
                                    stations_df_validator[['km']], stations_df_validator[['station_type']])
-                lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), traffic.get_stations())
+                lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), period, traffic.get_stations())
                 res.extend(lst)
         else:
             logger.info("0 validated entries found skipping pollution computation")
@@ -72,7 +81,7 @@ class ValidationModel:
         return res
 
     @staticmethod
-    def _get_entries_from_df(in_df: DataFrame, date: str,
+    def _get_entries_from_df(in_df: DataFrame, date: str, period: int,
                              stations_dict: Dict[str, TrafficSensorStation]) -> List[ValidationEntry]:
         """
         Create a list of entries for the given dataframe.
@@ -83,13 +92,12 @@ class ValidationModel:
         """
         out_entries = []
         for _, row in in_df.iterrows():
-            row['date'] = date
             out_entries.append(ValidationEntry(
                 station=stations_dict[row['station_code']],
-                valid_time=datetime.fromisoformat(f"{row['date']}T{row['time']}"),
+                valid_time=datetime.fromisoformat(f"{date}T{row['time']}"),
                 vehicle_class=VehicleClass(row["variable"]),
                 entry_class=ValidationTypeClass.VALID,
                 entry_value=row["is_valid"],
-                period=None
+                period=period
             ))
         return out_entries

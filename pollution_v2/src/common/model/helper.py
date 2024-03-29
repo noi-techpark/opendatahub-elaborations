@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
-from typing import Iterable, List
+
+from datetime import date
+from typing import Iterable
 
 import pandas as pd
 import json
 import logging
 
-from common.data_model import TrafficSensorStation
 from common.data_model.common import StationType
 from common.data_model.history import HistoryEntry
 from common.data_model.traffic import TrafficEntry
@@ -75,42 +76,44 @@ class ModelHelper:
         return pd.DataFrame(temp)
 
     @staticmethod
-    def get_traffic_dataframe_for_validation(traffic_entries: Iterable[TrafficEntry]) -> pd.DataFrame:
+    def get_traffic_dataframe_for_validation(traffic_entries: Iterable[TrafficEntry], date: date) -> pd.DataFrame:
         """
         Get a dataframe from the given traffic entries. The resulting dataframe will have the following columns:
         time,value,station_code,variable
 
         :param traffic_entries: the traffic entries
+        :param date: the date to filter on
         :return: the traffic dataframe
         """
         temp = []
         for entry in traffic_entries:
-
-            temp.append({
-                "time": entry.valid_time.time().isoformat(),
-                "value": entry.nr_of_vehicles,
-                "station_code": entry.station.code,
-                "variable": entry.vehicle_class.value
-            })
+            if date == entry.valid_time.date():
+                temp.append({
+                    "time": entry.valid_time.time().isoformat(),
+                    "value": entry.nr_of_vehicles,
+                    "station_code": entry.station.code,
+                    "variable": entry.vehicle_class.value
+                })
 
         return pd.DataFrame(temp)
 
     @staticmethod
-    def get_history_dataframe(history_entries: Iterable[HistoryEntry]) -> pd.DataFrame:
+    def get_history_dataframe(history_entries: Iterable[HistoryEntry], date: date) -> pd.DataFrame:
         """
         Get a dataframe from the given history entries. The resulting dataframe will have the following columns:
         date,station_code,total_traffic
 
         :param history_entries: the history entries
+        :param date: the date to filter on
         :return: the history dataframe
         """
         temp = []
         for entry in history_entries:
-
-            temp.append({
-                "date": entry.valid_time.date().isoformat(),
-                "station_code": entry.valid_time.time().isoformat(),
-                "total_traffic": entry.station.id_strada
-            })
+            if date == entry.valid_time.date():
+                temp.append({
+                    "date": entry.valid_time.date().isoformat(),
+                    "station_code": entry.valid_time.time().isoformat(),
+                    "total_traffic": entry.station.id_strada
+                })
 
         return pd.DataFrame(temp)
