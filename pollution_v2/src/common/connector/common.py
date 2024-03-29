@@ -314,9 +314,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
             else:
                 raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
             query_params["where"] = f'scode.eq."{code}"'
-            logger.info(f"Retrieving latest measures for station [{code}] on [{type(self).__name__}]")
+            logger.info(f"Retrieving latest measures on [{type(self).__name__}] for station [{code}]")
         else:
-            logger.info("Retrieving latest measures for all stations")
+            logger.info("Retrieving latest measures on [{type(self).__name__}] for all stations")
 
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/latest",
@@ -349,9 +349,11 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
             else:
                 raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
             query_params["where"] = f'scode.eq."{code}"'
-            logger.info(f"Retrieving measures from date [{iso_from_date}] to date [{iso_to_date}] for station [{code}]")
+            logger.info(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
+                        f"to date [{iso_to_date}] for station [{code}]")
         else:
-            logger.info(f"Retrieving measures from date [{iso_from_date}] to date [{iso_to_date}] for all stations")
+            logger.info(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
+                        f"to date [{iso_to_date}] for all stations")
 
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/{iso_from_date}/{iso_to_date}",

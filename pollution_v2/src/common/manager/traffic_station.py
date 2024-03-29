@@ -91,14 +91,14 @@ class TrafficStationManager(ABC):
         :param min_from_date: The minimum date to start from.
         :return: Computation starting date.
         """
-        logger.info(f"Looking for latest measures available for station [{traffic_station.code}] "
-                    f"on [{type(connector).__name__}]")
+        logger.info(f"Looking for latest measures available on [{type(connector).__name__}] "
+                    f"for station [{traffic_station.code}] ")
         latest_measure = self.__get_latest_measure(connector, traffic_station)
         if latest_measure is None:
-            logger.info(f"No measures available for station [{traffic_station.code}] on [{type(connector).__name__}]")
+            logger.info(f"No measures available on [{type(connector).__name__}] for station [{traffic_station.code}]")
             if self._checkpoint_cache is not None:
                 logger.info(
-                    f"Looking on checkpoints for station [{traffic_station.code}] on [{type(connector).__name__}]")
+                    f"Looking on checkpoints on [{type(connector).__name__}] for station [{traffic_station.code}]")
                 checkpoint = self._checkpoint_cache.get(ComputationCheckpoint.get_id_for_station(traffic_station,
                                                                                                  self._get_manager_code()))
                 if checkpoint is not None:
@@ -124,6 +124,9 @@ class TrafficStationManager(ABC):
 
         if from_date.tzinfo is None:
             from_date = DEFAULT_TIMEZONE.localize(from_date)
+
+        if min_from_date.tzinfo is None:
+            min_from_date = DEFAULT_TIMEZONE.localize(min_from_date)
 
         if from_date.microsecond:
             from_date = from_date.replace(microsecond=0)

@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import os
+
 import pandas as pd
 
 from validator.Dominio import Dominio
@@ -9,9 +11,11 @@ from validator.Input import Input
 from validator.Parametri import Parametri
 from validator.Station import Station
 
+default_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../config/validator.yaml'))
+
 
 # Il metodo utilizzato per validare i dati per il giorno specificato
-def validator(day, raw_data, history, km, station_type, config='../config/validator.yaml'):
+def validator(day, raw_data, history, km, station_type, config=default_config_path):
     """
     :param day: data per la quale validare i dati
     :param raw_data: dataframe con i dati grezzi
@@ -44,7 +48,7 @@ def validator(day, raw_data, history, km, station_type, config='../config/valida
     A22 = Dominio(data)
     for index, row in data.station_list.iterrows():
         if (data.station_type.loc[row['station']]['station_type'] != 'TVCC' or
-                data.station_type.loc[row['station']]['station_type'] != 'RADAR'):
+            data.station_type.loc[row['station']]['station_type'] != 'RADAR'):
             # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
             s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
                         params.layer1('n'))

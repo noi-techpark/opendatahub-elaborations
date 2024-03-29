@@ -16,7 +16,7 @@ from common.data_model import TrafficSensorStation, Provenance
 from common.settings import (ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION_CRONTAB, PROVENANCE_ID,
                              PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION,
                              COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT,
-                             COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE)
+                             COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE, DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN)
 from validator.manager.validation import ValidationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -61,7 +61,6 @@ with TrafficStationsDAG(
 
     default_args=default_args
 ) as dag:
-
     def _init_manager() -> ValidationManager:
         """
         Inits what needed for the computation of a batch of pollution data measures.
@@ -80,6 +79,7 @@ with TrafficStationsDAG(
         provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION)
         manager = ValidationManager(connector_collector, provenance, checkpoint_cache)
         return manager
+
 
     @task
     def get_stations_list(**kwargs) -> list[dict]:
@@ -118,8 +118,7 @@ with TrafficStationsDAG(
         computation_start_dt = datetime.now()
 
         logger.info(f"Running validation from [{min_from_date}] to [{max_to_date}]")
-
-        # TODO: implement validation
+        manager.run_computation_for_station(station, min_from_date, max_to_date)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed validation in [{(computation_end_dt - computation_start_dt).seconds}]")
@@ -142,8 +141,7 @@ with TrafficStationsDAG(
             :param ending_date: the date on which data availability ends
             :return: true if there are enought data to run another DAG on this station
             """
-            # TODO implement
-            return False
+            return (ending_date - starting_date).total_seconds() / 3600 > DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN
 
         dag.trigger_next_dag_run(manager, dag, has_remaining_data, **kwargs)
 

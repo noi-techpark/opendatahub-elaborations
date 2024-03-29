@@ -53,7 +53,7 @@ class ValidationModel:
                            f"records will not be processed")
 
         run_on_dates = history_dates.intersection(traffic_dates)
-        logger.info(f"Ready to process validation on the following dates [{run_on_dates}]")
+        logger.info(f"Ready to process validation on the following dates [{sorted(run_on_dates)}]")
 
         traffic_entries = traffic.get_entries()
         history_entries = history.get_entries()
@@ -68,7 +68,7 @@ class ValidationModel:
         if len(traffic_entries) > 0 and len(history_entries) > 0:
             for date in run_on_dates:
                 traffic_df = ModelHelper.get_traffic_dataframe_for_validation(traffic_entries, date)
-                logger.info(f"Startig validation on {len(traffic_df)} traffic records on station [{station.code}]")
+                logger.info(f"Starting validation on {len(traffic_df)} traffic records on station [{station.code}]")
                 history_df = ModelHelper.get_history_dataframe(history_entries, date)
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,
                                    stations_df_validator[['km']], stations_df_validator[['station_type']])
