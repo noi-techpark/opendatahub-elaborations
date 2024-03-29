@@ -13,9 +13,10 @@ from common.cache.computation_checkpoint import ComputationCheckpointCache
 from dags.common import TrafficStationsDAG
 from common.connector.collector import ConnectorCollector
 from common.data_model import TrafficSensorStation, Provenance
-from common.settings import ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION_CRONTAB, PROVENANCE_ID, \
-    PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_HOST, \
-    COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE
+from common.settings import (ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION_CRONTAB, PROVENANCE_ID,
+                             PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION,
+                             COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT,
+                             COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE)
 from validator.manager.validation import ValidationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -76,7 +77,7 @@ with TrafficStationsDAG(
             logger.info("Checkpoint cache disabled")
 
         connector_collector = ConnectorCollector.build_from_env()
-        provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION)
+        provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION)
         manager = ValidationManager(connector_collector, provenance, checkpoint_cache)
         return manager
 
