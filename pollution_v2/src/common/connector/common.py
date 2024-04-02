@@ -138,7 +138,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         if not self._token or self._token.is_refresh_toke_expired:
             logger.info("Requesting new token")
             self._token = Token.from_repr(
-                self._keycloak_openid.token(username=self._username, password=self._password, grant_type=self._grant_type)
+                self._keycloak_openid.token(username=self._username, password=self._password,
+                                            grant_type=self._grant_type)
             )
         elif self._token.refresh_token:
             logger.info("Refresh current access token")
@@ -203,7 +204,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         raise MaximumRetryExceeded()
 
-    def _get_result_page(self, path: str, limit: int, offset: int, query_params: Optional[dict] = None) -> (list, int, int):
+    def _get_result_page(self, path: str, limit: int, offset: int, query_params: Optional[dict] = None) -> (
+        list, int, int):
         """
         Request a result page from a paginated endpoint.
 
@@ -248,9 +250,10 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
             if limit == -1:
                 logger.debug("Retrieving all elements")
             else:
-                logger.debug(f"Retrieving page [{offset} - {offset+limit}]")
+                logger.debug(f"Retrieving page [{offset} - {offset + limit}]")
 
-            new_results, limit, offset = self._get_result_page(path, limit=limit, offset=offset, query_params=query_params)
+            new_results, limit, offset = self._get_result_page(path, limit=limit, offset=offset,
+                                                               query_params=query_params)
 
             results.extend(new_results)
             if limit == -1:
@@ -362,7 +365,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         return [self.build_measure(raw_measure) for raw_measure in raw_measures]
 
-    def _post_request(self, path: str, raw_data: dict or list, query_params: Optional[dict] = None) -> str or dict or list:
+    def _post_request(self, path: str, raw_data: dict or list,
+                      query_params: Optional[dict] = None) -> str or dict or list:
         """
         Perform a post request to the ODH.
 
@@ -445,7 +449,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         else:
             for index in range(len(data_types) // self._max_batch_size + 1):
                 if index < len(data_types) // self._max_batch_size:
-                    self._post_data_type_batch(data_types[index * self._max_batch_size: (index + 1) * self._max_batch_size], provenance)
+                    self._post_data_type_batch(
+                        data_types[index * self._max_batch_size: (index + 1) * self._max_batch_size], provenance)
                 else:
                     if len(data_types) > index * self._max_batch_size:
                         self._post_data_type_batch(data_types[index * self._max_batch_size:], provenance)
@@ -476,9 +481,11 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                 measures_dict[measure.provenance.provenance_id][measure.station.code] = {}
 
             if measure.data_type.name not in measures_dict[measure.provenance.provenance_id][measure.station.code]:
-                measures_dict[measure.provenance.provenance_id][measure.station.code][measure.data_type.name] = [measure]
+                measures_dict[measure.provenance.provenance_id][measure.station.code][measure.data_type.name] = [
+                    measure]
             else:
-                measures_dict[measure.provenance.provenance_id][measure.station.code][measure.data_type.name].append(measure)
+                measures_dict[measure.provenance.provenance_id][measure.station.code][measure.data_type.name].append(
+                    measure)
 
         if len(measures_dict.keys()) > 1:
             logger.error("Measures have more than one provenance")
@@ -500,7 +507,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                     data_map["branch"][station_code]["branch"][data_type_name] = {
                         "name": "(default)",
                         "branch": {},
-                        "data": [data_point.to_odh_repr() for data_point in measures_dict[provenance_id][station_code][data_type_name]]  # Send data to ODH in chronological order
+                        # Send data to ODH in chronological order
+                        "data": [data_point.to_odh_repr() for data_point in
+                                 measures_dict[provenance_id][station_code][data_type_name]]
                     }
 
             self._post_request(f"/json/pushRecords/{self._station_type}", data_map)

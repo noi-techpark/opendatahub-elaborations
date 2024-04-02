@@ -249,7 +249,26 @@ Use the following commands (could be necessary to use `docker-compose` on older 
 #### Computation checkpoint
 By setting the *COMPUTATION_CHECKPOINT_REDIS_HOST* variable to a valid Redis server, the computation checkpoints will be enabled.
 
-The computation checkpoint store the final date of the last computed interval of data for a station. The checkpoint is used
+The computation checkpoint stores the final date of the last computed interval of data for a station. The checkpoint is used
 as a starting date for the next computation if the station has no pollution data associated.
 This feature has been implemented to avoid attempting a recalculation, at each execution of the task, of all
-the historical data of the stations that have only invalid data for this library
+the historical data of the stations that have only invalid data for this library.
+
+We can use the Redis host made available by airflow when building its containers. The environment variable
+(taken from `docker-compose.yaml`) dictating the redis host used by airflow is:
+
+`AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0`
+
+This is standard for Airflow and means it connects to Redis host at port 6379, with database 0.
+Redis supports up to 16 databases, and they are independent from each other.
+Therefore we can use the redis host already present to check for the computation error, we just need to use a different database.
+We can use these environment variables (db is set to 10, but needs only to be different from 0):
+
+`AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_HOST: 'redis'
+AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
+AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_DB: 10`
+
+By using these settings, the computations persist when errors on the data were found.
+When a task could not compute the validation or pollution computation, it updated the redis cache with the next
+date to retrieve data and then finished with MARK=SUCCESS, thus not breaking the flow of task executions.
+The next planned task for that station retrieves the date available from cache and continues the computation from there.

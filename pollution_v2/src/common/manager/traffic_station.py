@@ -9,15 +9,12 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from pandas import DataFrame
-
 from common.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation
 from common.data_model.common import MeasureType, Provenance, DataType, MeasureCollection, Measure
 from common.data_model.entry import GenericEntry
-from common.model.helper import ModelHelper
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
