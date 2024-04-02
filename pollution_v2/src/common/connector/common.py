@@ -135,7 +135,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         """
         Refresh current token or request a new one.
         """
-        if not self._token or self._token.is_refresh_toke_expired:
+        if not self._token or self._token.is_refresh_token_expired:
             logger.info("Requesting new token")
             self._token = Token.from_repr(
                 self._keycloak_openid.token(username=self._username, password=self._password, grant_type=self._grant_type)
