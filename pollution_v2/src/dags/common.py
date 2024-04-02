@@ -75,9 +75,9 @@ class TrafficStationsDAG(DAG):
         stations = []
         all_stations = TrafficStationsDAG.get_stations_list(manager)
         for station in all_stations:
-            starting_date = manager.get_starting_date(manager.get_output_collector(),
+            starting_date = manager.get_starting_date(manager.get_output_connector(),
                                                       station, ODH_MINIMUM_STARTING_DATE)
-            ending_date = manager.get_starting_date(manager.get_input_collector(),
+            ending_date = manager.get_starting_date(manager.get_input_connector(),
                                                     station, ODH_MINIMUM_STARTING_DATE)
             logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
             if has_remaining_data(starting_date, ending_date):

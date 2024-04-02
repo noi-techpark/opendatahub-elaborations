@@ -4,9 +4,14 @@
 
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+import logging
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+logger = logging.getLogger("pollution_v2.validator.Station")
 
 class Station:
     # Inizializza l'oggetto stazione con le caratteristiche identificative
@@ -31,7 +36,7 @@ class Station:
         history_len = history[history['station'] == self.ID].shape[0]
         if self.ID not in history['station'].values or history_len < 10:
             if self.ID not in chilometriche.keys():
-                print(f'{self.ID:<4} {self.direction:<4} no history, no information about position --> skip layer 1, 1.1, 2')
+                logger.info(f'{self.ID:<4} {self.direction:<4} no history, no information about position --> skip layer 1, 1.1, 2')
                 self.skip_validation = True
                 self.layer1 = None
                 self.layer1_1 = None
@@ -42,14 +47,15 @@ class Station:
                 nearest = self.nearest_stations_L1(chilometriche, history, N)
                 history_data = history[(history['station'].isin(nearest)) & (history['lane'].isin(self.lane))]
                 history_data = history_data.groupby(['date', 'lane', 'daytype'])['total_traffic'].mean().reset_index()
-                print(f'{self.ID:<4} {self.direction:<4} no history, get statistics from {nearest} stations')
+                logger.info(f'{self.ID:<4} {self.direction:<4} no history, get statistics from {nearest} stations')
         else:
             history_data = history[(history['station'] == self.ID) & (history['lane'].isin(self.lane))]
-            print(f'{self.ID:<4} {self.direction:<4}')
+            logger.debug(f'{self.ID:<4} {self.direction:<4}')
         if history_data is not None:
             agg_hist = history_data[history_data['lane'].isin(self.lane)].groupby(['date', 'daytype']).agg({'total_traffic': 'sum'}).reset_index()
         else:
             self.skip_validation = True
+        # TODO move in previous if?
         self.layer1_stats = agg_hist['total_traffic'].agg(['mean', 'std']).to_dict()
 
         # Calcolo statistiche distribuzione corsie per layer 2
@@ -58,7 +64,7 @@ class Station:
             layer2_hist['ratio'] = layer2_hist[self.lane[0]] / layer2_hist[self.lane[1]]
             self.layer2_stats = layer2_hist['ratio'].agg(['mean', 'std']).to_dict()
         else:
-            print(f'{self.ID:<4} {self.direction:<4} no lane history --> skip layer 2 validation')
+            logger.info(f'{self.ID:<4} {self.direction:<4} no lane history --> skip layer 2 validation')
 
     # Identifica le N stazioni a valle e le N stazioni a monte più vicine.
     def nearest_stations_L1(self, chilometriche, history, N):
@@ -91,7 +97,7 @@ class Station:
         try:
             self.zscore1 = (self.daily - self.layer1_stats['mean'])/self.layer1_stats['std']
         except Exception as e:
-            print(f'error computing zscore layer 1 for {self.ID} {self.direction}: {e}')
+            logger.warning(f'error computing zscore layer 1 for {self.ID} {self.direction}: {e}')
             self.zscore1 = None
 
     def zScore1_1(self, chilometriche, dominio, N):
@@ -101,7 +107,7 @@ class Station:
             self.layer1_1_stats = {'mean': np.mean(nearest_data), 'std': np.std(nearest_data)}
             self.zscore1_1 = (self.daily - np.mean(nearest_data))/np.std(nearest_data)
         except Exception as e:
-            print(f'error computing zscore layer 1.1 for {self.ID} {self.direction}: {e}')
+            logger.warning(f'error computing zscore layer 1.1 for {self.ID} {self.direction}: {e}')
             self.zscore1_1 = None
 
     # Calcola lo z-score per i dati giornalieri sulla base della corsia.
@@ -113,7 +119,7 @@ class Station:
                     lane_ratio = traffic_per_lane.iloc[0]['value']/traffic_per_lane.iloc[1]['value']
                     self.zscore2 = (lane_ratio - self.layer2_stats['mean'])/self.layer2_stats['std']
                 except KeyError as e:
-                    print(f'error computing zscore layer 2 for {self.ID} {self.direction}: {e}')
+                    logger.warning(f'error computing zscore layer 2 for {self.ID} {self.direction}: {e}')
                     self.zscore2 = None
             else:
                 self.zscore2 = None

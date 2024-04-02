@@ -8,8 +8,6 @@ import logging
 from datetime import datetime
 from typing import List
 
-from pandas import DataFrame
-
 from common.cache.common import TrafficManagerClass
 from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation
@@ -33,10 +31,10 @@ class ValidationManager(TrafficStationManager):
     def _get_manager_code(self) -> str:
         return TrafficManagerClass.VALIDATION.name
 
-    def get_output_collector(self) -> ODHBaseConnector:
+    def get_output_connector(self) -> ODHBaseConnector:
         return self._connector_collector.validation
 
-    def get_input_collector(self) -> ODHBaseConnector:
+    def get_input_connector(self) -> ODHBaseConnector:
         return self._connector_collector.traffic
 
     def _download_history_data(self,
@@ -65,7 +63,7 @@ class ValidationManager(TrafficStationManager):
         traffic_data = []
         try:
             history_data = self._download_history_data(start_date, to_date, traffic_station)
-            traffic_data = self._download_input_data(start_date, to_date, traffic_station)
+            traffic_data = self._download_traffic_data(start_date, to_date, traffic_station)
         except Exception as e:
             logger.exception(
                 f"Unable to download history and traffic data for station [{traffic_station.code}] "

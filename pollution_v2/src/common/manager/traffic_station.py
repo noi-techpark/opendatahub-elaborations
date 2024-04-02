@@ -15,7 +15,7 @@ from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation
 from common.data_model.common import MeasureType, Provenance, DataType, MeasureCollection, Measure
 from common.data_model.entry import GenericEntry
-from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE
+from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE, PERIOD_1DAY
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
 
@@ -38,14 +38,14 @@ class TrafficStationManager(ABC):
         pass
 
     @abstractmethod
-    def get_output_collector(self) -> ODHBaseConnector:
+    def get_output_connector(self) -> ODHBaseConnector:
         """
         Returns the colletor of the data in charge of the implementing manager class.
         """
         pass
 
     @abstractmethod
-    def get_input_collector(self) -> ODHBaseConnector:
+    def get_input_connector(self) -> ODHBaseConnector:
         """
         Returns the collector for retrieving input data for computing and the dates useful to determine processing
         interval for the implementing manager class.
@@ -169,11 +169,11 @@ class TrafficStationManager(ABC):
         """
         return self._connector_collector.traffic.get_station_list()
 
-    def _download_input_data(self,
-                             from_date: datetime,
-                             to_date: datetime,
-                             traffic_station: TrafficSensorStation
-                             ) -> List[MeasureType]:
+    def _download_traffic_data(self,
+                               from_date: datetime,
+                               to_date: datetime,
+                               traffic_station: TrafficSensorStation
+                               ) -> List[MeasureType]:
         """
         Download traffic data measures in the given interval.
 
@@ -182,9 +182,8 @@ class TrafficStationManager(ABC):
         :return: The resulting TrafficMeasureCollection containing the traffic data.
         """
 
-        return self.get_input_collector().get_measures(from_date=from_date, to_date=to_date, station=traffic_station,
-                                                       # TODO cablato
-                                                       period_to_exclude=86400)
+        return self._connector_collector.traffic.get_measures(from_date=from_date, to_date=to_date, station=traffic_station,
+                                                              period_to_exclude=PERIOD_1DAY)
 
     def _upload_data(self, input_entries: List[GenericEntry]) -> None:
         """
@@ -197,15 +196,15 @@ class TrafficStationManager(ABC):
 
         logger.info(f"Posting provenance {self._provenance}")
         if not self._provenance.provenance_id:
-            self._provenance.provenance_id = self.get_output_collector().post_provenance(self._provenance)
+            self._provenance.provenance_id = self.get_output_connector().post_provenance(self._provenance)
 
         logger.info(f"Posting data types {self._get_data_types()}")
         if self._create_data_types:
-            self.get_output_collector().post_data_types(self._get_data_types(), self._provenance)
+            self.get_output_connector().post_data_types(self._get_data_types(), self._provenance)
 
         data = self._build_from_entries(input_entries)
         logger.info(f"Posting measures {len(data.measures)}")
-        self.get_output_collector().post_measures(data.measures)
+        self.get_output_connector().post_measures(data.measures)
 
     def run_computation_for_station(self,
                                     traffic_station: TrafficSensorStation,
@@ -224,13 +223,12 @@ class TrafficStationManager(ABC):
         logger.info(f"Determining computation interval for [{traffic_station.code}] "
                     f"between [{min_from_date}] and [{max_to_date}]")
 
-        start_date = self.get_starting_date(self.get_output_collector(), traffic_station, min_from_date)
-        logger.info(f"Computation interval for [{traffic_station.code}] starts at [{start_date}]")
+        start_date = self.get_starting_date(self.get_output_connector(), traffic_station, min_from_date)
 
         # Detect inactive stations:
         # If we're about to request more than one window of measurements, do a check first if there even is any new data
         if (max_to_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
-            latest_measurement_date = self._get_latest_date(self.get_input_collector(), traffic_station)
+            latest_measurement_date = self._get_latest_date(self.get_input_connector(), traffic_station)
             # traffic data request range end is the latest measurement
             # For inactive stations, this latest measurement date will be < start_date,
             # thus no further requests will be made. In general, it makes no sense to ask for data
@@ -240,7 +238,6 @@ class TrafficStationManager(ABC):
             max_to_date = min(max_to_date, latest_measurement_date)
 
         to_date = start_date
-        logger.info(f"Computation interval for [{traffic_station.code}] ends at [{to_date}]")
 
         if start_date == max_to_date:
             logger.info(f"Not computing data for station [{traffic_station.code}] in interval "

@@ -15,6 +15,7 @@ from common.data_model.history import HistoryMeasureCollection
 from common.data_model.traffic import TrafficMeasureCollection
 from common.data_model.validation import ValidationEntry, ValidationTypeClass
 from common.model.helper import ModelHelper
+from common.settings import PERIOD_10MIN
 from validator.Validator import validator
 
 logger = logging.getLogger("pollution_v2.validator.model.validation_model")
@@ -39,17 +40,17 @@ class ValidationModel:
         history_dates = {measure.valid_time.date() for measure in history.measures}
         traffic_dates = {measure.valid_time.date() for measure in traffic.measures}
 
-        if len(history_dates.difference(traffic_dates)) > 0:
-            unprocessed_records = [measure.valid_time.date() for measure in traffic.measures
-                                   if measure.valid_time.date() in history_dates.difference(traffic_dates)]
-            logger.warning(f"Missing traffic data for the following dates [{history_dates.difference(traffic_dates)}] "
-                           f"on station [{station.code}]: {len(unprocessed_records)} "
+        diff = {measure.valid_time.date() for measure in traffic.measures
+                if measure.valid_time.date() in history_dates.difference(traffic_dates)}
+        if len(diff) > 0:
+            logger.warning(f"Missing traffic data for the following dates [{sorted(diff)}] "
+                           f"on station [{station.code}]: {len(diff)} "
                            f"records will not be processed")
-        if len(traffic_dates.difference(history_dates)) > 0:
-            unprocessed_records = [measure.valid_time.date() for measure in traffic.measures
-                                   if measure.valid_time.date() in traffic_dates.difference(history_dates)]
-            logger.warning(f"Missing history data for the following dates [{traffic_dates.difference(history_dates)}] "
-                           f"on station [{station.code}]: {len(unprocessed_records)} "
+        diff = {measure.valid_time.date() for measure in traffic.measures
+                if measure.valid_time.date() in traffic_dates.difference(history_dates)}
+        if len(diff) > 0:
+            logger.warning(f"Missing history data for the following dates [{sorted(diff)}] "
+                           f"on station [{station.code}]: {len(diff)} "
                            f"records will not be processed")
 
         run_on_dates = history_dates.intersection(traffic_dates)
@@ -61,8 +62,8 @@ class ValidationModel:
         stations_df = ModelHelper.get_stations_dataframe(traffic.get_stations())
         stations_df_validator = stations_df.copy().set_index("station_id")
 
-        # TODO coming from algorithm?
-        period = 600
+        # TODO without hard-coding here, should come out from algorithm
+        period = PERIOD_10MIN
 
         res = []
         if len(traffic_entries) > 0 and len(history_entries) > 0:

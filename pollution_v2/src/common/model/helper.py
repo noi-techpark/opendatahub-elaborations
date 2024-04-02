@@ -2,8 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from datetime import date
-from typing import Iterable
+from datetime import date, datetime
+from typing import Iterable, Set
 
 import pandas as pd
 import json
@@ -17,6 +17,9 @@ logger = logging.getLogger("pollution_v2.common.model")
 
 
 class ModelHelper:
+    """
+    Created Pandas datqframes starting useful to feed computerion algorithms
+    """
 
     @staticmethod
     def get_stations_dataframe(stations: dict[str, StationType]) -> pd.DataFrame:
@@ -30,7 +33,6 @@ class ModelHelper:
         """
         temp = []
         for entry in stations.values():
-
             temp.append({
                 "station_id": entry.id_stazione,
                 "station_code": entry.code,
@@ -41,12 +43,14 @@ class ModelHelper:
         return pd.DataFrame(temp)
 
     @staticmethod
-    def get_traffic_dataframe(traffic_entries: Iterable[TrafficEntry]) -> pd.DataFrame:
+    def get_traffic_dataframe(traffic_entries: Iterable[TrafficEntry],
+                              date_filter: Set[datetime] = None) -> pd.DataFrame:
         """
         Get a dataframe from the given traffic entries. The resulting dataframe will have the following columns:
         date,time,Location,Station,Lane,Category,Transits,Speed,km
 
         :param traffic_entries: the traffic entries
+        :param date_filter: the dates to filter on
         :return: the traffic dataframe
         """
         temp = []
@@ -60,18 +64,19 @@ class ModelHelper:
                 except Exception as e:
                     logger.warning(f"Unable to parse the KM data for station [{entry.station.code}], error [{e}]")
 
-            temp.append({
-                "date": entry.valid_time.date().isoformat(),
-                "time": entry.valid_time.time().isoformat(),
-                "Location": entry.station.id_strada,
-                "Station": entry.station.id_stazione,
-                "Lane": entry.station.id_corsia,
-                "Category": entry.vehicle_class.value,
-                "Transits": entry.nr_of_vehicles,
-                "Speed": entry.average_speed,
-                "Period": entry.period,
-                "KM": km
-            })
+            if date_filter is None or (date_filter is not None and entry.valid_time in date_filter):
+                temp.append({
+                    "date": entry.valid_time.date().isoformat(),
+                    "time": entry.valid_time.time().isoformat(),
+                    "Location": entry.station.id_strada,
+                    "Station": entry.station.id_stazione,
+                    "Lane": entry.station.id_corsia,
+                    "Category": entry.vehicle_class.value,
+                    "Transits": entry.nr_of_vehicles,
+                    "Speed": entry.average_speed,
+                    "Period": entry.period,
+                    "KM": km
+                })
 
         return pd.DataFrame(temp)
 

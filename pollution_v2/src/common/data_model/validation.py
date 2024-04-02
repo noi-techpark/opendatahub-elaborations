@@ -48,28 +48,30 @@ class ValidationMeasureCollection(MeasureCollection[ValidationMeasure, TrafficSe
 
     @staticmethod
     def build_from_validation_entries(validation_entries: List[ValidationEntry],
-                                      provenance: Provenance) -> ValidationMeasureCollection:
+                                      provenance: Provenance, filter_is_valid=False) -> ValidationMeasureCollection:
         """
         Build a ValidationMeasureCollection from the list of validation entries.
 
         :param validation_entries: the validation entries from which generate the ValidationMeasureCollection
         :param provenance: the provenance of the validation measures
+        :param filter_is_valid: if True, processes only the measure with is_valid set to True
         :return: a ValidationMeasureCollection object containing the validation measures generated from the validation entries
         """
         data_types_dict: Dict[str, DataType] = {data_type.name: data_type for data_type in
                                                 ValidationMeasure.get_data_types()}
         validation_measures: List[ValidationMeasure] = []
         for validation_entry in validation_entries:
-            validation_measures.append(ValidationMeasure(
-                station=validation_entry.station,
-                data_type=data_types_dict[
-                    f"{validation_entry.vehicle_class.name}-{validation_entry.entry_class.name}"],
-                provenance=provenance,
-                period=validation_entry.period,
-                transaction_time=None,
-                valid_time=validation_entry.valid_time,
-                value=validation_entry.entry_value
-            ))
+            if not filter_is_valid or (filter_is_valid and validation_entry.entry_value == 1):
+                validation_measures.append(ValidationMeasure(
+                    station=validation_entry.station,
+                    data_type=data_types_dict[
+                        f"{validation_entry.vehicle_class.name}-{validation_entry.entry_class.name}"],
+                    provenance=provenance,
+                    period=validation_entry.period,
+                    transaction_time=None,
+                    valid_time=validation_entry.valid_time,
+                    value=validation_entry.entry_value
+                ))
 
         return ValidationMeasureCollection(validation_measures)
 
