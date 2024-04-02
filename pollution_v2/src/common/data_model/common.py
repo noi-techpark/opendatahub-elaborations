@@ -7,7 +7,7 @@ from __future__ import absolute_import, annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TypeVar, Generic, List, Iterable, Optional, Dict, Any, ClassVar
+from typing import TypeVar, Generic, List, Iterable, Optional, Dict, ClassVar
 
 import dateutil.parser
 
@@ -158,14 +158,6 @@ class Station:
             station_type=dict_data["station_type"],
             origin=dict_data["origin"]
         )
-
-
-@dataclass
-class StationLatestMeasure:
-
-    def __init__(self, station_code, latest_time):
-        self.station_code = station_code
-        self.latest_time = latest_time
 
 
 StationType = TypeVar("StationType", bound=Station)

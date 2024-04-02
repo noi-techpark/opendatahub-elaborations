@@ -7,12 +7,19 @@ from __future__ import absolute_import, annotations
 import json
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 from json import JSONDecodeError
 from typing import Optional, TypeVar, Generic, Type
 
 import redis
 
-logger = logging.getLogger("pollution_connector.cache.redis_cache")
+logger = logging.getLogger("pollution_v2.common.cache.common")
+
+
+class TrafficManagerClass(Enum):
+
+    POLLUTION = "POLLUTION"
+    VALIDATION = "VALIDATION"
 
 
 class CacheData(ABC):
@@ -59,7 +66,6 @@ class RedisCache(Generic[CacheDataType], ABC):
         Cache the data in dict format inside the redis db.
 
         :param data: the data to cache
-        :param key: the key to save the data
         :param ttl: the time to live of the data entry (expressed in seconds)
         """
         logger.info(f"Caching data for key [{data.unique_id()}] and ttl [{ttl}].")

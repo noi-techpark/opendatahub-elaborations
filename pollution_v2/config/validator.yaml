@@ -1,10 +1,7 @@
 # SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
-
-# Percorso del database
-db_path: '../../sample_data/input/odh.db'
-day: '2023-12-06'
+# plot validation results [True/False]
 plot: False
 # Parametri del Layer 1:
 #   valori superiore e inferiore dello Z-score oltre i quali il dato non è valido
@@ -13,10 +10,19 @@ plot: False
 Layer1:
     low: -2.5
     high: null
-    n: 2
+    n: 3
 # Parametri del Layer 1.1:
 #   valori superiore e inferiore dello Z-score oltre i quali il dato non è valido
 #   null = nessun limite
+#   n: numero di stazioni a monte e a valle da considerare per verificare la continuità lungo l'asse
 Layer1_1:
-    low: -2.5
-    high: +2.5
+    low: -2
+    high: null
+    n: 2
+# Parametri del Layer 2:
+#   valori superiore e inferiore dello Z-score oltre i quali il dato non è valido
+#   null = nessun limite
+Layer2:
+    low: -5
+    high: +5
+    n: 4

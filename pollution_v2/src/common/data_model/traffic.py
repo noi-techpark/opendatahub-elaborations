@@ -68,7 +68,8 @@ class TrafficMeasure(Measure):
             data_type=DataType.from_odh_repr(raw_data),
             provenance=Provenance.from_odh_repr(raw_data),
             period=raw_data.get("mperiod"),
-            transaction_time=dateutil.parser.parse(raw_data["mtransactiontime"]) if raw_data.get("mtransactiontime") else None,
+            transaction_time=dateutil.parser.parse(raw_data["mtransactiontime"]) if raw_data.get(
+                "mtransactiontime") else None,
             valid_time=dateutil.parser.parse(raw_data["mvalidtime"]),
             value=raw_data["mvalue"],
         )
@@ -139,11 +140,13 @@ class TrafficMeasureCollection(MeasureCollection[TrafficMeasure, TrafficSensorSt
 
             if measure.is_vehicle_counting_measure:
                 if entry.nr_of_vehicles is not None:
-                    raise ValueError(f"Duplicated measure for type [{measure.data_type.name}] on station [{measure.station.code} for date [{measure.valid_time}]")
+                    raise ValueError(
+                        f"Duplicated measure for type [{measure.data_type.name}] on station [{measure.station.code} for date [{measure.valid_time}]")
                 entry.nr_of_vehicles = measure.value
             elif measure.is_average_speed_measure:
                 if entry.average_speed is not None:
-                    raise ValueError(f"Duplicated measure for type [{measure.data_type.name}] on station [{measure.station.code} for date [{measure.valid_time}]")
+                    raise ValueError(
+                        f"Duplicated measure for type [{measure.data_type.name}] on station [{measure.station.code} for date [{measure.valid_time}]")
                 entry.average_speed = measure.value
 
         return result

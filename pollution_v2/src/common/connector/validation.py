@@ -9,9 +9,10 @@ from typing import Optional, List
 from common.connector.common import ODHBaseConnector
 from common.data_model.pollution import PollutionMeasure
 from common.data_model.traffic import TrafficSensorStation
+from common.data_model.validation import ValidationMeasure
 
 
-class PollutionODHConnector(ODHBaseConnector[PollutionMeasure, TrafficSensorStation]):
+class ValidationODHConnector(ODHBaseConnector[ValidationMeasure, TrafficSensorStation]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -30,8 +31,7 @@ class PollutionODHConnector(ODHBaseConnector[PollutionMeasure, TrafficSensorStat
                  requests_retry_sleep_time: float) -> None:
 
         station_type = "TrafficSensor"
-        measure_types = PollutionMeasure.get_data_types()
-        measure_types = [measure_type.name for measure_type in measure_types]
+        measure_types = [measure_type.name for measure_type in ValidationMeasure.get_data_types()]
 
         super().__init__(base_reader_url,
                          base_writer_url,

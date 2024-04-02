@@ -16,7 +16,7 @@ from keycloak import KeycloakOpenID
 
 from common.data_model.common import MeasureType, StationType, Station, Provenance, DataType
 
-logger = logging.getLogger("pollution_connector.connector.common")
+logger = logging.getLogger("pollution_v2.common.connector.common")
 
 
 @dataclass
@@ -66,7 +66,7 @@ class Token:
         return (self.created_at + timedelta(seconds=self.expires_in)) < datetime.now()
 
     @property
-    def is_refresh_toke_expired(self) -> bool:
+    def is_refresh_token_expired(self) -> bool:
         """
         Check if the refresh token is expired.
         """
@@ -135,7 +135,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         """
         Refresh current token or request a new one.
         """
-        if not self._token or self._token.is_refresh_toke_expired:
+        if not self._token or self._token.is_refresh_token_expired:
             logger.info("Requesting new token")
             self._token = Token.from_repr(
                 self._keycloak_openid.token(username=self._username, password=self._password, grant_type=self._grant_type)
@@ -314,7 +314,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
             else:
                 raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
             query_params["where"] = f'scode.eq."{code}"'
-            logger.info(f"Retrieving latest measures for station [{code}]")
+            logger.info(f"Retrieving latest measures for station [{code}] on [{type(self).__name__}]")
         else:
             logger.info("Retrieving latest measures for all stations")
 

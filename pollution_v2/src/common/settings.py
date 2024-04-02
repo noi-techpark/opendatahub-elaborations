@@ -20,6 +20,9 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 LOG_LEVEL_LIBS = os.getenv("LOG_LEVEL_LIBS", "DEBUG")
 LOGS_DIR = os.getenv("LOGS_DIR", "")
 
+# General
+DEFAULT_TIMEZONE = pytz.timezone(os.getenv("DEFAULT_TIMEZONE", "Europe/Rome"))
+
 # Open Data Hub
 ODH_BASE_READER_URL = Variable.get("ODH_BASE_READER_URL")
 ODH_BASE_WRITER_URL = Variable.get("ODH_BASE_WRITER_URL")
@@ -31,14 +34,11 @@ ODH_CLIENT_SECRET = Variable.get("ODH_CLIENT_SECRET")
 ODH_GRANT_TYPE = Variable.get("ODH_GRANT_TYPE", "password").split(";")
 ODH_PAGINATION_SIZE = int(Variable.get("ODH_PAGINATION_SIZE", 200))
 ODH_MAX_POST_BATCH_SIZE = int(Variable.get("ODH_MAX_POST_BATCH_SIZE")) if Variable.get("ODH_MAX_POST_BATCH_SIZE") else None
-ODH_COMPUTATION_BATCH_SIZE = int(Variable.get("ODH_COMPUTATION_BATCH_SIZE", 30))
 ODH_MINIMUM_STARTING_DATE = dateutil.parser.parse(Variable.get("ODH_MINIMUM_STARTING_DATE", "2018-01-01"))
+ODH_COMPUTATION_BATCH_SIZE = int(Variable.get("ODH_COMPUTATION_BATCH_SIZE", 30))
 DAG_POLLUTION_EXECUTION_CRONTAB = Variable.get("DAG_POLLUTION_EXECUTION_CRONTAB", "0 0 * * *")
 DAG_VALIDATION_EXECUTION_CRONTAB = Variable.get("DAG_VALIDATION_EXECUTION_CRONTAB", "0 0 * * *")
 DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN = int(Variable.get("DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN", 24))
-
-# General
-DEFAULT_TIMEZONE = pytz.timezone(os.getenv("DEFAULT_TIMEZONE", "Europe/Rome"))
 
 # Requests management
 REQUESTS_TIMEOUT = float(os.getenv("REQUESTS_TIMEOUT", 300))

@@ -5,14 +5,14 @@ from unittest.mock import patch, ANY, Mock
 
 import pendulum
 
-from common.data_model import TrafficSensorStation, StationLatestMeasure
+from common.data_model import TrafficSensorStation
 from common.settings import DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN, ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
 from tests.test_common import TestPollutionComputerCommon
 
 
 class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_is_called(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
@@ -29,7 +29,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
         get_traffic_stations_mock.assert_called_once()
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_gets_stations_from_cache(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
@@ -55,7 +55,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
         # Test that the return value contains the entire list of stations
         self.assertEqual(return_value, [self.station_dict, station_dict_2])
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_retrieves_passed_stations(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
@@ -81,7 +81,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
         # Test that the return value contains only the passed station
         self.assertEqual(return_value, [self.station_dict])
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.run_computation_for_station")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation_for_station")
     def test_run_computation_for_station_is_called(self, run_computation_for_station_mock):
         """
         Test that the run_computation_for_station method is called when the process_station task is run.
@@ -94,7 +94,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
         run_computation_for_station_mock.assert_called_once()
 
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.run_computation_for_station")
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation_for_station")
     def test_run_computation_for_station_gets_correct_input(self, run_computation_for_station_mock):
         """
         Test that the run_computation_for_station method is called when the process_station task is run.
@@ -113,73 +113,44 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.execute")
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.__init__")
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_all_latest_measures")
-    def test_trigger_next_dag_run_triggers_task_with_station(self, get_all_latest_measure_mock, trigger_dag_run_mock,
-                                                             trigger_dag_run_execute_mock):
+    def test_trigger_next_dag_run_triggers_task_with_station(self, trigger_dag_run_mock, trigger_dag_run_execute_mock):
         """
         Test that the TriggerDagRunOperator is called when the whats_next task is run with a station with remaining data.
         """
         trigger_dag_run_mock.return_value = None
 
-        # Mock self.station_dict to have remaining data
-        included_date = pendulum.now().subtract(hours=DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN+1)
-        get_all_latest_measure_mock.return_value = [
-            StationLatestMeasure(self.station_dict["code"], included_date),
-        ]
-
-        # Run the whats_next task
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
-        task = dag.get_task(self.whats_next_task_id)
-        task_function = task.python_callable
-        task_function([self.station_dict])
-
-        # Test that the get_all_latest_measures method is called
-        trigger_dag_run_mock.assert_called_once()
+        all_stations = [self.station_dict, self.station2_dict]
+        self.mock_whats_next_run_allow_limited_stations(all_stations, all_stations)
 
         # Test that the trigger_dag_run method is called
+        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
         trigger_dag_run_mock.assert_called_once_with(
             task_id="run_again_the_dag",
             dag=dag,
             trigger_dag_id=self.pollution_computer_dag_id,
-            conf={"stations_to_process": [self.station_dict["code"]]}
+            conf={"stations_to_process": [station['code'] for station in all_stations]}
         )
         trigger_dag_run_execute_mock.assert_called_once()
 
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.execute")
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.__init__")
-    @patch("pollution_connector.tasks.pollution_computation.PollutionComputationManager.get_all_latest_measures")
-    def test_trigger_next_dag_run_passes_correct_stations(self, get_all_latest_measures_mock, trigger_dag_run_mock,
-                                                          trigger_dag_run_execute_mock):
+    def test_trigger_next_dag_run_passes_correct_stations(self, trigger_dag_run_mock, trigger_dag_run_execute_mock):
         """
         Test that the trigger_next_dag_run method is called with the correct input when the whats_next task is run.
         """
         trigger_dag_run_mock.return_value = None
 
-        span_hours = DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
-        included_date = pendulum.now().subtract(hours=span_hours+1)
-        excluded_date = pendulum.now().subtract(hours=span_hours-1)
-        get_all_latest_measures_mock.return_value = [
-            StationLatestMeasure("station_1", included_date),
-            StationLatestMeasure("station_2", excluded_date),
-            StationLatestMeasure("station_3", included_date),
-            StationLatestMeasure("station_4", excluded_date)
-        ]
-
-        # Run the whats_next task
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
-        task = dag.get_task(self.whats_next_task_id)
-        task_function = task.python_callable
-        task_function([self.station_dict])
-
-        # Test that the get_all_latest_measures method is called
-        get_all_latest_measures_mock.assert_called_once()
+        all_stations = [self.station_dict, self.station2_dict, self.station3_dict, self.station4_dict]
+        allowed_stations = [self.station_dict, self.station3_dict]
+        self.mock_whats_next_run_allow_limited_stations(all_stations, allowed_stations)
 
         # Test that the trigger_dag_run method is called with the correct input
+        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
         trigger_dag_run_mock.assert_called_once_with(
             task_id="run_again_the_dag",
             dag=dag,
             trigger_dag_id=self.pollution_computer_dag_id,
-            conf={"stations_to_process": ["station_1", "station_3"]}
+            conf={"stations_to_process": [station['code'] for station in allowed_stations]}
         )
 
         trigger_dag_run_execute_mock.assert_called_once()
