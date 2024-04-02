@@ -160,14 +160,6 @@ class Station:
         )
 
 
-@dataclass
-class StationLatestMeasure:
-
-    def __init__(self, station_code, latest_time):
-        self.station_code = station_code
-        self.latest_time = latest_time
-
-
 StationType = TypeVar("StationType", bound=Station)
 
 

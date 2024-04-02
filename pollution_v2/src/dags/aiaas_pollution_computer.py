@@ -27,7 +27,7 @@ logger = logging.getLogger("pollution_v2.dags.aiaas_pollution_computer")
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': ODH_MINIMUM_STARTING_DATE,
+    'start_date': DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE),
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -136,11 +136,11 @@ with TrafficStationsDAG(
 
         def has_remaining_data(starting_date: datetime, ending_date: datetime) -> bool:
             """
-            Determines if there are still enought data to be processed for another DAG run on the specific station.
+            Determines if there are still enough data to be processed for another DAG run on the specific station.
 
             :param starting_date: the date on which data availability starts
             :param ending_date: the date on which data availability ends
-            :return: true if there are enought data to run another DAG on this station
+            :return: true if there are enough data to run another DAG on this station
             """
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
 
