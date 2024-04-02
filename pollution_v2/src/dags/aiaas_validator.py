@@ -135,11 +135,11 @@ with TrafficStationsDAG(
 
         def has_remaining_data(starting_date: datetime, ending_date: datetime) -> bool:
             """
-            Determines if there are still enought data to be processed for another DAG run on the specific station.
+            Determines if there are still enough data to be processed for another DAG run on the specific station.
 
             :param starting_date: the date on which data availability starts
             :param ending_date: the date on which data availability ends
-            :return: true if there are enought data to run another DAG on this station
+            :return: true if there are enough data to run another DAG on this station
             """
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN
 

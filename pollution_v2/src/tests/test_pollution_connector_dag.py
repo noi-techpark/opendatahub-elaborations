@@ -11,6 +11,7 @@ import pendulum
 import pytz
 from airflow.models import Variable
 
+from common.settings import DEFAULT_TIMEZONE
 from tests.test_common import TestPollutionComputerCommon
 
 
@@ -61,11 +62,7 @@ class TestPollutionComputerDAG(TestPollutionComputerCommon):
 
             parsed_date = dateutil.parser.parse(starting_date)
             assert parsed_date == settings.ODH_MINIMUM_STARTING_DATE
-
-            # Default timezone set in airflow settings is UTC, so we need to convert the parsed date to that timezone
-            # If default timezone is changed, update also this test
-            default_airflow_timezone = pytz.UTC
-            parsed_date = pendulum.instance(parsed_date.replace(tzinfo=default_airflow_timezone))
+            parsed_date = DEFAULT_TIMEZONE.localize(parsed_date)
 
             # Importing the dag after the settings have been reloaded
             from dags.aiaas_pollution_computer import dag as pollution_computer_dag
