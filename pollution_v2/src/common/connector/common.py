@@ -66,7 +66,7 @@ class Token:
         return (self.created_at + timedelta(seconds=self.expires_in)) < datetime.now()
 
     @property
-    def is_refresh_toke_expired(self) -> bool:
+    def is_refresh_token_expired(self) -> bool:
         """
         Check if the refresh token is expired.
         """
