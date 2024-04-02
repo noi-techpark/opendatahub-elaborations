@@ -299,12 +299,14 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         logger.info(f"Retrieved [{len(raw_stations)}] stations")
         return [self.build_station(raw_station) for raw_station in raw_stations]
 
-    def get_latest_measures(self, station: Optional[Station or str] = None) -> List[MeasureType]:
+    def get_latest_measures(self, station: Optional[Station or str] = None,
+                            period_to_exclude: int = None) -> List[MeasureType]:
         """
         Retrieve the last measure for the connector DataType.
 
         :param station: If set, it is possible to retrieve only the measures for the given station. It can be a string
                         representing the station code or a Station object.
+        :param period_to_exclude: If set, it allows filtering on period; otherwise, no filter on period
         :return: The list of measures
         """
         query_params = {}
@@ -316,7 +318,10 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                 code = station.code
             else:
                 raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
-            query_params["where"] = f'scode.eq."{code}"'
+            if period_to_exclude is None:
+                query_params["where"] = f'scode.eq."{code}"'
+            else:
+                query_params["where"] = f'and(scode.eq."{code}",mperiod.neq.{period_to_exclude})'
             logger.info(f"Retrieving latest measures on [{type(self).__name__}] for station [{code}]")
         else:
             logger.info("Retrieving latest measures on [{type(self).__name__}] for all stations")
@@ -328,7 +333,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         return [self.build_measure(raw_measure) for raw_measure in raw_measures]
 
-    def get_measures(self, from_date: datetime, to_date: datetime, station: Optional[Station or str] = None) -> List[MeasureType]:
+    def get_measures(self, from_date: datetime, to_date: datetime, station: Optional[Station or str] = None,
+                     period_to_exclude: int = None) -> List[MeasureType]:
         """
         Retrieve the measures for the connector DataType in the given interval.
 
@@ -336,6 +342,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         :param to_date: The end date of the interval
         :param station: If set, it is possible to retrieve only the measures for the given station. It can be a string
                         representing the station code or a Station object.
+        :param period_to_exclude: If set, it allows filtering on period; otherwise, no filter on period
         :return: the list of Measures
         """
 
@@ -351,7 +358,10 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                 code = station.code
             else:
                 raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
-            query_params["where"] = f'scode.eq."{code}"'
+            if period_to_exclude is None:
+                query_params["where"] = f'scode.eq."{code}"'
+            else:
+                query_params["where"] = f'and(scode.eq."{code}",mperiod.neq.{period_to_exclude})'
             logger.info(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
                         f"to date [{iso_to_date}] for station [{code}]")
         else:

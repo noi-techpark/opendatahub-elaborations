@@ -182,7 +182,9 @@ class TrafficStationManager(ABC):
         :return: The resulting TrafficMeasureCollection containing the traffic data.
         """
 
-        return self.get_input_collector().get_measures(from_date=from_date, to_date=to_date, station=traffic_station)
+        return self.get_input_collector().get_measures(from_date=from_date, to_date=to_date, station=traffic_station,
+                                                       # TODO cablato
+                                                       period_to_exclude=86400)
 
     def _upload_data(self, input_entries: List[GenericEntry]) -> None:
         """
