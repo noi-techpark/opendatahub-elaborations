@@ -18,6 +18,10 @@ from common.data_model.station import TrafficSensorStation
 
 @dataclass
 class TrafficMeasure(Measure):
+    """
+    Measure representing traffic.
+    """
+
     station: TrafficSensorStation
 
     @classmethod

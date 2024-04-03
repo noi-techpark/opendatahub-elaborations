@@ -50,8 +50,8 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
     logging.debug(f'...initializing data for day {day}')
     A22 = Dominio(data)
     for index, row in data.station_list.iterrows():
-        if (data.station_type.loc[row['station']]['station_type'] != 'TVCC' or
-            data.station_type.loc[row['station']]['station_type'] != 'RADAR'):
+        station_type = data.station_type[data.station_type['station_id'] == row['station']]['station_type'].item()
+        if station_type != 'TVCC' or station_type != 'RADAR':
             # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
             s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
                         params.layer1('n'))

@@ -9,6 +9,7 @@ from typing import Optional, List
 from common.connector.common import ODHBaseConnector
 from common.data_model.history import HistoryMeasure
 from common.data_model.traffic import TrafficSensorStation
+from common.settings import PERIOD_1DAY
 
 
 class HistoryODHConnector(ODHBaseConnector[HistoryMeasure, TrafficSensorStation]):
@@ -33,6 +34,7 @@ class HistoryODHConnector(ODHBaseConnector[HistoryMeasure, TrafficSensorStation]
         measure_types = [
             "Nr. Vehicles"
         ]
+        period = PERIOD_1DAY
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -49,7 +51,8 @@ class HistoryODHConnector(ODHBaseConnector[HistoryMeasure, TrafficSensorStation]
                          requests_timeout,
                          requests_max_retries,
                          requests_sleep_time,
-                         requests_retry_sleep_time)
+                         requests_retry_sleep_time,
+                         period)
 
     @staticmethod
     def build_station(raw_station: dict) -> TrafficSensorStation:

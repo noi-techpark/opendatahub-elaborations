@@ -161,7 +161,9 @@ class TrafficStationManager(ABC):
         if len(self._traffic_stations) == 0:
             logger.info("Retrieving station list from ODH")
             self._traffic_stations = self.__get_station_list()
-        return self._traffic_stations
+
+        # TODO check filter if to be kept
+        return [station for station in self._traffic_stations if station.code.startswith("A22:")]
 
     def __get_station_list(self) -> List[TrafficSensorStation]:
         """
@@ -172,7 +174,7 @@ class TrafficStationManager(ABC):
     def _download_traffic_data(self,
                                from_date: datetime,
                                to_date: datetime,
-                               traffic_station: TrafficSensorStation
+                               traffic_station: TrafficSensorStation = None
                                ) -> List[MeasureType]:
         """
         Download traffic data measures in the given interval.
@@ -182,8 +184,8 @@ class TrafficStationManager(ABC):
         :return: The resulting TrafficMeasureCollection containing the traffic data.
         """
 
-        return self._connector_collector.traffic.get_measures(from_date=from_date, to_date=to_date, station=traffic_station,
-                                                              period_to_exclude=PERIOD_1DAY)
+        return self._connector_collector.traffic.get_measures(from_date=from_date, to_date=to_date,
+                                                              station=traffic_station)
 
     def _upload_data(self, input_entries: List[GenericEntry]) -> None:
         """

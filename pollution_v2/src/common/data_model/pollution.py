@@ -35,13 +35,22 @@ class PollutionEntry(GenericEntry):
 
 
 class PollutionMeasure(Measure):
+    """
+    Measure representing pollution.
+    """
 
     @staticmethod
     def get_data_types() -> List[DataType]:
+        """
+        Returns the data types specific for this measure.
+
+        :return: the data types specific for this measure
+        """
         data_types = []
         for vehicle in VehicleClass:
             for pollutant in PollutantClass:
-                data_types.append(DataType(f"{vehicle.name}-{pollutant.name}-emissions", f"{vehicle.value} emissions of {pollutant.name}", "total", "g/km", {}))
+                data_types.append(DataType(f"{vehicle.name}-{pollutant.name}-emissions",
+                                           f"{vehicle.value} emissions of {pollutant.name}", "total", "g/km", {}))
         return data_types
 
 
@@ -49,8 +58,8 @@ class PollutionMeasure(Measure):
 class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSensorStation]):
 
     @staticmethod
-    def build_from_pollution_entries(pollution_entries: List[PollutionEntry],
-                                     provenance: Provenance) -> PollutionMeasureCollection:
+    def build_from_entries(pollution_entries: List[PollutionEntry],
+                           provenance: Provenance) -> PollutionMeasureCollection:
         """
         Build a PollutionMeasureCollection from the list of pollution entries.
 

@@ -10,6 +10,7 @@ from common.connector.common import ODHBaseConnector
 from common.data_model.pollution import PollutionMeasure
 from common.data_model.traffic import TrafficSensorStation
 from common.data_model.validation import ValidationMeasure
+from common.settings import PERIOD_10MIN
 
 
 class ValidationODHConnector(ODHBaseConnector[ValidationMeasure, TrafficSensorStation]):
@@ -32,6 +33,7 @@ class ValidationODHConnector(ODHBaseConnector[ValidationMeasure, TrafficSensorSt
 
         station_type = "TrafficSensor"
         measure_types = [measure_type.name for measure_type in ValidationMeasure.get_data_types()]
+        period = PERIOD_10MIN
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -48,7 +50,8 @@ class ValidationODHConnector(ODHBaseConnector[ValidationMeasure, TrafficSensorSt
                          requests_timeout,
                          requests_max_retries,
                          requests_sleep_time,
-                         requests_retry_sleep_time)
+                         requests_retry_sleep_time,
+                         period)
 
     @staticmethod
     def build_station(raw_station: dict) -> TrafficSensorStation:

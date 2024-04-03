@@ -3,13 +3,13 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 from datetime import date, datetime
-from typing import Iterable, Set
+from typing import Iterable, Set, List
 
 import pandas as pd
 import json
 import logging
 
-from common.data_model.common import StationType
+from common.data_model import TrafficSensorStation
 from common.data_model.history import HistoryEntry
 from common.data_model.traffic import TrafficEntry
 
@@ -22,7 +22,7 @@ class ModelHelper:
     """
 
     @staticmethod
-    def get_stations_dataframe(stations: dict[str, StationType]) -> pd.DataFrame:
+    def get_stations_dataframe(stations: List[TrafficSensorStation]) -> pd.DataFrame:
         """
         Get a dataframe from the given list of traffic stations.
         The resulting dataframe will have the following columns:
@@ -32,13 +32,14 @@ class ModelHelper:
         :return: the station dataframe
         """
         temp = []
-        for entry in stations.values():
-            temp.append({
-                "station_id": entry.id_stazione,
-                "station_code": entry.code,
-                "km": entry.km,
-                "station_type": entry.station_type
-            })
+        for entry in stations:
+            if entry.km > 0:
+                temp.append({
+                    "station_id": entry.id_stazione,
+                    "station_code": entry.code,
+                    "km": entry.km,
+                    "station_type": entry.station_type
+                })
 
         return pd.DataFrame(temp)
 
@@ -114,11 +115,10 @@ class ModelHelper:
         """
         temp = []
         for entry in history_entries:
-            if date == entry.valid_time.date():
-                temp.append({
-                    "date": entry.valid_time.date().isoformat(),
-                    "station_code": entry.valid_time.time().isoformat(),
-                    "total_traffic": entry.station.id_strada
-                })
+            temp.append({
+                "date": entry.valid_time.date().isoformat(),
+                "station_code": entry.station.code,
+                "total_traffic": entry.nr_of_vehicles
+            })
 
         return pd.DataFrame(temp)

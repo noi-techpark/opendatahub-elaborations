@@ -78,4 +78,4 @@ class PollutionComputationManager(TrafficStationManager):
         return PollutionMeasure.get_data_types()
 
     def _build_from_entries(self, input_entries: List[PollutionEntry]) -> MeasureCollection:
-        return PollutionMeasureCollection.build_from_pollution_entries(input_entries, self._provenance)
+        return PollutionMeasureCollection.build_from_entries(input_entries, self._provenance)

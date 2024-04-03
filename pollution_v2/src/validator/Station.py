@@ -35,7 +35,7 @@ class Station:
         self.lane_selector()
         history_len = history[history['station'] == self.ID].shape[0]
         if self.ID not in history['station'].values or history_len < 10:
-            if self.ID not in chilometriche.keys():
+            if self.ID not in chilometriche.index.values:
                 logger.info(f'{self.ID:<4} {self.direction:<4} no history, no information about position --> skip layer 1, 1.1, 2')
                 self.skip_validation = True
                 self.layer1 = None

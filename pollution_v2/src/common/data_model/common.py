@@ -14,6 +14,9 @@ import dateutil.parser
 
 import logging
 
+from common.data_model.entry import GenericEntryType
+from common.data_model.station import StationType, Station
+
 logger = logging.getLogger("pollution_v2.common.data_model.common")
 
 
@@ -110,74 +113,6 @@ class Measure:
 
 
 MeasureType = TypeVar("MeasureType", bound=Measure)
-
-
-@dataclass
-class Station:
-
-    code: str
-    active: bool
-    available: bool
-    coordinates: dict
-    metadata: dict
-    name: str
-    station_type: str
-    origin: Optional[str]
-
-    @property
-    def km(self) -> float:
-        """
-        Returns station mileage.
-        """
-        if self.metadata.get("a22_metadata"):
-            metadata = ast.literal_eval(self.metadata["a22_metadata"])
-            if metadata.get("metro"):
-                return (int(metadata["metro"])) / 1000
-        logger.warning(f"Mileage not defined for station [{self.code}]")
-        return -1000
-
-    __version__: ClassVar[int] = 1
-
-    @classmethod
-    def from_odh_repr(cls, raw_data: dict):
-        return cls(
-            code=raw_data["scode"],
-            active=raw_data["sactive"],
-            available=raw_data["savailable"],
-            coordinates=raw_data["scoordinate"],
-            metadata=raw_data["smetadata"],
-            name=raw_data["sname"],
-            station_type=raw_data["stype"],
-            origin=raw_data.get("sorigin")
-        )
-
-    def to_json(self) -> dict:
-        return {
-            "code": self.code,
-            "active": self.active,
-            "available": self.available,
-            "coordinates": self.coordinates,
-            "metadata": self.metadata,
-            "name": self.name,
-            "station_type": self.station_type,
-            "origin": self.origin
-        }
-
-    @classmethod
-    def from_json(cls, dict_data) -> Station:
-        return Station(
-            code=dict_data["code"],
-            active=dict_data["active"],
-            available=dict_data["available"],
-            coordinates=dict_data["coordinates"],
-            metadata=dict_data["metadata"],
-            name=dict_data["name"],
-            station_type=dict_data["station_type"],
-            origin=dict_data["origin"]
-        )
-
-
-StationType = TypeVar("StationType", bound=Station)
 
 
 @dataclass

@@ -44,7 +44,8 @@ class Input:
         raw_data[['domain', 'station', 'lane']] = raw_data['station_code'].str.split(':', expand=True)
         raw_data['direction'] = raw_data['lane'].map({'1': 'NORD', '2': 'NORD', '3': 'SUD', '4': 'SUD', '5': 'NORD', '6': 'SUD'})
         raw_data['station'] = raw_data['station'].astype(int)
-        raw_data['km'] = raw_data['station'].map(self.chilometriche.T.to_dict('list'))
+        raw_data['km'] = pd.merge(raw_data[['station']].drop_duplicates(), self.chilometriche,
+                                  left_on='station', right_on='station_id')['km']
         return raw_data
 
     def get_stations(self):

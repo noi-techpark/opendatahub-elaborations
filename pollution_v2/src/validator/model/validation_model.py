@@ -27,7 +27,7 @@ class ValidationModel:
     """
 
     def compute_data(self, history: HistoryMeasureCollection, traffic: TrafficMeasureCollection,
-                     station: TrafficSensorStation) -> List[ValidationEntry]:
+                     station: TrafficSensorStation, stations: List[TrafficSensorStation]) -> List[ValidationEntry]:
         """
         Compute the validation given the available traffic measures
 
@@ -59,8 +59,7 @@ class ValidationModel:
         traffic_entries = traffic.get_entries()
         history_entries = history.get_entries()
 
-        stations_df = ModelHelper.get_stations_dataframe(traffic.get_stations())
-        stations_df_validator = stations_df.copy().set_index("station_id")
+        stations_df = ModelHelper.get_stations_dataframe(stations)
 
         # TODO without hard-coding here, should come out from algorithm
         period = PERIOD_10MIN
@@ -69,10 +68,12 @@ class ValidationModel:
         if len(traffic_entries) > 0 and len(history_entries) > 0:
             for date in run_on_dates:
                 traffic_df = ModelHelper.get_traffic_dataframe_for_validation(traffic_entries, date)
-                logger.info(f"Starting validation on {len(traffic_df)} traffic records on station [{station.code}]")
+                logger.info(f"Starting validation on {len(traffic_df)} traffic records on station [{station.code}] "
+                            f"on [{date}]")
                 history_df = ModelHelper.get_history_dataframe(history_entries, date)
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,
-                                   stations_df_validator[['km']], stations_df_validator[['station_type']])
+                                   stations_df[["station_id", "km"]].drop_duplicates(),
+                                   stations_df[["station_id", "station_type"]].drop_duplicates())
                 lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), period, traffic.get_stations())
                 res.extend(lst)
         else:

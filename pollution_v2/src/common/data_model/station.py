@@ -4,19 +4,87 @@
 
 from __future__ import absolute_import, annotations
 
+import ast
 from dataclasses import dataclass
 
 import logging
-
-from common.data_model.common import Station
+from typing import Optional, ClassVar, TypeVar
 
 logger = logging.getLogger("pollution_v2.common.data_model.station")
 
 
 @dataclass
+class Station:
+
+    code: str
+    active: bool
+    available: bool
+    coordinates: dict
+    metadata: dict
+    name: str
+    station_type: str
+    origin: Optional[str]
+
+    @property
+    def km(self) -> float:
+        """
+        Returns station mileage.
+        """
+        if self.metadata.get("a22_metadata"):
+            metadata = ast.literal_eval(self.metadata["a22_metadata"])
+            if metadata.get("metro"):
+                return (int(metadata["metro"])) / 1000
+        logger.warning(f"Mileage not defined for station [{self.code}]")
+        return -1000
+
+    __version__: ClassVar[int] = 1
+
+    @classmethod
+    def from_odh_repr(cls, raw_data: dict):
+        return cls(
+            code=raw_data["scode"],
+            active=raw_data["sactive"],
+            available=raw_data["savailable"],
+            coordinates=raw_data["scoordinate"],
+            metadata=raw_data["smetadata"],
+            name=raw_data["sname"],
+            station_type=raw_data["stype"],
+            origin=raw_data.get("sorigin")
+        )
+
+    def to_json(self) -> dict:
+        return {
+            "code": self.code,
+            "active": self.active,
+            "available": self.available,
+            "coordinates": self.coordinates,
+            "metadata": self.metadata,
+            "name": self.name,
+            "station_type": self.station_type,
+            "origin": self.origin
+        }
+
+    @classmethod
+    def from_json(cls, dict_data) -> Station:
+        return Station(
+            code=dict_data["code"],
+            active=dict_data["active"],
+            available=dict_data["available"],
+            coordinates=dict_data["coordinates"],
+            metadata=dict_data["metadata"],
+            name=dict_data["name"],
+            station_type=dict_data["station_type"],
+            origin=dict_data["origin"]
+        )
+
+
+StationType = TypeVar("StationType", bound=Station)
+
+
+@dataclass
 class TrafficSensorStation(Station):
     """
-    Class representing a traffic station
+    Class representing a traffic station.
     """
 
     def split_station_code(self) -> (str, int, int):

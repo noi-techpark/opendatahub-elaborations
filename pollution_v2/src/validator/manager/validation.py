@@ -5,7 +5,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 
 from common.cache.common import TrafficManagerClass
@@ -39,8 +39,7 @@ class ValidationManager(TrafficStationManager):
 
     def _download_history_data(self,
                                from_date: datetime,
-                               to_date: datetime,
-                               traffic_station: TrafficSensorStation
+                               to_date: datetime
                                ) -> HistoryMeasureCollection:
         """
         Download history data measures in the given interval.
@@ -52,9 +51,12 @@ class ValidationManager(TrafficStationManager):
 
         # set time to midnight otherwise you'll miss today's value
         from_date = DEFAULT_TIMEZONE.localize(datetime.combine(from_date, datetime.min.time()))
+
+        # TODO restore days=4*365
+        from_date = from_date - timedelta(days=365)
+
         return HistoryMeasureCollection(measures=self._connector_collector.history.get_measures(from_date=from_date,
-                                                                                                to_date=to_date,
-                                                                                                station=traffic_station))
+                                                                                                to_date=to_date))
 
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime,
                                    traffic_station: TrafficSensorStation) -> List[GenericEntry]:
@@ -62,7 +64,9 @@ class ValidationManager(TrafficStationManager):
         history_data = []
         traffic_data = []
         try:
-            history_data = self._download_history_data(start_date, to_date, traffic_station)
+            # no station as for history every station is needed
+            history_data = self._download_history_data(start_date, to_date)
+            # TODO check if station has to be passed or not
             traffic_data = self._download_traffic_data(start_date, to_date, traffic_station)
         except Exception as e:
             logger.exception(
@@ -70,9 +74,12 @@ class ValidationManager(TrafficStationManager):
                 f"in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]",
                 exc_info=e)
 
+        all_traffic_stations = self.get_traffic_stations_from_cache()
+
         if history_data and traffic_data:
             model = ValidationModel()
-            return model.compute_data(history_data, TrafficMeasureCollection(traffic_data), traffic_station)
+            return model.compute_data(history_data, TrafficMeasureCollection(traffic_data),
+                                      traffic_station, all_traffic_stations)
 
         return []
 
@@ -80,4 +87,4 @@ class ValidationManager(TrafficStationManager):
         return ValidationMeasure.get_data_types()
 
     def _build_from_entries(self, input_entries: List[ValidationEntry]) -> MeasureCollection:
-        return ValidationMeasureCollection.build_from_validation_entries(input_entries, self._provenance)
+        return ValidationMeasureCollection.build_from_entries(input_entries, self._provenance)
