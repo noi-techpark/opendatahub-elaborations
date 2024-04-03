@@ -8,15 +8,15 @@ from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
 from tests.test_common import TestDAGCommon
 
 
-class TestPollutionComputerDAGTasks(TestDAGCommon):
+class TestValidatorDAGTasks(TestDAGCommon):
 
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("validator.manager.validation.ValidationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_is_called(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
         """
         # Run the get_stations_list task
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         task = dag.get_task(self.get_stations_list_task_id)
         task_function = task.python_callable
 
@@ -27,13 +27,13 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
 
         get_traffic_stations_mock.assert_called_once()
 
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("validator.manager.validation.ValidationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_gets_stations_from_cache(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
         """
         # Run the get_stations_list task
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         task = dag.get_task(self.get_stations_list_task_id)
         task_function = task.python_callable
 
@@ -51,13 +51,13 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
         # Test that the return value contains the entire list of stations
         self.assertEqual(return_value, [self.station_dict, self.station2_dict])
 
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
+    @patch("validator.manager.validation.ValidationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_retrieves_passed_stations(self, get_traffic_stations_mock):
         """
         Test that the get_traffic_stations_from_cache method is called when the get_stations_list task is run.
         """
         # Run the get_stations_list task
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         task = dag.get_task(self.get_stations_list_task_id)
         task_function = task.python_callable
 
@@ -75,26 +75,26 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
         # Test that the return value contains only the passed station
         self.assertEqual(return_value, [self.station_dict])
 
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation_for_station")
+    @patch("validator.manager.validation.ValidationManager.run_computation_for_station")
     def test_run_computation_for_station_is_called(self, run_computation_for_station_mock):
         """
         Test that the run_computation_for_station method is called when the process_station task is run.
         """
         # Run the process_station task
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         task = dag.get_task(self.process_station_task_id)
         task_function = task.python_callable
         task_function(self.station_dict)
 
         run_computation_for_station_mock.assert_called_once()
 
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation_for_station")
+    @patch("validator.manager.validation.ValidationManager.run_computation_for_station")
     def test_run_computation_for_station_gets_correct_input(self, run_computation_for_station_mock):
         """
         Test that the run_computation_for_station method is called when the process_station task is run.
         """
         # Run the process_station task
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         task = dag.get_task(self.process_station_task_id)
         task_function = task.python_callable
         task_function(self.station_dict)
@@ -114,14 +114,14 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
         trigger_dag_run_mock.return_value = None
 
         all_stations = [self.station_dict, self.station2_dict]
-        self.mock_pollution_computer_whats_next_run_allow_limited_stations(all_stations, all_stations)
+        self.mock_validator_whats_next_run_allow_limited_stations(all_stations, all_stations)
 
         # Test that the trigger_dag_run method is called
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         trigger_dag_run_mock.assert_called_once_with(
             task_id="run_again_the_dag",
             dag=dag,
-            trigger_dag_id=self.pollution_computer_dag_id,
+            trigger_dag_id=self.validator_dag_id,
             conf={"stations_to_process": [station['code'] for station in all_stations]}
         )
         trigger_dag_run_execute_mock.assert_called_once()
@@ -136,14 +136,14 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
 
         all_stations = [self.station_dict, self.station2_dict, self.station3_dict, self.station4_dict]
         allowed_stations = [self.station_dict, self.station3_dict]
-        self.mock_pollution_computer_whats_next_run_allow_limited_stations(all_stations, allowed_stations)
+        self.mock_validator_whats_next_run_allow_limited_stations(all_stations, allowed_stations)
 
         # Test that the trigger_dag_run method is called with the correct input
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         trigger_dag_run_mock.assert_called_once_with(
             task_id="run_again_the_dag",
             dag=dag,
-            trigger_dag_id=self.pollution_computer_dag_id,
+            trigger_dag_id=self.validator_dag_id,
             conf={"stations_to_process": [station['code'] for station in allowed_stations]}
         )
 
@@ -154,7 +154,7 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
         Test that the init_date_range method returns the correct date range.
         """
         # Run the init_date_range method
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         min_from_date, max_to_date = dag.init_date_range(None, None)
 
         # Test that the returned date range is correct

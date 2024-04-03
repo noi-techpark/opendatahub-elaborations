@@ -14,7 +14,7 @@ from common.settings import ODH_COMPUTATION_BATCH_SIZE, DEFAULT_TIMEZONE
 from tests.test_common import TestDAGCommon
 
 
-class TestPollutionComputation(TestDAGCommon):
+class TestValidation(TestDAGCommon):
 
     def setUp(self):
 
@@ -25,9 +25,9 @@ class TestPollutionComputation(TestDAGCommon):
         self.latest_date = DEFAULT_TIMEZONE.localize(datetime(2024, 1, 30))
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
-    @patch("pollution_connector.model.pollution_computation_model.PollutionComputationModel.compute_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
+    @patch("validator.manager.validation.ValidationManager._upload_data")
+    @patch("validator.model.validation_model.ValidationModel.compute_data")
+    @patch("validator.manager.validation.ValidationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_daily(self, download_mock, latest_date_mock, get_start_date_mock,
@@ -43,7 +43,7 @@ class TestPollutionComputation(TestDAGCommon):
             assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE")
 
             # Get the process_station task
-            dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+            dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
             task = dag.get_task(self.process_station_task_id)
             task_function = task.python_callable
             init_date_range_mock.return_value = (self.min_date, self.max_date)
@@ -66,9 +66,9 @@ class TestPollutionComputation(TestDAGCommon):
             upload_mock.assert_called_once()
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
-    @patch("pollution_connector.model.pollution_computation_model.PollutionComputationModel.compute_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
+    @patch("validator.manager.validation.ValidationManager._upload_data")
+    @patch("validator.model.validation_model.ValidationModel.compute_data")
+    @patch("validator.manager.validation.ValidationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_when_more_data(self, download_mock, latest_date_mock, get_start_date_mock,
@@ -84,12 +84,12 @@ class TestPollutionComputation(TestDAGCommon):
             assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE")
 
             # Get the process_station task
-            dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+            dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
             task = dag.get_task(self.process_station_task_id)
             task_function = task.python_callable
             init_date_range_mock.return_value = (self.min_date, self.max_date)
 
-            # start_date is the latest pollution found
+            # start_date is the latest validation found
             # latest_date is the latest traffic data found
             start_date = DEFAULT_TIMEZONE.localize(datetime(2023, 1, 1))
             latest_date_mock.return_value = self.latest_date
@@ -116,9 +116,9 @@ class TestPollutionComputation(TestDAGCommon):
             upload_mock.assert_called_once()
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
-    @patch("pollution_connector.model.pollution_computation_model.PollutionComputationModel.compute_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
+    @patch("validator.manager.validation.ValidationManager._upload_data")
+    @patch("validator.model.validation_model.ValidationModel.compute_data")
+    @patch("validator.manager.validation.ValidationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
     def test_run_computation_date_range_when_few_data(self, download_mock, latest_date_mock, get_start_date_mock,
@@ -134,12 +134,12 @@ class TestPollutionComputation(TestDAGCommon):
             assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE")
 
             # Get the process_station task
-            dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+            dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
             task = dag.get_task(self.process_station_task_id)
             task_function = task.python_callable
             init_date_range_mock.return_value = (self.min_date, self.max_date)
 
-            # start_date is the latest pollution found
+            # start_date is the latest validation found
             # latest_date is the latest traffic data found
             start_date = DEFAULT_TIMEZONE.localize(datetime(2024, 1, 15))
             latest_date_mock.return_value = self.latest_date

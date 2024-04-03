@@ -10,16 +10,18 @@ from airflow.models import DagBag
 import pendulum
 
 from common.connector.common import ODHBaseConnector
+from common.connector.traffic import TrafficODHConnector
 from common.connector.validation import ValidationODHConnector
 from common.data_model import TrafficSensorStation
-from common.settings import DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
+from common.settings import DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN, DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN
 
 
-class TestPollutionComputerCommon(TestCase):
+class TestDAGCommon(TestCase):
 
     def setUp(self):
         self.dagbag = DagBag()
         self.pollution_computer_dag_id = "pollution_computer"
+        self.validator_dag_id = "validator"
 
         # Task IDs
         self.get_stations_list_task_id = "get_stations_list"
@@ -53,23 +55,9 @@ class TestPollutionComputerCommon(TestCase):
         self.station4_dict = self.station_dict.copy()
         self.station4_dict["code"] = "4"
 
-    def __mock_get_starting_date_allow_limited_stations(self, allowed_stations: list[dict]) -> Callable[[ODHBaseConnector, TrafficSensorStation, datetime], datetime]:
-        span_hours = DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
-        ending_date = pendulum.now()
-        included_starting_date = ending_date.subtract(hours=span_hours + 2)
-        excluded_starting_date = ending_date.subtract(hours=span_hours - 2)
-        def get_starting_date_mock(connector: ODHBaseConnector, traffic_station: TrafficSensorStation,
-                                   min_from_date: datetime) -> datetime:
-            if isinstance(connector, ValidationODHConnector):
-                return ending_date
-            else:
-                if traffic_station.code in [station["code"] for station in allowed_stations]:
-                    return included_starting_date
-                return excluded_starting_date
-        return get_starting_date_mock
+    def __mock_whats_next(self, all_stations: list[dict], allowed_stations: list[dict], dag_id: str,
+                          get_starting_date_mock_func: Callable[[ODHBaseConnector, TrafficSensorStation, datetime], datetime]):
 
-
-    def mock_whats_next_run_allow_limited_stations(self, all_stations: list[dict], allowed_stations: list[dict]):
         with patch("dags.common.TrafficStationsDAG.get_stations_list") as get_stations_list_mock:
             with patch("common.manager.traffic_station.TrafficStationManager.get_starting_date") as get_starting_date_mock:
 
@@ -77,10 +65,46 @@ class TestPollutionComputerCommon(TestCase):
                 get_stations_list_mock.return_value = [
                     TrafficSensorStation.from_json(station_dict) for station_dict in all_stations
                 ]
-                get_starting_date_mock.side_effect = self.__mock_get_starting_date_allow_limited_stations(allowed_stations)
+                get_starting_date_mock.side_effect = get_starting_date_mock_func
 
                 # Run the whats_next task
-                dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+                dag = self.dagbag.get_dag(dag_id=dag_id)
                 task = dag.get_task(self.whats_next_task_id)
                 task_function = task.python_callable
                 task_function(all_stations)
+
+    def mock_validator_whats_next_run_allow_limited_stations(self, all_stations: list[dict], allowed_stations: list[dict]):
+
+        span_hours = DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN
+        ending_date = pendulum.now()
+        included_starting_date = ending_date.subtract(hours=span_hours + 2)
+        excluded_starting_date = ending_date.subtract(hours=span_hours - 2)
+
+        def get_starting_date_mock_func(connector: ODHBaseConnector, traffic_station: TrafficSensorStation,
+                                        min_from_date: datetime) -> datetime:
+            if isinstance(connector, TrafficODHConnector):
+                return ending_date
+            else:
+                if traffic_station.code in [station["code"] for station in allowed_stations]:
+                    return included_starting_date
+                return excluded_starting_date
+
+        self.__mock_whats_next(all_stations, allowed_stations, self.validator_dag_id, get_starting_date_mock_func)
+
+    def mock_pollution_computer_whats_next_run_allow_limited_stations(self, all_stations: list[dict], allowed_stations: list[dict]):
+
+        span_hours = DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
+        ending_date = pendulum.now()
+        included_starting_date = ending_date.subtract(hours=span_hours + 2)
+        excluded_starting_date = ending_date.subtract(hours=span_hours - 2)
+
+        def get_starting_date_mock_func(connector: ODHBaseConnector, traffic_station: TrafficSensorStation,
+                                        min_from_date: datetime) -> datetime:
+            if isinstance(connector, ValidationODHConnector):
+                return ending_date
+            else:
+                if traffic_station.code in [station["code"] for station in allowed_stations]:
+                    return included_starting_date
+                return excluded_starting_date
+
+        self.__mock_whats_next(all_stations, allowed_stations, self.pollution_computer_dag_id, get_starting_date_mock_func)

@@ -6,14 +6,13 @@ import importlib
 from unittest import mock
 
 import dateutil
-
 from airflow.models import Variable
 
 from common.settings import DEFAULT_TIMEZONE
 from tests.test_common import TestDAGCommon
 
 
-class TestPollutionComputerDAG(TestDAGCommon):
+class TestValidatorDAG(TestDAGCommon):
 
     def test_pollution_computer_dag_import(self):
         """
@@ -21,9 +20,9 @@ class TestPollutionComputerDAG(TestDAGCommon):
         """
         assert self.dagbag.import_errors == {}
         assert self.dagbag.dags is not None
-        assert self.pollution_computer_dag_id in self.dagbag.dags
+        assert self.validator_dag_id in self.dagbag.dags
 
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         assert self.dagbag.import_errors == {}
         assert dag is not None
 
@@ -37,7 +36,7 @@ class TestPollutionComputerDAG(TestDAGCommon):
         Test that the tasks in the DAG are correctly connected.
         The task_dependencies dictionary contains the list of downstream tasks for each task.
         """
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
         for task_id, downstream_list in self.task_dependencies.items():
             assert dag.has_task(task_id)
             task = dag.get_task(task_id)
