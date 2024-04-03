@@ -26,7 +26,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
+    @patch("pollution_connector.model.pollution_computation_model.PollutionComputationModel.compute_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
@@ -67,7 +67,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
+    @patch("pollution_connector.model.pollution_computation_model.PollutionComputationModel.compute_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
@@ -117,7 +117,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
 
     @patch("dags.common.TrafficStationsDAG.init_date_range")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._upload_data")
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._compute_data")
+    @patch("pollution_connector.model.pollution_computation_model.PollutionComputationModel.compute_data")
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")

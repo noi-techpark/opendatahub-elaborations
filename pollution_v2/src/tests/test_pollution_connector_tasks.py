@@ -6,7 +6,7 @@ from unittest.mock import patch, ANY, Mock
 import pendulum
 
 from common.data_model import TrafficSensorStation
-from common.settings import DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN, ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
+from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
 from tests.test_common import TestPollutionComputerCommon
 
 
@@ -40,11 +40,9 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
         task_function = task.python_callable
 
         # Mock the available list of stations
-        station_dict_2 = self.station_dict.copy()
-        station_dict_2["code"] = "station_temp"
         get_traffic_stations_mock.return_value = [
             TrafficSensorStation.from_json(self.station_dict),
-            TrafficSensorStation.from_json(station_dict_2)
+            TrafficSensorStation.from_json(self.station2_dict)
         ]
 
         # Mock the stations_to_process parameter to be None
@@ -53,7 +51,7 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
         })
 
         # Test that the return value contains the entire list of stations
-        self.assertEqual(return_value, [self.station_dict, station_dict_2])
+        self.assertEqual(return_value, [self.station_dict, self.station2_dict])
 
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_traffic_stations_from_cache")
     def test_get_traffic_station_retrieves_passed_stations(self, get_traffic_stations_mock):
@@ -66,11 +64,9 @@ class TestPollutionComputerDAGTasks(TestPollutionComputerCommon):
         task_function = task.python_callable
 
         # Mock the available list of stations
-        station_dict_2 = self.station_dict.copy()
-        station_dict_2["code"] = "station_temp"
         get_traffic_stations_mock.return_value = [
             TrafficSensorStation.from_json(self.station_dict),
-            TrafficSensorStation.from_json(station_dict_2)
+            TrafficSensorStation.from_json(self.station2_dict)
         ]
 
         # Mock the stations_to_process parameter to be only one value
