@@ -52,11 +52,19 @@ class ValidationManager(TrafficStationManager):
         # set time to midnight otherwise you'll miss today's value
         from_date = DEFAULT_TIMEZONE.localize(datetime.combine(from_date, datetime.min.time()))
 
-        # TODO restore days=4*365
-        from_date = from_date - timedelta(days=365)
+        measures = []
+        from_date_on_month = from_date.replace(day=1)
+        to_date_on_month = datetime(to_date.year, to_date.month + 1, 1) + timedelta(days=-1)
+        if to_date_on_month.tzinfo is None:
+            to_date_on_month = DEFAULT_TIMEZONE.localize(to_date_on_month)
 
-        return HistoryMeasureCollection(measures=self._connector_collector.history.get_measures(from_date=from_date,
-                                                                                                to_date=to_date))
+        for i in range(0, 4):
+            from_date_to_use = from_date_on_month.replace(year=from_date_on_month.year-i)
+            to_date_to_use = min(to_date_on_month.replace(year=to_date_on_month.year-i), to_date)
+            measures.extend(self._connector_collector.history.get_measures(from_date=from_date_to_use,
+                                                                           to_date=to_date_to_use))
+
+        return HistoryMeasureCollection(measures=measures)
 
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime,
                                    traffic_station: TrafficSensorStation) -> List[GenericEntry]:
@@ -66,8 +74,8 @@ class ValidationManager(TrafficStationManager):
         try:
             # no station as for history every station is needed
             history_data = self._download_history_data(start_date, to_date)
-            # TODO check if station has to be passed or not
-            traffic_data = self._download_traffic_data(start_date, to_date, traffic_station)
+            # no station as parameter as validation needs data from all stations
+            traffic_data = self._download_traffic_data(start_date, to_date)
         except Exception as e:
             logger.exception(
                 f"Unable to download history and traffic data for station [{traffic_station.code}] "
