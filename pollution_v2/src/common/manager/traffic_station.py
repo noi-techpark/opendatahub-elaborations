@@ -15,7 +15,7 @@ from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation
 from common.data_model.common import MeasureType, Provenance, DataType, MeasureCollection, Measure
 from common.data_model.entry import GenericEntry
-from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE, PERIOD_1DAY
+from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
 
@@ -211,7 +211,8 @@ class TrafficStationManager(ABC):
     def run_computation_for_station(self,
                                     traffic_station: TrafficSensorStation,
                                     min_from_date: datetime,
-                                    max_to_date: datetime) -> None:
+                                    max_to_date: datetime,
+                                    batch_size: int) -> None:
         """
         Start the computation of a batch of data measures on a specific station.
         As starting date for the  batch is used the latest measure available on the ODH,
@@ -220,6 +221,7 @@ class TrafficStationManager(ABC):
         :param traffic_station: Station to process.
         :param min_from_date: Traffic measures before this date are discarded if no measures are available.
         :param max_to_date: Ending date for interval; measures after this date are discarded.
+        :param batch_size: Number of days to be processed as maximum span.
         """
 
         logger.info(f"Determining computation interval for [{traffic_station.code}] "
@@ -229,7 +231,7 @@ class TrafficStationManager(ABC):
 
         # Detect inactive stations:
         # If we're about to request more than one window of measurements, do a check first if there even is any new data
-        if (max_to_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
+        if (max_to_date - start_date).days > batch_size:
             latest_measurement_date = self._get_latest_date(self.get_input_connector(), traffic_station)
             # traffic data request range end is the latest measurement
             # For inactive stations, this latest measurement date will be < start_date,
@@ -245,7 +247,7 @@ class TrafficStationManager(ABC):
             logger.info(f"Not computing data for station [{traffic_station.code}] in interval "
                         f"[{start_date.isoformat()} - {to_date.isoformat()}] (no timespan)")
         elif start_date < max_to_date:
-            to_date = to_date + timedelta(days=ODH_COMPUTATION_BATCH_SIZE)
+            to_date = to_date + timedelta(days=batch_size)
             if to_date > max_to_date:
                 to_date = max_to_date
 
@@ -273,8 +275,8 @@ class TrafficStationManager(ABC):
 
     def run_computation_and_upload_results(self,
                                            min_from_date: datetime,
-                                           max_to_date: datetime
-                                           ) -> None:
+                                           max_to_date: datetime,
+                                           batch_size: int) -> None:
         """
         Watch-out! Used only from main_*!
 
@@ -283,6 +285,7 @@ class TrafficStationManager(ABC):
 
         :param min_from_date: Traffic measures before this date are discarded if no measures are available.
         :param max_to_date: Traffic measure after this date are discarded.
+        :param batch_size: Number of days to be processed as maximum span.
         """
 
         if min_from_date.tzinfo is None:
@@ -293,8 +296,13 @@ class TrafficStationManager(ABC):
 
         computation_start_dt = datetime.now()
 
-        for traffic_station in self.get_traffic_stations_from_cache():
-            self.run_computation_for_station(traffic_station, min_from_date, max_to_date)
+        stations = self.get_traffic_stations_from_cache()
+        stations_with_km = [station for station in stations if station.km > 0]
+        logger.info(f"Stations filtered on having km defined, resulting {len(stations_with_km)} "
+                    f"elements (starting from {len(stations)})")
+
+        for traffic_station in stations_with_km:
+            self.run_computation_for_station(traffic_station, min_from_date, max_to_date, batch_size)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")

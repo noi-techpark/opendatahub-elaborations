@@ -34,7 +34,7 @@ class Station:
             metadata = ast.literal_eval(self.metadata["a22_metadata"])
             if metadata.get("metro"):
                 return (int(metadata["metro"])) / 1000
-        logger.warning(f"Mileage not defined for station [{self.code}]")
+        logger.debug(f"Mileage not defined for station [{self.code}]")
         return -1000
 
     __version__: ClassVar[int] = 1

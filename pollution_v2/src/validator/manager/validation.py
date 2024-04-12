@@ -78,7 +78,7 @@ class ValidationManager(TrafficStationManager):
             traffic_data = self._download_traffic_data(start_date, to_date)
         except Exception as e:
             logger.exception(
-                f"Unable to download history and traffic data for station [{traffic_station.code}] "
+                f"Unable to download history and traffic data "
                 f"in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]",
                 exc_info=e)
 

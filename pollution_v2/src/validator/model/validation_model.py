@@ -34,6 +34,7 @@ class ValidationModel:
         :param history: A collection which contain measures history
         :param traffic: A collection which contain all the available traffic measures
         :param station: A station to be processed
+        :param stations: List of all stations
         :return: A list of the new computed validation measures
         """
 
@@ -44,13 +45,13 @@ class ValidationModel:
                 if measure.valid_time.date() in history_dates.difference(traffic_dates)}
         if len(diff) > 0:
             logger.warning(f"Missing traffic data for the following dates [{sorted(diff)}] "
-                           f"on station [{station.code}]: {len(diff)} "
+                           f"while processing [{station.code}]: {len(diff)} "
                            f"records will not be processed")
         diff = {measure.valid_time.date() for measure in traffic.measures
                 if measure.valid_time.date() in traffic_dates.difference(history_dates)}
         if len(diff) > 0:
             logger.warning(f"Missing history data for the following dates [{sorted(diff)}] "
-                           f"on station [{station.code}]: {len(diff)} "
+                           f"while processing [{station.code}]: {len(diff)} "
                            f"records will not be processed")
 
         run_on_dates = history_dates.intersection(traffic_dates)
@@ -60,9 +61,6 @@ class ValidationModel:
         history_entries = history.get_entries()
 
         stations_df = ModelHelper.get_stations_dataframe(stations)
-
-        # TODO without hard-coding here, should come out from algorithm
-        period = PERIOD_10MIN
 
         res = []
         if len(traffic_entries) > 0 and len(history_entries) > 0:
@@ -74,7 +72,7 @@ class ValidationModel:
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,
                                    stations_df[["station_id", "km"]].drop_duplicates(),
                                    stations_df[["station_id", "station_type"]].drop_duplicates())
-                lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), period, traffic.get_stations())
+                lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), PERIOD_10MIN, traffic.get_stations())
                 res.extend(lst)
         else:
             logger.info("0 validated entries found skipping pollution computation")

@@ -16,11 +16,14 @@ from redis.client import Redis
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
+from common.logging import get_logging_configuration
 from common.settings import (DEFAULT_TIMEZONE, SENTRY_SAMPLE_RATE, ODH_MINIMUM_STARTING_DATE,
                              COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT, PROVENANCE_ID,
                              PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION,
-                             COMPUTATION_CHECKPOINT_REDIS_DB)
+                             COMPUTATION_CHECKPOINT_REDIS_DB, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
 from validator.manager.validation import ValidationManager
+
+logging.config.dictConfig(get_logging_configuration("pollution_v2"))
 
 logger = logging.getLogger("pollution_v2.main_validation")
 
@@ -61,7 +64,7 @@ def compute_data(min_from_date: Optional[datetime] = None,
     collector_connector = ConnectorCollector.build_from_env()
     provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION)
     manager = ValidationManager(collector_connector, provenance, checkpoint_cache)
-    manager.run_computation_and_upload_results(min_from_date, max_to_date)
+    manager.run_computation_and_upload_results(min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ from unittest.mock import patch, ANY
 from airflow.models import Variable
 
 from common.data_model import TrafficSensorStation
-from common.settings import ODH_COMPUTATION_BATCH_SIZE, DEFAULT_TIMEZONE
+from common.settings import ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, DEFAULT_TIMEZONE
 from tests.test_common import TestDAGCommon
 
 
@@ -36,11 +36,11 @@ class TestPollutionComputation(TestDAGCommon):
         Test that the run_computation_for_station method is called with the correct date range.
         """
         batch_size = "30"
-        with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE=batch_size))):
-            # Reloading settings in order to update the AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE variable
+        with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION=batch_size))):
+            # Reloading settings in order to update the AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION variable
             from common import settings
             importlib.reload(settings)
-            assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE")
+            assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION")
 
             # Get the process_station task
             dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
@@ -77,11 +77,11 @@ class TestPollutionComputation(TestDAGCommon):
         Test that the run_computation_for_station method is called with the correct date range.
         """
         batch_size = "30"
-        with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE=batch_size))):
-            # Reloading settings in order to update the AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE variable
+        with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION=batch_size))):
+            # Reloading settings in order to update the AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION variable
             from common import settings
             importlib.reload(settings)
-            assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE")
+            assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION")
 
             # Get the process_station task
             dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
@@ -96,7 +96,7 @@ class TestPollutionComputation(TestDAGCommon):
             get_start_date_mock.return_value = start_date
 
             # The correct end date is the start date plus the batch size
-            correct_end_date = start_date + timedelta(days=ODH_COMPUTATION_BATCH_SIZE)
+            correct_end_date = start_date + timedelta(days=ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION)
 
             # Start task to run computation
             task_function(self.station_dict)
@@ -104,7 +104,7 @@ class TestPollutionComputation(TestDAGCommon):
             station = TrafficSensorStation.from_json(self.station_dict)
 
             get_start_date_mock.assert_called_once_with(ANY, station, self.min_date)
-            if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
+            if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION:
                 latest_date_mock.assert_called_once_with(ANY, station)
             else:
                 latest_date_mock.assert_not_called()
@@ -127,11 +127,11 @@ class TestPollutionComputation(TestDAGCommon):
         Test that the run_computation_for_station method is called with the correct date range.
         """
         batch_size = "30"
-        with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE=batch_size))):
-            # Reloading settings in order to update the AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE variable
+        with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION=batch_size))):
+            # Reloading settings in order to update the AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION variable
             from common import settings
             importlib.reload(settings)
-            assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE")
+            assert batch_size == Variable.get("ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION")
 
             # Get the process_station task
             dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
@@ -150,7 +150,7 @@ class TestPollutionComputation(TestDAGCommon):
 
             station = TrafficSensorStation.from_json(self.station_dict)
             get_start_date_mock.assert_called_once_with(ANY, station, self.min_date)
-            if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE:
+            if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION:
                 latest_date_mock.assert_called_once_with(ANY, station)
             else:
                 latest_date_mock.assert_not_called()

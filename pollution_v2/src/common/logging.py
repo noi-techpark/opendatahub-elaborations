@@ -61,7 +61,7 @@ def get_logging_configuration(service_name: str):
                 "handlers": log_handlers,
                 "propagate": 0
             },
-            "pollution_connector": {
+            "pollution_v2": {
                 "level": log_level,
                 "handlers": log_handlers,
                 "propagate": 0
