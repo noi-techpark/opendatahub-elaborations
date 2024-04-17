@@ -67,7 +67,7 @@ class ValidationManager(TrafficStationManager):
         return HistoryMeasureCollection(measures=measures)
 
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime,
-                                   traffic_station: TrafficSensorStation) -> List[GenericEntry]:
+                                   stations: List[TrafficSensorStation]) -> List[GenericEntry]:
 
         history_data = []
         traffic_data = []
@@ -75,19 +75,17 @@ class ValidationManager(TrafficStationManager):
             # no station as for history every station is needed
             history_data = self._download_history_data(start_date, to_date)
             # no station as parameter as validation needs data from all stations
-            traffic_data = self._download_traffic_data(start_date, to_date)
+            traffic_data = self._download_traffic_data(start_date, to_date, stations)
         except Exception as e:
             logger.exception(
                 f"Unable to download history and traffic data "
                 f"in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]",
                 exc_info=e)
 
-        all_traffic_stations = self.get_traffic_stations_from_cache()
-
         if history_data and traffic_data:
             model = ValidationModel()
             return model.compute_data(history_data, TrafficMeasureCollection(traffic_data),
-                                      traffic_station, all_traffic_stations)
+                                      stations)
 
         return []
 

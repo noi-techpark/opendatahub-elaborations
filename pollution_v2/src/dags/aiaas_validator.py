@@ -119,7 +119,7 @@ with TrafficStationsDAG(
         computation_start_dt = datetime.now()
 
         logger.info(f"Running validation from [{min_from_date}] to [{max_to_date}]")
-        manager.run_computation_for_station(station, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
+        manager.run_computation([], min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed validation in [{(computation_end_dt - computation_start_dt).seconds}]")

@@ -21,19 +21,23 @@ from validator.Validator import validator
 logger = logging.getLogger("pollution_v2.validator.model.validation_model")
 
 
+def _get_station_on_logs(stations: List[TrafficSensorStation]):
+    return (f"[{', '.join([station.code for station in (stations[:5] if len(stations) > 5 else stations)])}"
+            f"{' and more' if len(stations) > 5 else ''}]")
+
+
 class ValidationModel:
     """
     The model for computing validation data.
     """
 
     def compute_data(self, history: HistoryMeasureCollection, traffic: TrafficMeasureCollection,
-                     station: TrafficSensorStation, stations: List[TrafficSensorStation]) -> List[ValidationEntry]:
+                     stations: List[TrafficSensorStation]) -> List[ValidationEntry]:
         """
         Compute the validation given the available traffic measures
 
         :param history: A collection which contain measures history
         :param traffic: A collection which contain all the available traffic measures
-        :param station: A station to be processed
         :param stations: List of all stations
         :return: A list of the new computed validation measures
         """
@@ -45,13 +49,13 @@ class ValidationModel:
                 if measure.valid_time.date() in history_dates.difference(traffic_dates)}
         if len(diff) > 0:
             logger.warning(f"Missing traffic data for the following dates [{sorted(diff)}] "
-                           f"while processing [{station.code}]: {len(diff)} "
+                           f"while processing [{_get_station_on_logs(stations)}]: {len(diff)} "
                            f"records will not be processed")
         diff = {measure.valid_time.date() for measure in traffic.measures
                 if measure.valid_time.date() in traffic_dates.difference(history_dates)}
         if len(diff) > 0:
             logger.warning(f"Missing history data for the following dates [{sorted(diff)}] "
-                           f"while processing [{station.code}]: {len(diff)} "
+                           f"while processing [{_get_station_on_logs(stations)}]: {len(diff)} "
                            f"records will not be processed")
 
         run_on_dates = history_dates.intersection(traffic_dates)
@@ -66,7 +70,7 @@ class ValidationModel:
         if len(traffic_entries) > 0 and len(history_entries) > 0:
             for date in run_on_dates:
                 traffic_df = ModelHelper.get_traffic_dataframe_for_validation(traffic_entries, date)
-                logger.info(f"Starting validation on {len(traffic_df)} traffic records on station [{station.code}] "
+                logger.info(f"Starting validation on {len(traffic_df)} traffic records on station [{_get_station_on_logs(stations)}] "
                             f"on [{date}]")
                 history_df = ModelHelper.get_history_dataframe(history_entries, date)
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,

@@ -121,6 +121,10 @@ class Station:
                 except KeyError as e:
                     logger.warning(f'error computing zscore layer 2 for {self.ID} {self.direction}: {e}')
                     self.zscore2 = None
+                except Exception as e:
+                    # TODO is there a way to manage better this case?
+                    logger.warning(f'Exception computing zscore layer 2 for {self.ID} {self.direction}: {e}')
+                    self.zscore2 = None
             else:
                 self.zscore2 = None
         else:
