@@ -77,6 +77,7 @@ class Station:
         stations_sort = sorted(diff.items(), key=lambda x: x[1])
         nearest = [key for key, _ in stations_sort[:2*N]]
         nearest.remove(self.ID)
+        print("Nearest " + str(self.ID) + ": " + str(nearest))
         return nearest
 
     # Seleziona il numero delle corsie in base alla direzione di marcia
