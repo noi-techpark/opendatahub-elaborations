@@ -2,23 +2,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import os
-import logging
-
-import pandas as pd
-
-from validator.Dominio import Dominio
-from validator.Input import Input
-from validator.Parametri import Parametri
-from validator.Station import Station
-
-default_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../config/validator.yaml'))
-
-logger = logging.getLogger("pollution_v2.validator.Validator")
-
-
 # Il metodo utilizzato per validare i dati per il giorno specificato
-def validator(day, raw_data, history, km, station_type, config=default_config_path):
+def validator(day, raw_data, history, km, station_type, config = '../../config/validator.yaml'):
     """
     :param day: data per la quale validare i dati
     :param raw_data: dataframe con i dati grezzi
@@ -31,6 +16,11 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
     # -------------------------------------------------------------------------
     # Import Moduli
     # -------------------------------------------------------------------------
+    from Parametri import Parametri
+    from Input import Input
+    from Dominio import Dominio
+    from Station import Station
+    import pandas as pd
     pd.options.mode.chained_assignment = None
 
     # -------------------------------------------------------------------------
@@ -47,19 +37,18 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
     # -------------------------------------------------------------------------
     # Inizializzazione dominio e stazioni
     # -------------------------------------------------------------------------
-    logging.debug(f'...initializing data for day {day}')
+    print(f'...initializing data for day {day}')
     A22 = Dominio(data)
     for index, row in data.station_list.iterrows():
-        station_type = data.station_type[data.station_type['station_id'] == row['station']]['station_type'].item()
-        if station_type != 'TVCC' or station_type != 'RADAR':
+        if data.station_type[row['station']] != 'TVCC' or data.station_type[row['station']] != 'RADAR':
             # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
-            s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
-                        params.layer1('n'))
+            s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche, params.layer1('n'))
             A22.add_station(s)
+    print('-----------------------')
     # -------------------------------------------------------------------------
     # Layer 1
     # -------------------------------------------------------------------------
-    logging.debug('...validation starting')
+    print('...validation starting')
     for s in A22.station_list:
         if s.skip_validation == False:
             # calcolo Z-score
@@ -68,7 +57,7 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
             s.layer1_validation(params)
             if s.layer1 == False:
                 A22.layer1_not_valid_station(s)
-                logging.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 1')
+                print(f'{s.ID:<4} {s.direction:<4} not valid for layer 1')
                 if plot:
                     s.plot('layer1')
     # -------------------------------------------------------------------------
@@ -81,26 +70,26 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
             s.layer1_1_validation(params, A22)
             if s.layer1_1 == False:
                 if s in A22.layer1_not_valid:
-                    logging.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 1.1 (confirmed)')
+                    print(f'{s.ID:<4} {s.direction:<4} not valid for layer 1.1 (confirmed)')
                 else:
-                    logging.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 1.1')
+                    print(f'{s.ID:<4} {s.direction:<4} not valid for layer 1.1')
                 A22.layer1_1_not_valid_station(s)
                 if plot:
                     s.plot('layer1')
             else:
                 if s in A22.layer1_not_valid:
-                    logging.info(f'{s.ID:<4} {s.direction:<4} valid for layer 1.1 (not confirmed)')
+                    print(f'{s.ID:<4} {s.direction:<4} valid for layer 1.1 (not confirmed)')
     # -------------------------------------------------------------------------
     # Layer 2
     # -------------------------------------------------------------------------
     for s in A22.station_list:
-        if s.skip_validation == False:
+        if s.skip_validation == False and s.skip_l2_validation == False:
             # calcolo Z-score
             s.zScore_2()
             # assegna flag di validità basato su confronto z-score con valori limite
             s.layer2_validation(params, A22)
             if s.layer2 == False:
-                logging.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 2')
+                print(f'{s.ID:<4} {s.direction:<4} not valid for layer 2')
                 A22.layer2_not_valid_station(s)
     # -------------------------------------------------------------------------
     # Layer 3
@@ -108,11 +97,12 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
     for s in A22.station_list:
         s.layer3_validation()
         if any(not value for value in s.layer3.values()):
-            logging.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 3')
+            print(f'{s.ID:<4} {s.direction:<4} not valid for layer 3')
             if plot:
                 s.plot('layer3')
             A22.layer3_not_valid_station(s)
-    logging.info('...validation complete!')
+    print('-----------------------')
+    print('...validation complete!')
     # -----------------------------------------------------------------------------
     # Output
     # -----------------------------------------------------------------------------
