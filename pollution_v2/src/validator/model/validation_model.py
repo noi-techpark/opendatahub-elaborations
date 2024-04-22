@@ -74,8 +74,8 @@ class ValidationModel:
                             f"on [{date}]")
                 history_df = ModelHelper.get_history_dataframe(history_entries, date)
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,
-                                   stations_df[["station_id", "km"]].drop_duplicates(),
-                                   stations_df[["station_id", "station_type"]].drop_duplicates())
+                                   stations_df[["station_id", "km"]].drop_duplicates().set_index("station_id")["km"].to_dict(),
+                                   stations_df[["station_id", "station_type"]].drop_duplicates().set_index("station_id")["station_type"].to_dict())
                 lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), PERIOD_10MIN, traffic.get_stations())
                 res.extend(lst)
         else:
