@@ -11,8 +11,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from cmath import isinf
-
 logger = logging.getLogger("pollution_v2.validator.Station")
 
 # TODO check if there are any drawbacks in using this
@@ -64,6 +62,7 @@ class Station:
                 {'total_traffic': 'sum'}).reset_index()
         else:
             self.skip_validation = True
+        # TODO move in previous if?
         self.layer1_stats = agg_hist['total_traffic'].agg(['mean', 'std']).to_dict()
 
         # Calcolo statistiche distribuzione corsie per layer 2
@@ -138,7 +137,7 @@ class Station:
                     logger.warning(f'error computing zscore layer 2 for {self.ID} {self.direction}: {e}')
                     self.zscore2 = None
                 except Exception as e:
-                    logger.warning(f'exception computing zscore layer 2 for {self.ID} {self.direction}: {e}')
+                    logger.error(f'exception computing zscore layer 2 for {self.ID} {self.direction}: {e}')
                     self.zscore2 = None
             else:
                 self.zscore2 = None
