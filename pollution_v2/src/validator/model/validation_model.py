@@ -23,7 +23,7 @@ logger = logging.getLogger("pollution_v2.validator.model.validation_model")
 
 def _get_station_on_logs(stations: List[TrafficSensorStation]):
     return (f"[{', '.join([station.code for station in (stations[:5] if len(stations) > 5 else stations)])}"
-            f"{' and more' if len(stations) > 5 else ''}]")
+            f"{' and more (' + str(len(stations)) + ')' if len(stations) > 5 else ''}]")
 
 
 class ValidationModel:

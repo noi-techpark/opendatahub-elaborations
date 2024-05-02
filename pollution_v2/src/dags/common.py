@@ -44,7 +44,7 @@ class TrafficStationsDAG(DAG):
         return min_from_date, max_to_date
 
     @staticmethod
-    def get_stations_list(manager: TrafficStationManager, **kwargs):
+    def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False, **kwargs):
         """
         Returns the complete list of stations or the filtered list based on previous DAG run
 
@@ -60,25 +60,34 @@ class TrafficStationsDAG(DAG):
 
         logger.info(f"Found {len(traffic_stations)} traffic stations")
 
-        return [station for station in traffic_stations]
+        if filter_km_gt0:
+            stations_with_km = [station for station in traffic_stations if station.km > 0]
+            logger.info(f"Stations filtered on having km defined, resulting {len(stations_with_km)} "
+                        f"elements (starting from {len(traffic_stations)})")
+            return stations_with_km
+        else:
+            return [station for station in traffic_stations]
 
     @staticmethod
     def trigger_next_dag_run(manager: TrafficStationManager, originator_dag: DAG,
-                             has_remaining_data: Callable[[datetime, datetime], bool], **kwargs):
+                             has_remaining_data: Callable[[datetime, datetime], bool],
+                             filter_km_gt0: bool = False, **kwargs):
         """
         Checks if there are still data to be processed before ending DAG runs
 
         :param manager: the manager to use
         :param originator_dag: the dag to trigger
         :param has_remaining_data: the function to use to check if there are still data to process
+        :param filter_km_gt0: filters on km > 0 stations
         """
+
         stations = []
-        all_stations = TrafficStationsDAG.get_stations_list(manager)
+        all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0)
         for station in all_stations:
             starting_date = manager.get_starting_date(manager.get_output_connector(),
-                                                      station, ODH_MINIMUM_STARTING_DATE)
+                                                      [station], ODH_MINIMUM_STARTING_DATE)
             ending_date = manager.get_starting_date(manager.get_input_connector(),
-                                                    station, ODH_MINIMUM_STARTING_DATE)
+                                                    [station], ODH_MINIMUM_STARTING_DATE)
             logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
             if has_remaining_data(starting_date, ending_date):
                 logger.info(f"Forwarding station {station.code} to next execution")

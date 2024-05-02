@@ -4,6 +4,7 @@
 
 import logging
 from datetime import timedelta, datetime
+from typing import List
 
 from airflow.decorators import task
 from airflow.utils.trigger_rule import TriggerRule
@@ -91,7 +92,7 @@ with TrafficStationsDAG(
         """
         manager = _init_manager()
 
-        stations_list = dag.get_stations_list(manager, **kwargs)
+        stations_list = dag.get_stations_list(manager, True, **kwargs)
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
@@ -102,15 +103,14 @@ with TrafficStationsDAG(
 
 
     @task
-    def process_station(station_dict: dict, **kwargs):
+    def process_stations(station_dicts: List[dict], **kwargs):
         """
-        Process a single station
+        Retrieves and process all the stations
 
-        :param station_dict: the station to process
+        :param station_dicts: list of stations dictionaries to be processed
         """
 
-        station = TrafficSensorStation.from_json(station_dict)
-        logger.info(f"Received station {station}")
+        stations_to_process = [TrafficSensorStation.from_json(station_dict) for station_dict in station_dicts]
 
         manager = _init_manager()
 
@@ -119,7 +119,7 @@ with TrafficStationsDAG(
         computation_start_dt = datetime.now()
 
         logger.info(f"Running validation from [{min_from_date}] to [{max_to_date}]")
-        manager.run_computation([], min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
+        manager.run_computation(stations_to_process, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed validation in [{(computation_end_dt - computation_start_dt).seconds}]")
@@ -144,9 +144,10 @@ with TrafficStationsDAG(
             """
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN
 
-        dag.trigger_next_dag_run(manager, dag, has_remaining_data, **kwargs)
+        dag.trigger_next_dag_run(manager, dag, has_remaining_data, True, **kwargs)
 
+    tmp = get_stations_list()
 
-    processed_stations = process_station.expand(station_dict=get_stations_list())
+    processed_stations = process_stations(tmp)
 
     whats_next(processed_stations)

@@ -58,31 +58,35 @@ In details, the following step describe how the pollution computation DAG works.
 
 ### Setup the project
 
-1. Clone the repository
-2. Create a virtual environment and activate it:
-```commandline
-python3 -m venv venv
-source .venv/bin/activate
-```
+1. Clone the repository from [here](https://lab.u-hopper.com/u-hopper/projects/industrial/open-data-hub-bz/bdp-elaborations)
+2. Move to `pollution_v2` folder
+	```commandline
+	cd bdp-elaborations/pollution_v2
+	```
+3. Create a virtual environment and activate it:
+	```commandline
+	python3 -m venv venv
+	source venv/bin/activate
+	```
 3. Installing the requirements:
-```commandline
-pip install -r requirements.txt
-```
+	```commandline
+	pip install -r requirements.txt
+	```
 4. For a development environment is suggested to install and configure [pre-commit](https://pre-commit.com/). Pre-commit is a framework for managing and maintaining multi-language pre-commit hooks. The configuration available in this project will run some syntax check before each commit.
-```commandline
-pip install pre-commit
-pre-commit install
-```
+	```commandline
+	pip install pre-commit
+	pre-commit install
+	```
 
 ### Project folders
 
 * ```airflow``` contains Airflow installation files (under .gitignore)
-* ```config``` contains configuration files for tasks, e.g. validator
-* ```dags```contains DAG of the project
 * ```documentation``` contains UML diagrams describing the system
 * ```sample_data``` contains any sample data useful to test tasks (under .gitignore); sample data for validator are available [here](https://drive.google.com/file/d/1aPFDXOCECvA_h6npYe_aZ0k8vxHTwlYy/view?usp=drive_link)
 * ```src```contains source files
-* ```test``` contains test files
+  * ```src/config``` contains configuration files for tasks, e.g. validator
+  * ```src/dags```contains DAG of the project
+  * ```src/tests``` contains test files
 * ```venv``` contains Python virtual environment (under .gitignore)
 
 ### Setup Airflow
