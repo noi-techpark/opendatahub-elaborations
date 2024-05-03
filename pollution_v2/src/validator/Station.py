@@ -68,15 +68,19 @@ class Station:
         # Calcolo statistiche distribuzione corsie per layer 2
         layer2_hist = history_data.pivot_table(index='date', columns='lane', values='total_traffic', aggfunc='mean')
         if layer2_hist.shape[1] == 2:
-            layer2_hist['ratio'] = layer2_hist[self.lane[0]] / layer2_hist[self.lane[1]]
             try:
+                layer2_hist['ratio'] = layer2_hist[self.lane[0]] / layer2_hist[self.lane[1]]
                 self.layer2_stats = layer2_hist['ratio'].agg(['mean', 'std']).to_dict()
             except:
+                self.layer2_stats = None
+                self.layer2 = None
+                self.skip_l2_validation = True
                 logger.error(f"unable to calculate layer2_stats as cannot aggregate layer2_hist['ratio'] "
                              f"containing {layer2_hist[layer2_hist['ratio'].isna()].shape[0]} NaN values "
                              f"and {layer2_hist[np.isfinite(layer2_hist).all(1)].shape[0]} infinite values")
         else:
             logger.info(f'{self.ID:<4} {self.direction:<4} no lane history --> skip layer 2 validation')
+            self.layer2 = None
             self.skip_l2_validation = True
 
     # Identifica le N stazioni a valle e le N stazioni a monte più vicine.
