@@ -66,8 +66,12 @@ class Processor:
             temparature_key = "hightemp" if (data[T_INT] >= 20) else "lowtemp"
             data_point_map = {}
             for type_id in (value for value in data if value in TYPES_TO_ELABORATE): #Intersection
+                # ignore stations/types missing parameters #32
+                if PARAMETER_MAP[station_id] is None or PARAMETER_MAP[station_id][type_id] is None:
+                    continue
+
                 value = data[type_id]
-                processed_value = None               
+                processed_value = None
                 parameters = PARAMETER_MAP[station_id][type_id][temparature_key]
                 if ((type_id == NO2 or type_id == NO) and O3 in data and T_INT in data):
                     if(int(parameters["calc_version"]) == 1):
