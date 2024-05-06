@@ -67,7 +67,7 @@ class Processor:
             data_point_map = {}
             for type_id in (value for value in data if value in TYPES_TO_ELABORATE): #Intersection
                 # ignore stations/types missing parameters #32
-                if PARAMETER_MAP[station_id] is None or PARAMETER_MAP[station_id][type_id] is None:
+                if PARAMETER_MAP.get(station_id) is None or PARAMETER_MAP[station_id].get(type_id) is None:
                     continue
 
                 value = data[type_id]
