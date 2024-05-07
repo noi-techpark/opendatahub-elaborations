@@ -16,7 +16,6 @@ from common.data_model.validation import ValidationMeasureCollection
 from common.manager.traffic_station import TrafficStationManager
 from common.data_model.common import DataType, MeasureCollection
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
-from common.settings import DEFAULT_TIMEZONE
 from pollution_connector.model.pollution_computation_model import PollutionComputationModel
 
 logger = logging.getLogger("pollution_v2.pollution_connector.manager.pollution_computation")
@@ -55,13 +54,19 @@ class PollutionComputationManager(TrafficStationManager):
                                                                        station=traffic_station))
 
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime,
-                                   traffic_station: TrafficSensorStation) -> List[GenericEntry]:
+                                   stations: List[TrafficSensorStation]) -> List[GenericEntry]:
+
+        if len(stations) != 1:
+            logger.error(f"Cannot compute pollution on more than one station ({len(stations)} passed)")
+            return []
+
+        traffic_station = stations[0]
 
         validation_data = []
         traffic_data = []
         try:
             validation_data = self._download_validation_data(start_date, to_date, traffic_station)
-            traffic_data = self._download_traffic_data(start_date, to_date, traffic_station)
+            traffic_data = self._download_traffic_data(start_date, to_date, [traffic_station])
         except Exception as e:
             logger.exception(
                 f"Unable to download validation and traffic data for station [{traffic_station.code}] "

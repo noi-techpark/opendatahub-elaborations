@@ -27,7 +27,7 @@ class TestPollutionComputerDAG(TestDAGCommon):
         assert self.dagbag.import_errors == {}
         assert dag is not None
 
-        dag_tasks = [self.get_stations_list_task_id, self.process_station_task_id, self.whats_next_task_id]
+        dag_tasks = [self.get_stations_list_task_id, self.process_station_task_id_pollution, self.whats_next_task_id]
         assert len(dag.tasks) == len(dag_tasks)
         for task in dag_tasks:
             assert dag.has_task(task)
@@ -38,7 +38,7 @@ class TestPollutionComputerDAG(TestDAGCommon):
         The task_dependencies dictionary contains the list of downstream tasks for each task.
         """
         dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
-        for task_id, downstream_list in self.task_dependencies.items():
+        for task_id, downstream_list in self.task_dependencies_pollution.items():
             assert dag.has_task(task_id)
             task = dag.get_task(task_id)
             assert task.downstream_task_ids == set(downstream_list)

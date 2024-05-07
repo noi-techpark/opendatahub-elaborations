@@ -33,7 +33,7 @@ class TestPollutionComputation(TestDAGCommon):
     def test_run_computation_date_range_daily(self, download_mock, latest_date_mock, get_start_date_mock,
                                               compute_mock, upload_mock, init_date_range_mock):
         """
-        Test that the run_computation_for_station method is called with the correct date range.
+        Test that the run_computation method is called with the correct date range.
         """
         batch_size = "30"
         with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION=batch_size))):
@@ -44,7 +44,7 @@ class TestPollutionComputation(TestDAGCommon):
 
             # Get the process_station task
             dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
-            task = dag.get_task(self.process_station_task_id)
+            task = dag.get_task(self.process_station_task_id_pollution)
             task_function = task.python_callable
             init_date_range_mock.return_value = (self.min_date, self.max_date)
 
@@ -56,12 +56,12 @@ class TestPollutionComputation(TestDAGCommon):
 
             station = TrafficSensorStation.from_json(self.station_dict)
 
-            get_start_date_mock.assert_called_once_with(ANY, station, self.min_date)
+            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size))
             latest_date_mock.assert_not_called()
 
-            # Test that the run_computation_for_station method is called with the correct daily date range
+            # Test that the run_computation method is called with the correct daily date range
 
-            download_mock.assert_called_once_with(start_date, self.max_date, station)
+            download_mock.assert_called_once_with(start_date, self.max_date, [station])
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()
 
@@ -74,7 +74,7 @@ class TestPollutionComputation(TestDAGCommon):
     def test_run_computation_date_range_when_more_data(self, download_mock, latest_date_mock, get_start_date_mock,
                                                        compute_mock, upload_mock, init_date_range_mock):
         """
-        Test that the run_computation_for_station method is called with the correct date range.
+        Test that the run_computation method is called with the correct date range.
         """
         batch_size = "30"
         with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION=batch_size))):
@@ -85,7 +85,7 @@ class TestPollutionComputation(TestDAGCommon):
 
             # Get the process_station task
             dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
-            task = dag.get_task(self.process_station_task_id)
+            task = dag.get_task(self.process_station_task_id_pollution)
             task_function = task.python_callable
             init_date_range_mock.return_value = (self.min_date, self.max_date)
 
@@ -103,15 +103,15 @@ class TestPollutionComputation(TestDAGCommon):
 
             station = TrafficSensorStation.from_json(self.station_dict)
 
-            get_start_date_mock.assert_called_once_with(ANY, station, self.min_date)
+            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size))
             if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION:
-                latest_date_mock.assert_called_once_with(ANY, station)
+                latest_date_mock.assert_called_once_with(ANY, [station])
             else:
                 latest_date_mock.assert_not_called()
 
-            # Test that the run_computation_for_station method is called with the correct batch date range
+            # Test that the run_computation method is called with the correct batch date range
             # A lot of data is available, so the end date is the start date plus the batch size
-            download_mock.assert_called_once_with(start_date, correct_end_date, station)
+            download_mock.assert_called_once_with(start_date, correct_end_date, [station])
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()
 
@@ -124,7 +124,7 @@ class TestPollutionComputation(TestDAGCommon):
     def test_run_computation_date_range_when_few_data(self, download_mock, latest_date_mock, get_start_date_mock,
                                                       compute_mock, upload_mock, init_date_range_mock):
         """
-        Test that the run_computation_for_station method is called with the correct date range.
+        Test that the run_computation method is called with the correct date range.
         """
         batch_size = "30"
         with ((mock.patch.dict("os.environ", AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION=batch_size))):
@@ -135,7 +135,7 @@ class TestPollutionComputation(TestDAGCommon):
 
             # Get the process_station task
             dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
-            task = dag.get_task(self.process_station_task_id)
+            task = dag.get_task(self.process_station_task_id_pollution)
             task_function = task.python_callable
             init_date_range_mock.return_value = (self.min_date, self.max_date)
 
@@ -149,14 +149,14 @@ class TestPollutionComputation(TestDAGCommon):
             task_function(self.station_dict)
 
             station = TrafficSensorStation.from_json(self.station_dict)
-            get_start_date_mock.assert_called_once_with(ANY, station, self.min_date)
+            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size))
             if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION:
-                latest_date_mock.assert_called_once_with(ANY, station)
+                latest_date_mock.assert_called_once_with(ANY, [station])
             else:
                 latest_date_mock.assert_not_called()
 
-            # Test that the run_computation_for_station method is called with the correct batch date range
+            # Test that the run_computation method is called with the correct batch date range
             # Few data is available, so the end date is the max date
-            download_mock.assert_called_once_with(start_date, self.max_date, station)
+            download_mock.assert_called_once_with(start_date, self.max_date, [station])
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()

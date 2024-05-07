@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 from datetime import datetime
-from typing import Callable, Any
+from typing import Callable, List
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -25,13 +25,19 @@ class TestDAGCommon(TestCase):
 
         # Task IDs
         self.get_stations_list_task_id = "get_stations_list"
-        self.process_station_task_id = "process_station"
+        self.process_station_task_id_pollution = "process_station"
+        self.process_stations_task_id_validation = "process_stations"
         self.whats_next_task_id = "whats_next"
 
         # For each task, the list of its downstream tasks
-        self.task_dependencies = {
-            self.get_stations_list_task_id: [self.process_station_task_id],
-            self.process_station_task_id: [self.whats_next_task_id],
+        self.task_dependencies_pollution = {
+            self.get_stations_list_task_id: [self.process_station_task_id_pollution],
+            self.process_station_task_id_pollution: [self.whats_next_task_id],
+            self.whats_next_task_id: []
+        }
+        self.task_dependencies_validation = {
+            self.get_stations_list_task_id: [self.process_stations_task_id_validation],
+            self.process_stations_task_id_validation: [self.whats_next_task_id],
             self.whats_next_task_id: []
         }
 
@@ -56,7 +62,8 @@ class TestDAGCommon(TestCase):
         self.station4_dict["code"] = "4"
 
     def __mock_whats_next(self, all_stations: list[dict], allowed_stations: list[dict], dag_id: str,
-                          get_starting_date_mock_func: Callable[[ODHBaseConnector, TrafficSensorStation, datetime], datetime]):
+                          get_starting_date_mock_func: Callable[[ODHBaseConnector, ODHBaseConnector,
+                                                                 TrafficSensorStation, datetime, int], datetime]):
 
         with patch("dags.common.TrafficStationsDAG.get_stations_list") as get_stations_list_mock:
             with patch("common.manager.traffic_station.TrafficStationManager.get_starting_date") as get_starting_date_mock:
@@ -80,9 +87,10 @@ class TestDAGCommon(TestCase):
         included_starting_date = ending_date.subtract(hours=span_hours + 2)
         excluded_starting_date = ending_date.subtract(hours=span_hours - 2)
 
-        def get_starting_date_mock_func(connector: ODHBaseConnector, traffic_station: TrafficSensorStation,
-                                        min_from_date: datetime) -> datetime:
-            if isinstance(connector, TrafficODHConnector):
+        def get_starting_date_mock_func(output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
+                                        traffic_station: TrafficSensorStation, min_from_date: datetime,
+                                        batch_size: int) -> datetime:
+            if isinstance(output_connector, TrafficODHConnector):
                 return ending_date
             else:
                 if traffic_station.code in [station["code"] for station in allowed_stations]:
@@ -98,13 +106,16 @@ class TestDAGCommon(TestCase):
         included_starting_date = ending_date.subtract(hours=span_hours + 2)
         excluded_starting_date = ending_date.subtract(hours=span_hours - 2)
 
-        def get_starting_date_mock_func(connector: ODHBaseConnector, traffic_station: TrafficSensorStation,
-                                        min_from_date: datetime) -> datetime:
-            if isinstance(connector, ValidationODHConnector):
+        def get_starting_date_mock_func(output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
+                                        stations: List[TrafficSensorStation], min_from_date: datetime,
+                                        batch_size: int) -> datetime:
+            if isinstance(output_connector, ValidationODHConnector):
                 return ending_date
             else:
-                if traffic_station.code in [station["code"] for station in allowed_stations]:
-                    return included_starting_date
-                return excluded_starting_date
+                allowed_station_codes = [station["code"] for station in allowed_stations]
+                starting_dates = [included_starting_date
+                                  if station.code in allowed_station_codes else excluded_starting_date
+                                  for station in stations]
+                return min(starting_dates)
 
         self.__mock_whats_next(all_stations, allowed_stations, self.pollution_computer_dag_id, get_starting_date_mock_func)

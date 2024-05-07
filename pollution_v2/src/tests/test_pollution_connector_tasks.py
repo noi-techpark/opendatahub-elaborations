@@ -75,34 +75,38 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
         # Test that the return value contains only the passed station
         self.assertEqual(return_value, [self.station_dict])
 
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation_for_station")
-    def test_run_computation_for_station_is_called(self, run_computation_for_station_mock):
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation")
+    def test_run_computation_is_called(self, run_computation_mock):
         """
-        Test that the run_computation_for_station method is called when the process_station task is run.
-        """
-        # Run the process_station task
-        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
-        task = dag.get_task(self.process_station_task_id)
-        task_function = task.python_callable
-        task_function(self.station_dict)
-
-        run_computation_for_station_mock.assert_called_once()
-
-    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation_for_station")
-    def test_run_computation_for_station_gets_correct_input(self, run_computation_for_station_mock):
-        """
-        Test that the run_computation_for_station method is called when the process_station task is run.
+        Test that the run_computation method is called when the process_station task is run.
         """
         # Run the process_station task
         dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
-        task = dag.get_task(self.process_station_task_id)
+        task = dag.get_task(self.process_station_task_id_pollution)
         task_function = task.python_callable
         task_function(self.station_dict)
 
-        run_computation_for_station_mock.assert_called_once_with(
-            TrafficSensorStation.from_json(self.station_dict),
+        run_computation_mock.assert_called_once()
+
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.run_computation")
+    def test_run_computation_gets_correct_input(self, run_computation_mock):
+        """
+        Test that the run_computation method is called when the process_station task is run.
+        """
+
+        batch_size = 30
+
+        # Run the process_station task
+        dag = self.dagbag.get_dag(dag_id=self.pollution_computer_dag_id)
+        task = dag.get_task(self.process_station_task_id_pollution)
+        task_function = task.python_callable
+        task_function(self.station_dict)
+
+        run_computation_mock.assert_called_once_with(
+            [TrafficSensorStation.from_json(self.station_dict)],
             ANY,  # This corresponds to the min_from_date parameter
-            ANY   # This corresponds to the max_to_date parameter
+            ANY,  # This corresponds to the max_to_date parameter
+            batch_size
         )
 
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.execute")
