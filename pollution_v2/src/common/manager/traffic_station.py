@@ -88,7 +88,7 @@ class TrafficStationManager(ABC):
                 latest_date_across_stations = latest_date
         return latest_date_across_stations
 
-    def get_starting_date(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
+    def get_starting_date(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector | None,
                           stations: List[TrafficSensorStation], min_from_date: datetime,
                           batch_size: int) -> datetime:
         """
@@ -147,10 +147,13 @@ class TrafficStationManager(ABC):
                     from_date = min_from_date
                 # if between from_date and from_date + batch_size there are no input data
                 to_date_tmp = from_date + timedelta(days=batch_size)
-                input_data = (input_connector.
-                              get_measures(from_date=from_date, to_date=to_date_tmp, station=station))
-                logger.info(f"Looking on measures available on [{type(input_connector).__name__}] "
-                            f"for [{station.code}]: found {len(input_data)}")
+                if input_connector is not None:
+                    input_data = (input_connector.
+                                  get_measures(from_date=from_date, to_date=to_date_tmp, station=station))
+                    logger.info(f"Looking on measures available on [{type(input_connector).__name__}] "
+                                f"for [{station.code}]: found {len(input_data)}")
+                else:
+                    input_data = []
                 if len(input_data) == 0:
                     if checkpoint is None or checkpoint.checkpoint_dt is None or checkpoint.checkpoint_dt < to_date_tmp:
                         # it is pointless trying to run model, save the from_date + batch_size as checkpoint for station
@@ -324,13 +327,16 @@ class TrafficStationManager(ABC):
 
             if self._checkpoint_cache is not None:
                 for station in stations:
-                    self._checkpoint_cache.set(
-                        ComputationCheckpoint(
-                            station_code=station.code,
-                            checkpoint_dt=to_date,
-                            manager_code=self._get_manager_code()
+                    checkpoint = self._checkpoint_cache.get(
+                        ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
+                    if checkpoint is None or checkpoint.checkpoint_dt < to_date:
+                        self._checkpoint_cache.set(
+                            ComputationCheckpoint(
+                                station_code=station.code,
+                                checkpoint_dt=to_date,
+                                manager_code=self._get_manager_code()
+                            )
                         )
-                    )
         else:
             logger.info(f"Nothing to process for stations {_get_stations_on_logs(stations)} in interval "
                         f"[{start_date} - {to_date}]")

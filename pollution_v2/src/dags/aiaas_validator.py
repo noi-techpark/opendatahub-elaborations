@@ -144,7 +144,8 @@ with TrafficStationsDAG(
             """
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN
 
-        dag.trigger_next_dag_run(manager, dag, has_remaining_data, True, **kwargs)
+        dag.trigger_next_dag_run(manager, dag, has_remaining_data,
+                                 ODH_COMPUTATION_BATCH_SIZE_VALIDATION,True, **kwargs)
 
     tmp = get_stations_list()
 
