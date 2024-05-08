@@ -46,7 +46,7 @@ class TestDAGCommon(TestCase):
             "active": "true",
             "available": "true",
             "coordinates": "1,1",
-            "metadata": "metadata",
+            "metadata": {"a22_metadata": "{\"metro\":\"123\"}"},
             "name": "station",
             "station_type": "type",
             "origin": "origin"
@@ -88,14 +88,16 @@ class TestDAGCommon(TestCase):
         excluded_starting_date = ending_date.subtract(hours=span_hours - 2)
 
         def get_starting_date_mock_func(output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
-                                        traffic_station: TrafficSensorStation, min_from_date: datetime,
+                                        stations: List[TrafficSensorStation], min_from_date: datetime,
                                         batch_size: int) -> datetime:
             if isinstance(output_connector, TrafficODHConnector):
                 return ending_date
             else:
-                if traffic_station.code in [station["code"] for station in allowed_stations]:
-                    return included_starting_date
-                return excluded_starting_date
+                allowed_station_codes = [station["code"] for station in allowed_stations]
+                starting_dates = [included_starting_date
+                                  if station.code in allowed_station_codes else excluded_starting_date
+                                  for station in stations]
+                return min(starting_dates)
 
         self.__mock_whats_next(all_stations, allowed_stations, self.validator_dag_id, get_starting_date_mock_func)
 

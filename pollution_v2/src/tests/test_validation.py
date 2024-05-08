@@ -155,8 +155,11 @@ class TestValidation(TestDAGCommon):
             else:
                 latest_date_mock.assert_not_called()
 
+            # The correct end date is the start date plus the batch size
+            end_date = start_date + timedelta(days=int(batch_size))
+
             # Test that the run_computation method is called with the correct batch date range
             # Few data is available, so the end date is the max date
-            download_mock.assert_called_once_with(start_date, self.max_date, [station])
+            download_mock.assert_called_once_with(start_date, end_date, [station])
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()

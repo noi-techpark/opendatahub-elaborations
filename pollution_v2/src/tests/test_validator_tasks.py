@@ -82,9 +82,9 @@ class TestValidatorDAGTasks(TestDAGCommon):
         """
         # Run the process_station task
         dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
-        task = dag.get_task(self.process_station_task_id)
+        task = dag.get_task(self.process_stations_task_id_validation)
         task_function = task.python_callable
-        task_function(self.station_dict)
+        task_function([self.station_dict])
 
         run_computation_mock.assert_called_once()
 
@@ -93,16 +93,20 @@ class TestValidatorDAGTasks(TestDAGCommon):
         """
         Test that the run_computation method is called when the process_station task is run.
         """
+
+        batch_size = 1
+
         # Run the process_station task
         dag = self.dagbag.get_dag(dag_id=self.validator_dag_id)
-        task = dag.get_task(self.process_station_task_id)
+        task = dag.get_task(self.process_stations_task_id_validation)
         task_function = task.python_callable
-        task_function(self.station_dict)
+        task_function([self.station_dict])
 
         run_computation_mock.assert_called_once_with(
-            TrafficSensorStation.from_json(self.station_dict),
+            [TrafficSensorStation.from_json(self.station_dict)],
             ANY,  # This corresponds to the min_from_date parameter
-            ANY   # This corresponds to the max_to_date parameter
+            ANY,   # This corresponds to the max_to_date parameter
+            batch_size
         )
 
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.execute")
