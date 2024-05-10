@@ -37,6 +37,13 @@ class Station:
         logger.debug(f"Mileage not defined for station [{self.code}]")
         return -1000
 
+    @property
+    def sensor_type(self) -> float:
+        """
+        Returns sensor type.
+        """
+        return self.metadata.get("sensor_type")
+
     __version__: ClassVar[int] = 1
 
     @classmethod

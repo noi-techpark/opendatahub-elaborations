@@ -44,7 +44,8 @@ class TrafficStationsDAG(DAG):
         return min_from_date, max_to_date
 
     @staticmethod
-    def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False, **kwargs):
+    def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False,
+                          filter_indloop: bool = False, **kwargs):
         """
         Returns the complete list of stations or the filtered list based on previous DAG run
 
@@ -60,18 +61,24 @@ class TrafficStationsDAG(DAG):
 
         logger.info(f"Found {len(traffic_stations)} traffic stations")
 
+        res = traffic_stations
+
         if filter_km_gt0:
-            stations_with_km = [station for station in traffic_stations if station.km > 0]
-            logger.info(f"Stations filtered on having km defined, resulting {len(stations_with_km)} "
-                        f"elements (starting from {len(traffic_stations)})")
-            return stations_with_km
-        else:
-            return [station for station in traffic_stations]
+            res = [station for station in res if station.km > 0]
+            logger.info(f"Stations filtered on having km defined: {len(res)} elements")
+
+        if filter_indloop:
+            res = [station for station in res
+                   if station.sensor_type is not None and station.sensor_type == 'induction_loop']
+            logger.info(f"Stations filtered on sensor_type being induction_loop: {len(res)} elements")
+
+        return res
 
     @staticmethod
     def trigger_next_dag_run(manager: TrafficStationManager, originator_dag: DAG,
                              has_remaining_data: Callable[[datetime, datetime], bool],
-                             batch_size: int, filter_km_gt0: bool = False, **kwargs):
+                             batch_size: int, filter_km_gt0: bool = False,
+                             filter_indloop: bool = False, **kwargs):
         """
         Checks if there are still data to be processed before ending DAG runs
 
@@ -80,10 +87,11 @@ class TrafficStationsDAG(DAG):
         :param has_remaining_data: the function to use to check if there are still data to process
         :param batch_size: batch_size to consider
         :param filter_km_gt0: filters on km > 0 stations
+        :param filter_indloop: filters on induction loop sensor type
         """
 
         stations = []
-        all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0)
+        all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0, filter_indloop)
         for station in all_stations:
             starting_date = manager.get_starting_date(manager.get_output_connector(), manager.get_input_connector(),
                                                       [station], ODH_MINIMUM_STARTING_DATE, batch_size)
