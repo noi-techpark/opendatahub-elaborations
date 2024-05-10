@@ -8,6 +8,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import List
 
+from dateutil.relativedelta import relativedelta
+
 from common.cache.common import TrafficManagerClass
 from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation
@@ -54,7 +56,7 @@ class ValidationManager(TrafficStationManager):
 
         measures = []
         from_date_on_month = from_date.replace(day=1)
-        to_date_on_month = datetime(to_date.year, to_date.month + 1, 1)
+        to_date_on_month = from_date_on_month + relativedelta(months=1)
         if to_date_on_month.tzinfo is None:
             to_date_on_month = DEFAULT_TIMEZONE.localize(to_date_on_month)
 
