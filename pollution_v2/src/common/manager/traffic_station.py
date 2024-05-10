@@ -109,6 +109,10 @@ class TrafficStationManager(ABC):
             from_date = self._iterate_while_data_found(output_connector, input_connector,
                                                        station, min_from_date, batch_size)
 
+            if from_date is not None and from_date.tzinfo is None:
+                from_date = DEFAULT_TIMEZONE.localize(from_date)
+            if from_date_across_stations is not None and from_date_across_stations.tzinfo is None:
+                from_date_across_stations = DEFAULT_TIMEZONE.localize(from_date_across_stations)
             if from_date_across_stations is None or from_date < from_date_across_stations:
                 from_date_across_stations = from_date
 
@@ -168,8 +172,7 @@ class TrafficStationManager(ABC):
                     logger.info(f"Looking for more...")
                     return from_date, True
                 else:
-                    logger.info(f"Using latest measure date [{from_date.isoformat()}] as starting date for [{station.code}]")
-                    return from_date, False
+                    return self.__normalize_from_date(from_date, min_from_date, station.code)
             else:
                 # If there isn't any latest measure available,
                 # the min_from_date is used as starting date for the batch
@@ -178,6 +181,11 @@ class TrafficStationManager(ABC):
         else:
             logger.debug(f"Measures found, using min date [{latest_measure.valid_time}] as starting date for [{station.code}]")
             from_date = latest_measure.valid_time
+
+        return self.__normalize_from_date(from_date, min_from_date, station.code)
+
+    def __normalize_from_date(self, from_date: datetime, min_from_date: datetime,
+                              station_code: str) -> Tuple[datetime, bool]:
 
         if from_date.tzinfo is None:
             from_date = DEFAULT_TIMEZONE.localize(from_date)
@@ -190,11 +198,12 @@ class TrafficStationManager(ABC):
 
         if from_date < min_from_date:
             logger.warning(f"Latest measure date is [{from_date.isoformat()}] but it's before the min starting date; "
-                           f"using [{min_from_date.isoformat()}]")
+                           f"using [{min_from_date.isoformat()}] as starting date for [{station_code}]")
             from_date = min_from_date
         elif from_date > min_from_date:
-            logger.info(f"Using latest measure date [{from_date.isoformat()}] as starting date for [{station.code}]")
+            logger.info(f"Using latest measure date [{from_date.isoformat()}] as starting date for [{station_code}]")
 
+        # final date, no more iteration then False as second element of tuple returned
         return from_date, False
 
     def __get_latest_measure(self, connector: ODHBaseConnector,
@@ -329,6 +338,11 @@ class TrafficStationManager(ABC):
                 for station in stations:
                     checkpoint = self._checkpoint_cache.get(
                         ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
+                    if (checkpoint is not None and
+                            checkpoint.checkpoint_dt is not None and checkpoint.checkpoint_dt.tzinfo is None):
+                        checkpoint.checkpoint_dt = DEFAULT_TIMEZONE.localize(checkpoint.checkpoint_dt)
+                    if to_date is not None and to_date.tzinfo is None:
+                        to_date = DEFAULT_TIMEZONE.localize(to_date)
                     if checkpoint is None or checkpoint.checkpoint_dt < to_date:
                         self._checkpoint_cache.set(
                             ComputationCheckpoint(
