@@ -17,7 +17,7 @@ class FreeParkingSlotsCalculator:
     FREE_URL = "/flat/ParkingStation,ParkingSensor/free/latest?limit=-1&where=sactive.eq.true&select=mvalidtime,tname,scode,stype,mperiod"
 
     def fetchData(self, url):
-        r = requests.get(os.getenv("ODH_MOBILITY_API_NINJA") + url)
+        r = requests.get(os.getenv("ODH_MOBILITY_API_NINJA") + url, headers={"referer": "parking-free-elab"})
         return r.json()['data'];
 
     def getHistoryData(self, stationcode, period, fromTime):
