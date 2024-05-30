@@ -18,7 +18,7 @@ from common.settings import (ODH_MINIMUM_STARTING_DATE, COMPUTATION_CHECKPOINT_R
                              COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST,
                              PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION,
                              PROVENANCE_VERSION, DAG_POLLUTION_EXECUTION_CRONTAB, DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN,
-                             DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION)
+                             DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, AIRFLOW_NUM_RETRIES)
 from pollution_connector.manager.pollution_computation import PollutionComputationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -32,7 +32,7 @@ default_args = {
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': AIRFLOW_NUM_RETRIES,
     'retry_delay': timedelta(minutes=5),
 }
 

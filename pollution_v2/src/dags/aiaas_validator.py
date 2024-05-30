@@ -18,7 +18,7 @@ from common.settings import (ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION
                              PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION,
                              COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT,
                              COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE, DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN,
-                             ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
+                             ODH_COMPUTATION_BATCH_SIZE_VALIDATION, AIRFLOW_NUM_RETRIES)
 from validator.manager.validation import ValidationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -32,7 +32,7 @@ default_args = {
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': AIRFLOW_NUM_RETRIES,
     'retry_delay': timedelta(minutes=5),
 }
 
