@@ -379,9 +379,13 @@ class TrafficStationManager(ABC):
         computation_start_dt = datetime.now()
 
         stations = self.get_traffic_stations_from_cache()
-        stations_with_km = [station for station in stations if station.km > 0]
-        logger.info(f"Stations filtered on having km defined, resulting {len(stations_with_km)} "
+
+        stations_no_famas_traffic = [station for station in stations if station.origin != 'FAMAS-traffic']
+        logger.info(f"Stations filtered excluding 'FAMAS-traffic', resulting {len(stations_no_famas_traffic)} "
                     f"elements (starting from {len(stations)})")
+        stations_with_km = [station for station in stations_no_famas_traffic if station.km > 0]
+        logger.info(f"Stations filtered on having km defined, resulting {len(stations_with_km)} "
+                    f"elements (starting from {len(stations_no_famas_traffic)})")
         stations_with_km_indloop = [station for station in stations_with_km
                                     if station.sensor_type is not None and station.sensor_type == 'induction_loop']
         logger.info(f"Stations filtered on sensor_type being induction_loop, resulting {len(stations_with_km_indloop)} "
