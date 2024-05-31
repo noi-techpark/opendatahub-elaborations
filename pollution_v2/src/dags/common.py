@@ -45,7 +45,7 @@ class TrafficStationsDAG(DAG):
 
     @staticmethod
     def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False,
-                          filter_indloop: bool = False, **kwargs):
+                          filter_indloop: bool = False, filter_famas: bool = False, **kwargs):
         """
         Returns the complete list of stations or the filtered list based on previous DAG run
 
@@ -71,6 +71,11 @@ class TrafficStationsDAG(DAG):
             res = [station for station in res
                    if station.sensor_type is not None and station.sensor_type == 'induction_loop']
             logger.info(f"Stations filtered on sensor_type being induction_loop: {len(res)} elements")
+
+        if filter_famas:
+            res = [station for station in res
+                   if station.origin is not None and station.origin != 'FAMAS-traffic']
+            logger.info(f"Stations filtered on origin different from 'FAMAS-traffic': {len(res)} elements")
 
         return res
 

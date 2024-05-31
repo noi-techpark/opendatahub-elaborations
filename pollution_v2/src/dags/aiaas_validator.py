@@ -92,7 +92,7 @@ with TrafficStationsDAG(
         """
         manager = _init_manager()
 
-        stations_list = dag.get_stations_list(manager, True, True, **kwargs)
+        stations_list = dag.get_stations_list(manager, True, True, True, **kwargs)
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
