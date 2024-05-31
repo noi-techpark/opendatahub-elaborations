@@ -358,7 +358,8 @@ class TrafficStationManager(ABC):
     def run_computation_and_upload_results(self,
                                            min_from_date: datetime,
                                            max_to_date: datetime,
-                                           batch_size: int) -> None:
+                                           batch_size: int,
+                                           run_on_all_stations: bool) -> None:
         """
         Watch-out! Used only from main_*!
 
@@ -368,6 +369,7 @@ class TrafficStationManager(ABC):
         :param min_from_date: Traffic measures before this date are discarded if no measures are available.
         :param max_to_date: Traffic measure after this date are discarded.
         :param batch_size: Number of days to be processed as maximum span.
+        :param run_on_all_stations: Defines if the run must be done on all stations ate the same time
         """
 
         if min_from_date.tzinfo is None:
@@ -391,7 +393,17 @@ class TrafficStationManager(ABC):
         logger.info(f"Stations filtered on sensor_type being induction_loop, resulting {len(stations_with_km_indloop)} "
                     f"elements (starting from {len(stations_with_km)})")
 
-        self.run_computation(stations_with_km_indloop, min_from_date, max_to_date, batch_size)
+        if run_on_all_stations:
+            self._run_computation_on_all_stations(stations_with_km_indloop, min_from_date, max_to_date, batch_size)
+        else:
+            self._run_computation_on_single_station(stations_with_km_indloop, min_from_date, max_to_date, batch_size)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
+
+    def _run_computation_on_single_station(self, stations, min_from_date, max_to_date, batch_size):
+        for station in stations:
+            self.run_computation([station], min_from_date, max_to_date, batch_size)
+
+    def _run_computation_on_all_stations(self, stations, min_from_date, max_to_date, batch_size):
+        self.run_computation(stations, min_from_date, max_to_date, batch_size)
