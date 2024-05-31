@@ -46,7 +46,7 @@ class TestDAGCommon(TestCase):
             "active": "true",
             "available": "true",
             "coordinates": "1,1",
-            "metadata": {"a22_metadata": "{\"metro\":\"123\"}"},
+            "metadata": {"a22_metadata": "{\"metro\":\"123\"}", "sensor_type": "induction_loop"},
             "name": "station",
             "station_type": "type",
             "origin": "origin"
