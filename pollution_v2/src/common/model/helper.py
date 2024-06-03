@@ -18,7 +18,7 @@ logger = logging.getLogger("pollution_v2.common.model")
 
 class ModelHelper:
     """
-    Created Pandas datqframes starting useful to feed computerion algorithms
+    Created Pandas dataframes starting useful to feed computation algorithms
     """
 
     @staticmethod
