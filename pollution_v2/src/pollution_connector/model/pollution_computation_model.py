@@ -90,7 +90,11 @@ class PollutionComputationModel:
 
         if len(traffic_entries) > 0:
             traffic_df = ModelHelper.get_traffic_dataframe(traffic_entries, run_on_datetimes)
-            pollution_df = copert_emissions(traffic_df)
+            try:
+                year = sorted({date.strftime("%Y") for date in run_on_datetimes})[-1]
+            except:
+                year = ''
+            pollution_df = copert_emissions(traffic_df, year)
             return self._get_pollution_entries_from_df(pollution_df, traffic.get_stations())
         else:
             logger.info("0 validated entries found skipping pollution computation")

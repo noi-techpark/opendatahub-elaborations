@@ -147,7 +147,7 @@ with TrafficStationsDAG(
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
 
         dag.trigger_next_dag_run(manager, dag, has_remaining_data,
-                                 ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, **kwargs)
+                                 ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, True, True, True, **kwargs)
 
 
     processed_stations = process_station.expand(station_dict=get_stations_list())
