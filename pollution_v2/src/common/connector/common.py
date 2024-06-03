@@ -105,7 +105,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                  requests_timeout: float,
                  requests_max_retries: int,
                  requests_sleep_time: float,
-                 requests_retry_sleep_time: float):
+                 requests_retry_sleep_time: float,
+                 period: int):
 
         self._authentication_url = authentication_url
         self._base_reader_url = base_reader_url
@@ -123,6 +124,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         self._requests_max_retries = requests_max_retries
         self._requests_sleep_time = requests_sleep_time
         self._requests_retry_sleep_time = requests_retry_sleep_time
+        self._period = period
 
         self._keycloak_openid = KeycloakOpenID(server_url=self._authentication_url,
                                                client_id=self._client_id,
@@ -136,9 +138,10 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         Refresh current token or request a new one.
         """
         if not self._token or self._token.is_refresh_token_expired:
-            logger.info("Requesting new token")
+            logger.debug("Requesting new token")
             self._token = Token.from_repr(
-                self._keycloak_openid.token(username=self._username, password=self._password, grant_type=self._grant_type)
+                self._keycloak_openid.token(username=self._username, password=self._password,
+                                            grant_type=self._grant_type)
             )
         elif self._token.refresh_token:
             logger.info("Refresh current access token")
@@ -203,7 +206,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         raise MaximumRetryExceeded()
 
-    def _get_result_page(self, path: str, limit: int, offset: int, query_params: Optional[dict] = None) -> (list, int, int):
+    def _get_result_page(self, path: str, limit: int, offset: int, query_params: Optional[dict] = None) -> (
+        list, int, int):
         """
         Request a result page from a paginated endpoint.
 
@@ -248,9 +252,10 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
             if limit == -1:
                 logger.debug("Retrieving all elements")
             else:
-                logger.debug(f"Retrieving page [{offset} - {offset+limit}]")
+                logger.debug(f"Retrieving page [{offset} - {offset + limit}]")
 
-            new_results, limit, offset = self._get_result_page(path, limit=limit, offset=offset, query_params=query_params)
+            new_results, limit, offset = self._get_result_page(path, limit=limit, offset=offset,
+                                                               query_params=query_params)
 
             results.extend(new_results)
             if limit == -1:
@@ -296,27 +301,23 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         logger.info(f"Retrieved [{len(raw_stations)}] stations")
         return [self.build_station(raw_station) for raw_station in raw_stations]
 
-    def get_latest_measures(self, station: Optional[Station or str] = None) -> List[MeasureType]:
+    def get_latest_measures(self, station: Optional[Station or str] = None,
+                            period_to_include: int = None) -> List[MeasureType]:
         """
         Retrieve the last measure for the connector DataType.
 
         :param station: If set, it is possible to retrieve only the measures for the given station. It can be a string
                         representing the station code or a Station object.
+        :param period_to_include: If set, it allows filtering including period; otherwise, no filter on period
         :return: The list of measures
         """
-        query_params = {}
 
-        if station:
-            if isinstance(station, str):
-                code = station
-            elif isinstance(station, Station):
-                code = station.code
-            else:
-                raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
-            query_params["where"] = f'scode.eq."{code}"'
-            logger.info(f"Retrieving latest measures for station [{code}] on [{type(self).__name__}]")
-        else:
-            logger.info("Retrieving latest measures for all stations")
+        where_conds = self.__build_where_conds(station, period_to_include)
+        query_params = {}
+        if len(where_conds) > 0:
+            query_params["where"] = f'and({",".join(where_conds)})'
+
+        logger.info(f"Retrieving latest measures on [{type(self).__name__}] with where [{query_params['where']}]")
 
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/latest",
@@ -325,7 +326,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         return [self.build_measure(raw_measure) for raw_measure in raw_measures]
 
-    def get_measures(self, from_date: datetime, to_date: datetime, station: Optional[Station or str] = None) -> List[MeasureType]:
+    def get_measures(self, from_date: datetime, to_date: datetime, station: Optional[Station or str] = None,
+                     period_to_include: int = None) -> List[MeasureType]:
         """
         Retrieve the measures for the connector DataType in the given interval.
 
@@ -333,25 +335,23 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         :param to_date: The end date of the interval
         :param station: If set, it is possible to retrieve only the measures for the given station. It can be a string
                         representing the station code or a Station object.
+        :param period_to_include: If set, it allows filtering including period; otherwise, no filter on period
         :return: the list of Measures
         """
 
-        query_params = {}
+        if period_to_include is None:
+            period_to_include = self._period
 
         iso_from_date = from_date.isoformat(timespec="milliseconds")
         iso_to_date = to_date.isoformat(timespec="milliseconds")
 
-        if station:
-            if isinstance(station, str):
-                code = station
-            elif isinstance(station, Station):
-                code = station.code
-            else:
-                raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
-            query_params["where"] = f'scode.eq."{code}"'
-            logger.info(f"Retrieving measures from date [{iso_from_date}] to date [{iso_to_date}] for station [{code}]")
-        else:
-            logger.info(f"Retrieving measures from date [{iso_from_date}] to date [{iso_to_date}] for all stations")
+        where_conds = self.__build_where_conds(station, period_to_include)
+        query_params = {}
+        if len(where_conds) > 0:
+            query_params["where"] = f'and({",".join(where_conds)})'
+
+        logger.info(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
+                    f"to date [{iso_to_date}] with where [{query_params['where']}]")
 
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/{iso_from_date}/{iso_to_date}",
@@ -360,7 +360,26 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         return [self.build_measure(raw_measure) for raw_measure in raw_measures]
 
-    def _post_request(self, path: str, raw_data: dict or list, query_params: Optional[dict] = None) -> str or dict or list:
+    def __build_where_conds(self, station: Optional[Station or str] = None,
+                            period_to_include: int = None) -> List[str]:
+
+        where_condition = []
+        if station:
+            if isinstance(station, str):
+                code = station
+            elif isinstance(station, Station):
+                code = station.code
+            else:
+                raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
+            where_condition.append(f'scode.eq."{code}"')
+
+        if period_to_include is not None:
+            where_condition.append(f'mperiod.eq.{period_to_include}')
+
+        return where_condition
+
+    def _post_request(self, path: str, raw_data: dict or list,
+                      query_params: Optional[dict] = None) -> str or dict or list:
         """
         Perform a post request to the ODH.
 
@@ -443,7 +462,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         else:
             for index in range(len(data_types) // self._max_batch_size + 1):
                 if index < len(data_types) // self._max_batch_size:
-                    self._post_data_type_batch(data_types[index * self._max_batch_size: (index + 1) * self._max_batch_size], provenance)
+                    self._post_data_type_batch(
+                        data_types[index * self._max_batch_size: (index + 1) * self._max_batch_size], provenance)
                 else:
                     if len(data_types) > index * self._max_batch_size:
                         self._post_data_type_batch(data_types[index * self._max_batch_size:], provenance)
@@ -474,9 +494,11 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                 measures_dict[measure.provenance.provenance_id][measure.station.code] = {}
 
             if measure.data_type.name not in measures_dict[measure.provenance.provenance_id][measure.station.code]:
-                measures_dict[measure.provenance.provenance_id][measure.station.code][measure.data_type.name] = [measure]
+                measures_dict[measure.provenance.provenance_id][measure.station.code][measure.data_type.name] = [
+                    measure]
             else:
-                measures_dict[measure.provenance.provenance_id][measure.station.code][measure.data_type.name].append(measure)
+                measures_dict[measure.provenance.provenance_id][measure.station.code][measure.data_type.name].append(
+                    measure)
 
         if len(measures_dict.keys()) > 1:
             logger.error("Measures have more than one provenance")
@@ -498,7 +520,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                     data_map["branch"][station_code]["branch"][data_type_name] = {
                         "name": "(default)",
                         "branch": {},
-                        "data": [data_point.to_odh_repr() for data_point in measures_dict[provenance_id][station_code][data_type_name]]  # Send data to ODH in chronological order
+                        # Send data to ODH in chronological order
+                        "data": [data_point.to_odh_repr() for data_point in
+                                 measures_dict[provenance_id][station_code][data_type_name]]
                     }
 
             self._post_request(f"/json/pushRecords/{self._station_type}", data_map)

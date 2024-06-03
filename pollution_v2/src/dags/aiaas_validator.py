@@ -4,6 +4,7 @@
 
 import logging
 from datetime import timedelta, datetime
+from typing import List
 
 from airflow.decorators import task
 from airflow.utils.trigger_rule import TriggerRule
@@ -13,9 +14,11 @@ from common.cache.computation_checkpoint import ComputationCheckpointCache
 from dags.common import TrafficStationsDAG
 from common.connector.collector import ConnectorCollector
 from common.data_model import TrafficSensorStation, Provenance
-from common.settings import ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION_CRONTAB, PROVENANCE_ID, \
-    PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION, COMPUTATION_CHECKPOINT_REDIS_HOST, \
-    COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE
+from common.settings import (ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION_CRONTAB, PROVENANCE_ID,
+                             PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION,
+                             COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT,
+                             COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE, DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN,
+                             ODH_COMPUTATION_BATCH_SIZE_VALIDATION, AIRFLOW_NUM_RETRIES)
 from validator.manager.validation import ValidationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -29,7 +32,7 @@ default_args = {
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': AIRFLOW_NUM_RETRIES,
     'retry_delay': timedelta(minutes=5),
 }
 
@@ -60,7 +63,6 @@ with TrafficStationsDAG(
 
     default_args=default_args
 ) as dag:
-
     def _init_manager() -> ValidationManager:
         """
         Inits what needed for the computation of a batch of pollution data measures.
@@ -76,9 +78,10 @@ with TrafficStationsDAG(
             logger.info("Checkpoint cache disabled")
 
         connector_collector = ConnectorCollector.build_from_env()
-        provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION)
+        provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION)
         manager = ValidationManager(connector_collector, provenance, checkpoint_cache)
         return manager
+
 
     @task
     def get_stations_list(**kwargs) -> list[dict]:
@@ -89,7 +92,7 @@ with TrafficStationsDAG(
         """
         manager = _init_manager()
 
-        stations_list = dag.get_stations_list(manager, **kwargs)
+        stations_list = dag.get_stations_list(manager, True, True, True, **kwargs)
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
@@ -100,15 +103,14 @@ with TrafficStationsDAG(
 
 
     @task
-    def process_station(station_dict: dict, **kwargs):
+    def process_stations(station_dicts: List[dict], **kwargs):
         """
-        Process a single station
+        Retrieves and process all the stations
 
-        :param station_dict: the station to process
+        :param station_dicts: list of stations dictionaries to be processed
         """
 
-        station = TrafficSensorStation.from_json(station_dict)
-        logger.info(f"Received station {station}")
+        stations_to_process = [TrafficSensorStation.from_json(station_dict) for station_dict in station_dicts]
 
         manager = _init_manager()
 
@@ -117,8 +119,7 @@ with TrafficStationsDAG(
         computation_start_dt = datetime.now()
 
         logger.info(f"Running validation from [{min_from_date}] to [{max_to_date}]")
-
-        # TODO: implement validation
+        manager.run_computation(stations_to_process, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed validation in [{(computation_end_dt - computation_start_dt).seconds}]")
@@ -141,12 +142,13 @@ with TrafficStationsDAG(
             :param ending_date: the date on which data availability ends
             :return: true if there are enough data to run another DAG on this station
             """
-            # TODO implement
-            return False
+            return (ending_date - starting_date).total_seconds() / 3600 > DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN
 
-        dag.trigger_next_dag_run(manager, dag, has_remaining_data, **kwargs)
+        dag.trigger_next_dag_run(manager, dag, has_remaining_data,
+                                 ODH_COMPUTATION_BATCH_SIZE_VALIDATION,True, True, **kwargs)
 
+    tmp = get_stations_list()
 
-    processed_stations = process_station.expand(station_dict=get_stations_list())
+    processed_stations = process_stations(tmp)
 
     whats_next(processed_stations)

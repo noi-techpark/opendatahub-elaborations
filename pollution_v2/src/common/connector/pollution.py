@@ -9,6 +9,7 @@ from typing import Optional, List
 from common.connector.common import ODHBaseConnector
 from common.data_model.pollution import PollutionMeasure
 from common.data_model.traffic import TrafficSensorStation
+from common.settings import PERIOD_10MIN
 
 
 class PollutionODHConnector(ODHBaseConnector[PollutionMeasure, TrafficSensorStation]):
@@ -32,6 +33,7 @@ class PollutionODHConnector(ODHBaseConnector[PollutionMeasure, TrafficSensorStat
         station_type = "TrafficSensor"
         measure_types = PollutionMeasure.get_data_types()
         measure_types = [measure_type.name for measure_type in measure_types]
+        period = PERIOD_10MIN
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -48,7 +50,8 @@ class PollutionODHConnector(ODHBaseConnector[PollutionMeasure, TrafficSensorStat
                          requests_timeout,
                          requests_max_retries,
                          requests_sleep_time,
-                         requests_retry_sleep_time)
+                         requests_retry_sleep_time,
+                         period)
 
     @staticmethod
     def build_station(raw_station: dict) -> TrafficSensorStation:

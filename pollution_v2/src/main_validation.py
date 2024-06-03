@@ -15,17 +15,17 @@ from redis.client import Redis
 
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
-from common.data_model import Provenance
+from common.data_model.common import Provenance
 from common.logging import get_logging_configuration
 from common.settings import (DEFAULT_TIMEZONE, SENTRY_SAMPLE_RATE, ODH_MINIMUM_STARTING_DATE,
                              COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT, PROVENANCE_ID,
-                             PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION, PROVENANCE_VERSION,
-                             COMPUTATION_CHECKPOINT_REDIS_DB, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION)
-from pollution_connector.manager.pollution_computation import PollutionComputationManager
+                             PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION,
+                             COMPUTATION_CHECKPOINT_REDIS_DB, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
+from validator.manager.validation import ValidationManager
 
 logging.config.dictConfig(get_logging_configuration("pollution_v2"))
 
-logger = logging.getLogger("pollution_v2.main_pollution_connector")
+logger = logging.getLogger("pollution_v2.main_validation")
 
 sentry_sdk.init(
     traces_sample_rate=SENTRY_SAMPLE_RATE,
@@ -38,10 +38,10 @@ def compute_data(min_from_date: Optional[datetime] = None,
                  max_to_date: Optional[datetime] = None
                  ) -> None:
     """
-    Start the computation of a batch of pollution data measures. As starting date for the batch is used the latest
-    pollution measure available on the ODH, if no pollution measures are available min_from_date is used.
+    Start the computation of a batch of traffic data measures to be validated. As starting date for the batch is used
+    the latest validated measure available on the ODH, if no validated measures are available min_from_date is used.
 
-    :param min_from_date: Optional, if set traffic measures before this date are discarded if no pollution measures are available.
+    :param min_from_date: Optional, if set traffic measures before this date are discarded if no measures are available.
                           If not specified, the default will be taken from the environmental variable `ODH_MINIMUM_STARTING_DATE`.
     :param max_to_date: Optional, if set the traffic measure after this date are discarded.
                         If not specified, the default will be the current datetime.
@@ -62,14 +62,14 @@ def compute_data(min_from_date: Optional[datetime] = None,
         logger.info("Checkpoint cache disabled")
 
     collector_connector = ConnectorCollector.build_from_env()
-    provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION, PROVENANCE_VERSION)
-    manager = PollutionComputationManager(collector_connector, provenance, checkpoint_cache)
-    manager.run_computation_and_upload_results(min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION)
+    provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION)
+    manager = ValidationManager(collector_connector, provenance, checkpoint_cache)
+    manager.run_computation_and_upload_results(min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
 
 
 if __name__ == "__main__":
 
-    arg_parser = argparse.ArgumentParser(description="Manually run a pollution (v2) computation")
+    arg_parser = argparse.ArgumentParser(description="Manually run a validation")
     arg_parser.add_argument("-f", "--from-date", type=str, required=False,
                             help="The starting date[time] in isoformat (up to one second level of precision, "
                                  "milliseconds for the from date field are not supported in ODH) for downloading data "

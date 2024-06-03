@@ -14,10 +14,11 @@ from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
 from common.data_model import TrafficSensorStation
-from common.settings import ODH_MINIMUM_STARTING_DATE, \
-    COMPUTATION_CHECKPOINT_REDIS_DB, COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST, \
-    PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION, DAG_POLLUTION_EXECUTION_CRONTAB, \
-    DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN, DEFAULT_TIMEZONE
+from common.settings import (ODH_MINIMUM_STARTING_DATE, COMPUTATION_CHECKPOINT_REDIS_DB,
+                             COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST,
+                             PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION,
+                             PROVENANCE_VERSION, DAG_POLLUTION_EXECUTION_CRONTAB, DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN,
+                             DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, AIRFLOW_NUM_RETRIES)
 from pollution_connector.manager.pollution_computation import PollutionComputationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -31,7 +32,7 @@ default_args = {
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
-    'retries': 1,
+    'retries': AIRFLOW_NUM_RETRIES,
     'retry_delay': timedelta(minutes=5),
 }
 
@@ -78,7 +79,7 @@ with TrafficStationsDAG(
             logger.info("Checkpoint cache disabled")
 
         connector_collector = ConnectorCollector.build_from_env()
-        provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME, PROVENANCE_VERSION)
+        provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION, PROVENANCE_VERSION)
         manager = PollutionComputationManager(connector_collector, provenance, checkpoint_cache)
         return manager
 
@@ -91,7 +92,7 @@ with TrafficStationsDAG(
         """
         manager = _init_manager()
 
-        stations_list = dag.get_stations_list(manager, **kwargs)
+        stations_list = dag.get_stations_list(manager, True, True, True, **kwargs)
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
@@ -119,7 +120,8 @@ with TrafficStationsDAG(
         computation_start_dt = datetime.now()
 
         logger.info(f"Running computation from [{min_from_date}] to [{max_to_date}]")
-        manager.run_computation_for_station(station, min_from_date, max_to_date)
+        manager.run_computation([station], min_from_date, max_to_date,
+                                ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
@@ -144,7 +146,8 @@ with TrafficStationsDAG(
             """
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
 
-        dag.trigger_next_dag_run(manager, dag, has_remaining_data, **kwargs)
+        dag.trigger_next_dag_run(manager, dag, has_remaining_data,
+                                 ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, **kwargs)
 
 
     processed_stations = process_station.expand(station_dict=get_stations_list())

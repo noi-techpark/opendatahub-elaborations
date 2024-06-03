@@ -56,7 +56,7 @@ class Dominio:
             else:
                 df['layer_1_1'] = s.layer1_1
 
-            if s.layer2 is None:
+            if not hasattr(s, 'layer2') or s.layer2 is None:
                 df['layer_2'] = 999
             else:
                 df['layer_2'] = s.layer2

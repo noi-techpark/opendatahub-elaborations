@@ -11,7 +11,7 @@ from typing import Optional, List, Dict
 
 from common.data_model.common import VehicleClass, MeasureCollection, Measure, Provenance, DataType
 from common.data_model.entry import GenericEntry
-from common.data_model.traffic import TrafficSensorStation
+from common.data_model.station import TrafficSensorStation
 
 
 class PollutantClass(Enum):
@@ -28,18 +28,29 @@ class PollutionEntry(GenericEntry):
 
     def __init__(self, station: TrafficSensorStation, valid_time: datetime, vehicle_class: VehicleClass,
                  entry_class: PollutantClass, entry_value: Optional[float], period: Optional[int]):
-        super().__init__(station, valid_time, vehicle_class, entry_value, period)
+        super().__init__(station, valid_time, period)
         self.entry_class = entry_class
+        self.vehicle_class = vehicle_class
+        self.entry_value = entry_value
 
 
 class PollutionMeasure(Measure):
+    """
+    Measure representing pollution.
+    """
 
     @staticmethod
     def get_data_types() -> List[DataType]:
+        """
+        Returns the data types specific for this measure.
+
+        :return: the data types specific for this measure
+        """
         data_types = []
         for vehicle in VehicleClass:
             for pollutant in PollutantClass:
-                data_types.append(DataType(f"{vehicle.name}-{pollutant.name}-emissions", f"{vehicle.value} emissions of {pollutant.name}", "total", "g/km", {}))
+                data_types.append(DataType(f"{vehicle.name}-{pollutant.name}-emissions",
+                                           f"{vehicle.value} emissions of {pollutant.name}", "total", "g/km", {}))
         return data_types
 
 
@@ -47,7 +58,8 @@ class PollutionMeasure(Measure):
 class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSensorStation]):
 
     @staticmethod
-    def build_from_pollution_entries(pollution_entries: List[PollutionEntry], provenance: Provenance) -> PollutionMeasureCollection:
+    def build_from_entries(pollution_entries: List[PollutionEntry],
+                           provenance: Provenance) -> PollutionMeasureCollection:
         """
         Build a PollutionMeasureCollection from the list of pollution entries.
 

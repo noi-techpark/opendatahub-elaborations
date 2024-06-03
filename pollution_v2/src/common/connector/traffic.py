@@ -8,6 +8,7 @@ from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
 from common.data_model.traffic import TrafficMeasure, TrafficSensorStation
+from common.settings import PERIOD_10MIN
 
 
 class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]):
@@ -37,6 +38,7 @@ class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]
             "Average Speed Heavy Vehicles",
             "Average Speed Light Vehicles"
         ]
+        period = PERIOD_10MIN
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -53,7 +55,8 @@ class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]
                          requests_timeout,
                          requests_max_retries,
                          requests_sleep_time,
-                         requests_retry_sleep_time)
+                         requests_retry_sleep_time,
+                         period)
 
     @staticmethod
     def build_station(raw_station: dict) -> TrafficSensorStation:

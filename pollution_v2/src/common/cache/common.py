@@ -48,7 +48,7 @@ class RedisCache(Generic[CacheDataType], ABC):
         self._r = r
 
     def get(self, key: str) -> Optional[CacheDataType]:
-        logger.info(f"Getting cached data for key [{key}]")
+        logger.debug(f"Getting cached data for key [{key}]")
         result = self._r.get(key)
         if result is not None:
             try:
@@ -68,7 +68,7 @@ class RedisCache(Generic[CacheDataType], ABC):
         :param data: the data to cache
         :param ttl: the time to live of the data entry (expressed in seconds)
         """
-        logger.info(f"Caching data for key [{data.unique_id()}] and ttl [{ttl}].")
+        logger.debug(f"Caching data for key [{data.unique_id()}] and ttl [{ttl}].")
         if ttl:
             self._r.set(data.unique_id(), json.dumps(data.to_repr()), ex=ttl)
         else:
