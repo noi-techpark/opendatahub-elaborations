@@ -80,7 +80,7 @@ class PollutionComputationModel:
         if len(diff_datetime) > 0:
             logger.warning(
                 f"{len(diff_datetime)} discarded records: no validation "
-                f"for the dates [{diff_date}] on station [{station.code}]) "
+                f"for the dates [{sorted(diff_date)}] on station [{station.code}]) "
                 f"(and datetimes [{sorted(diff_datetime)}]")
 
         run_on_datetimes = validated_datetimes.intersection(traffic_datetimes)
