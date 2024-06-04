@@ -28,7 +28,7 @@ logger = logging.getLogger("pollution_v2.dags.aiaas_pollution_computer")
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE),
+    'start_date': ODH_MINIMUM_STARTING_DATE,
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -47,7 +47,7 @@ with TrafficStationsDAG(
     schedule=DAG_POLLUTION_EXECUTION_CRONTAB,
 
     # execution date starting at (if needed, backfill)
-    start_date=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE),
+    start_date=ODH_MINIMUM_STARTING_DATE,
 
     # if True, the scheduler creates a DAG Run for each completed interval between start_date and end_date
     # and the scheduler will execute them sequentially

@@ -58,8 +58,8 @@ class TestValidatorDAG(TestDAGCommon):
             assert starting_date == Variable.get("ODH_MINIMUM_STARTING_DATE")
 
             parsed_date = dateutil.parser.parse(starting_date)
-            assert parsed_date == settings.ODH_MINIMUM_STARTING_DATE
             parsed_date = DEFAULT_TIMEZONE.localize(parsed_date)
+            assert parsed_date == settings.ODH_MINIMUM_STARTING_DATE
 
             # Importing the dag after the settings have been reloaded
             from dags.aiaas_pollution_computer import dag as pollution_computer_dag

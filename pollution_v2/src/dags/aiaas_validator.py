@@ -47,7 +47,7 @@ with TrafficStationsDAG(
     schedule=DAG_VALIDATION_EXECUTION_CRONTAB,
 
     # execution date starting at (if needed, backfill)
-    start_date=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE),
+    start_date=ODH_MINIMUM_STARTING_DATE,
 
     # if True, the scheduler creates a DAG Run for each completed interval between start_date and end_date
     # and the scheduler will execute them sequentially

@@ -162,5 +162,5 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
         min_from_date, max_to_date = dag.init_date_range(None, None)
 
         # Test that the returned date range is correct
-        self.assertEqual(min_from_date, DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE))
+        self.assertEqual(min_from_date, ODH_MINIMUM_STARTING_DATE)
         assert max_to_date > min_from_date

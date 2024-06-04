@@ -83,7 +83,7 @@ class TrafficStationManager(ABC):
         for station in stations:
             measures = connector.get_latest_measures(station=station)
             latest_date = max(list(map(lambda m: m.valid_time, measures)),
-                              default=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE))
+                              default=ODH_MINIMUM_STARTING_DATE)
             if latest_date_across_stations is None or latest_date > latest_date_across_stations:
                 latest_date_across_stations = latest_date
         return latest_date_across_stations
