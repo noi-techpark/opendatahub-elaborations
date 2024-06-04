@@ -88,7 +88,7 @@ class PollutionComputationModel:
 
         traffic_entries = traffic.get_entries()
 
-        if len(traffic_entries) > 0:
+        if len(run_on_datetimes) > 0 and len(traffic_entries) > 0:
             traffic_df = ModelHelper.get_traffic_dataframe(traffic_entries, run_on_datetimes)
             try:
                 year = sorted({date.strftime("%Y") for date in run_on_datetimes})[-1]

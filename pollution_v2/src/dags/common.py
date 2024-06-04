@@ -103,10 +103,13 @@ class TrafficStationsDAG(DAG):
                                                       [station], ODH_MINIMUM_STARTING_DATE, batch_size)
             ending_date = manager.get_starting_date(manager.get_input_connector(), None,
                                                     [station], ODH_MINIMUM_STARTING_DATE, batch_size)
-            logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
-            if has_remaining_data(starting_date, ending_date):
-                logger.info(f"Forwarding station {station.code} to next execution")
-                stations.append(station.code)
+            if starting_date is None:
+                logger.info(f"Nothing to process on {station.code}, not forwarded to next execution")
+            else:
+                logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
+                if has_remaining_data(starting_date, ending_date):
+                    logger.info(f"Forwarding station {station.code} to next execution")
+                    stations.append(station.code)
 
         # True if on ODH there are lots of data to be processed (e.g. new station with old unprocessed data)
         run_again = len(stations) > 0
