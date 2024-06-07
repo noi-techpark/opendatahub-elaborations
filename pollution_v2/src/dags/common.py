@@ -100,9 +100,9 @@ class TrafficStationsDAG(DAG):
         all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0, filter_indloop, filter_famas)
         for station in all_stations:
             starting_date = manager.get_starting_date(manager.get_output_connector(), manager.get_input_connector(),
-                                                      [station], ODH_MINIMUM_STARTING_DATE, batch_size)
+                                                      [station], ODH_MINIMUM_STARTING_DATE, batch_size, False)
             ending_date = manager.get_starting_date(manager.get_input_connector(), None,
-                                                    [station], ODH_MINIMUM_STARTING_DATE, batch_size)
+                                                    [station], ODH_MINIMUM_STARTING_DATE, batch_size, False)
             if starting_date is None:
                 logger.info(f"Nothing to process on {station.code}, not forwarded to next execution")
             else:

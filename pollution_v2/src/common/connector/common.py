@@ -399,6 +399,11 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         while call_counter <= self._requests_max_retries:
             call_counter += 1
             try:
+                logger.debug("posting...")
+                logger.debug(f"where: {self._base_writer_url}{path}")
+                logger.debug(f"what:  {raw_data}")
+                logger.debug(f"with:  {self._get_authentication_header(token)}")
+                logger.debug(f"param: {query_params}")
                 response = requests.post(
                     f"{self._base_writer_url}{path}",
                     json=raw_data,
@@ -408,12 +413,16 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                 )
                 if response.status_code in [200, 201]:
                     try:  # ODH seems that id not returning a json for post requests but a string
+                        logger.debug(f"Response code is {response.status_code}, response is {response.json()}")
                         return response.json()
                     except requests.exceptions.JSONDecodeError:
+                        logger.debug(f"Response code is {response.status_code}, error decoding json: {response.text}")
                         return response.text
                 else:
+                    logger.debug(f"Response code is {response.status_code}, considered as error!")
                     raise ApiException(message=response.content.decode("utf-8"), code=response.status_code)
             except ApiException as e:
+                logger.exception("API Exception in getting data from ODH", exc_info=e)
                 raise e
             except Exception as e:
                 logger.exception("Exception in getting data from ODH", exc_info=e)
