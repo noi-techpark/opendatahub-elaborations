@@ -56,7 +56,7 @@ class TestValidation(TestDAGCommon):
 
             station = TrafficSensorStation.from_json(self.station_dict)
 
-            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size))
+            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size), True)
             latest_date_mock.assert_not_called()
 
             # Test that the run_computation method is called with the correct daily date range
@@ -103,7 +103,7 @@ class TestValidation(TestDAGCommon):
 
             station = TrafficSensorStation.from_json(self.station_dict)
 
-            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size))
+            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size), True)
             if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE_VALIDATION:
                 latest_date_mock.assert_called_once_with(ANY, [station])
             else:
@@ -149,7 +149,7 @@ class TestValidation(TestDAGCommon):
             task_function([self.station_dict])
 
             station = TrafficSensorStation.from_json(self.station_dict)
-            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size))
+            get_start_date_mock.assert_called_once_with(ANY, ANY, [station], self.min_date, int(batch_size), True)
             if (self.max_date - start_date).days > ODH_COMPUTATION_BATCH_SIZE_VALIDATION:
                 latest_date_mock.assert_called_once_with(ANY, [station])
             else:

@@ -89,7 +89,7 @@ class TestDAGCommon(TestCase):
 
         def get_starting_date_mock_func(output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
                                         stations: List[TrafficSensorStation], min_from_date: datetime,
-                                        batch_size: int) -> datetime:
+                                        batch_size: int, keep_looking_for_input_data: bool) -> datetime:
             if isinstance(output_connector, TrafficODHConnector):
                 return ending_date
             else:
@@ -110,7 +110,7 @@ class TestDAGCommon(TestCase):
 
         def get_starting_date_mock_func(output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
                                         stations: List[TrafficSensorStation], min_from_date: datetime,
-                                        batch_size: int) -> datetime:
+                                        batch_size: int, keep_looking_for_input_data: bool) -> datetime:
             if isinstance(output_connector, ValidationODHConnector):
                 return ending_date
             else:

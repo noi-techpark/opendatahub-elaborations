@@ -106,7 +106,8 @@ class TestPollutionComputerDAGTasks(TestDAGCommon):
             [TrafficSensorStation.from_json(self.station_dict)],
             ANY,  # This corresponds to the min_from_date parameter
             ANY,  # This corresponds to the max_to_date parameter
-            batch_size
+            batch_size,
+            False
         )
 
     @patch("airflow.operators.trigger_dagrun.TriggerDagRunOperator.execute")
