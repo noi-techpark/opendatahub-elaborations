@@ -12,6 +12,7 @@ from typing import Optional, List, Dict, Iterator
 from common.data_model.common import VehicleClass, MeasureCollection, Measure, Provenance, DataType
 from common.data_model.entry import GenericEntry
 from common.data_model.traffic import TrafficSensorStation, TrafficEntry
+from common.settings import DATATYPE_PREFIX
 
 
 class ValidationTypeClass(Enum):
@@ -46,7 +47,7 @@ class ValidationMeasure(Measure):
         for vehicle in VehicleClass:
             for validation_type in ValidationTypeClass:
                 data_types.append(
-                    DataType(f"{vehicle.name}-{validation_type.name}", f"{vehicle.value} is {validation_type.name}",
+                    DataType(f"{DATATYPE_PREFIX}{vehicle.name}-{validation_type.name}", f"{vehicle.value} is {validation_type.name}",
                              "Validation", "-", {}))
         return data_types
 
@@ -73,7 +74,7 @@ class ValidationMeasureCollection(MeasureCollection[ValidationMeasure, TrafficSe
                 validation_measures.append(ValidationMeasure(
                     station=validation_entry.station,
                     data_type=data_types_dict[
-                        f"{validation_entry.vehicle_class.name}-{validation_entry.entry_class.name}"],
+                        f"{DATATYPE_PREFIX}{validation_entry.vehicle_class.name}-{validation_entry.entry_class.name}"],
                     provenance=provenance,
                     period=validation_entry.period,
                     transaction_time=None,
