@@ -47,7 +47,7 @@ with TrafficStationsDAG(
     schedule=DAG_VALIDATION_EXECUTION_CRONTAB,
 
     # execution date starting at (if needed, backfill)
-    start_date=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE),
+    start_date=ODH_MINIMUM_STARTING_DATE,
 
     # if True, the scheduler creates a DAG Run for each completed interval between start_date and end_date
     # and the scheduler will execute them sequentially
@@ -119,7 +119,8 @@ with TrafficStationsDAG(
         computation_start_dt = datetime.now()
 
         logger.info(f"Running validation from [{min_from_date}] to [{max_to_date}]")
-        manager.run_computation(stations_to_process, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
+        manager.run_computation(stations_to_process, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION,
+                                True)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed validation in [{(computation_end_dt - computation_start_dt).seconds}]")
@@ -145,7 +146,7 @@ with TrafficStationsDAG(
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN
 
         dag.trigger_next_dag_run(manager, dag, has_remaining_data,
-                                 ODH_COMPUTATION_BATCH_SIZE_VALIDATION,True, True, **kwargs)
+                                 ODH_COMPUTATION_BATCH_SIZE_VALIDATION,True, True, True, **kwargs)
 
     tmp = get_stations_list()
 

@@ -64,7 +64,8 @@ def compute_data(min_from_date: Optional[datetime] = None,
     collector_connector = ConnectorCollector.build_from_env()
     provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION, PROVENANCE_VERSION)
     manager = PollutionComputationManager(collector_connector, provenance, checkpoint_cache)
-    manager.run_computation_and_upload_results(min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION)
+    manager.run_computation_and_upload_results(min_from_date, max_to_date,
+                                               ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, False)
 
 
 if __name__ == "__main__":

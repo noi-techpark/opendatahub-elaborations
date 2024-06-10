@@ -317,7 +317,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         if len(where_conds) > 0:
             query_params["where"] = f'and({",".join(where_conds)})'
 
-        logger.info(f"Retrieving latest measures on [{type(self).__name__}] with where [{query_params['where']}]")
+        logger.debug(f"Retrieving latest measures on [{type(self).__name__}] with where [{query_params['where']}]")
 
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/latest",
@@ -350,7 +350,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         if len(where_conds) > 0:
             query_params["where"] = f'and({",".join(where_conds)})'
 
-        logger.info(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
+        logger.debug(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
                     f"to date [{iso_to_date}] with where [{query_params['where']}]")
 
         raw_measures = self._get_result_list(
@@ -399,6 +399,11 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         while call_counter <= self._requests_max_retries:
             call_counter += 1
             try:
+                logger.debug("posting...")
+                logger.debug(f"where: {self._base_writer_url}{path}")
+                logger.debug(f"what:  {raw_data}")
+                logger.debug(f"with:  {self._get_authentication_header(token)}")
+                logger.debug(f"param: {query_params}")
                 response = requests.post(
                     f"{self._base_writer_url}{path}",
                     json=raw_data,
@@ -408,12 +413,16 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                 )
                 if response.status_code in [200, 201]:
                     try:  # ODH seems that id not returning a json for post requests but a string
+                        logger.debug(f"Response code is {response.status_code}, response is {response.json()}")
                         return response.json()
                     except requests.exceptions.JSONDecodeError:
+                        logger.debug(f"Response code is {response.status_code}, error decoding json: {response.text}")
                         return response.text
                 else:
+                    logger.debug(f"Response code is {response.status_code}, considered as error!")
                     raise ApiException(message=response.content.decode("utf-8"), code=response.status_code)
             except ApiException as e:
+                logger.exception("API Exception in getting data from ODH", exc_info=e)
                 raise e
             except Exception as e:
                 logger.exception("Exception in getting data from ODH", exc_info=e)

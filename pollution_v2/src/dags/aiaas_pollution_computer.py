@@ -28,7 +28,7 @@ logger = logging.getLogger("pollution_v2.dags.aiaas_pollution_computer")
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE),
+    'start_date': ODH_MINIMUM_STARTING_DATE,
     'email': ['airflow@example.com'],
     'email_on_failure': False,
     'email_on_retry': False,
@@ -47,7 +47,7 @@ with TrafficStationsDAG(
     schedule=DAG_POLLUTION_EXECUTION_CRONTAB,
 
     # execution date starting at (if needed, backfill)
-    start_date=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE),
+    start_date=ODH_MINIMUM_STARTING_DATE,
 
     # if True, the scheduler creates a DAG Run for each completed interval between start_date and end_date
     # and the scheduler will execute them sequentially
@@ -121,7 +121,7 @@ with TrafficStationsDAG(
 
         logger.info(f"Running computation from [{min_from_date}] to [{max_to_date}]")
         manager.run_computation([station], min_from_date, max_to_date,
-                                ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION)
+                                ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, False)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
@@ -147,7 +147,7 @@ with TrafficStationsDAG(
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN
 
         dag.trigger_next_dag_run(manager, dag, has_remaining_data,
-                                 ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, **kwargs)
+                                 ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, True, True, True, **kwargs)
 
 
     processed_stations = process_station.expand(station_dict=get_stations_list())

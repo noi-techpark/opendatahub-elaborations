@@ -10,4 +10,5 @@ venv*
 celerybeat-schedule.db
 /sample_data/input/odh.db
 docker-compose.yaml.custom
+docker-compose.yaml.uh
 /sample_data/odh.db

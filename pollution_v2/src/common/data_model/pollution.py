@@ -12,6 +12,7 @@ from typing import Optional, List, Dict
 from common.data_model.common import VehicleClass, MeasureCollection, Measure, Provenance, DataType
 from common.data_model.entry import GenericEntry
 from common.data_model.station import TrafficSensorStation
+from common.settings import DATATYPE_PREFIX
 
 
 class PollutantClass(Enum):
@@ -49,7 +50,7 @@ class PollutionMeasure(Measure):
         data_types = []
         for vehicle in VehicleClass:
             for pollutant in PollutantClass:
-                data_types.append(DataType(f"{vehicle.name}-{pollutant.name}-emissions",
+                data_types.append(DataType(f"{DATATYPE_PREFIX}{vehicle.name}-{pollutant.name}-emissions",
                                            f"{vehicle.value} emissions of {pollutant.name}", "total", "g/km", {}))
         return data_types
 
@@ -72,7 +73,7 @@ class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSens
         for pollution_entry in pollution_entries:
             pollution_measures.append(PollutionMeasure(
                 station=pollution_entry.station,
-                data_type=data_types_dict[f"{pollution_entry.vehicle_class.name}-{pollution_entry.entry_class.name}-emissions"],
+                data_type=data_types_dict[f"{DATATYPE_PREFIX}{pollution_entry.vehicle_class.name}-{pollution_entry.entry_class.name}-emissions"],
                 provenance=provenance,
                 period=pollution_entry.period,
                 transaction_time=None,

@@ -83,7 +83,7 @@ class TrafficStationsDAG(DAG):
     def trigger_next_dag_run(manager: TrafficStationManager, originator_dag: DAG,
                              has_remaining_data: Callable[[datetime, datetime], bool],
                              batch_size: int, filter_km_gt0: bool = False,
-                             filter_indloop: bool = False, **kwargs):
+                             filter_indloop: bool = False, filter_famas: bool = False, **kwargs):
         """
         Checks if there are still data to be processed before ending DAG runs
 
@@ -93,19 +93,23 @@ class TrafficStationsDAG(DAG):
         :param batch_size: batch_size to consider
         :param filter_km_gt0: filters on km > 0 stations
         :param filter_indloop: filters on induction loop sensor type
+        :param filter_famas: filters on not famas stations
         """
 
         stations = []
-        all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0, filter_indloop)
+        all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0, filter_indloop, filter_famas)
         for station in all_stations:
             starting_date = manager.get_starting_date(manager.get_output_connector(), manager.get_input_connector(),
-                                                      [station], ODH_MINIMUM_STARTING_DATE, batch_size)
+                                                      [station], ODH_MINIMUM_STARTING_DATE, batch_size, False)
             ending_date = manager.get_starting_date(manager.get_input_connector(), None,
-                                                    [station], ODH_MINIMUM_STARTING_DATE, batch_size)
-            logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
-            if has_remaining_data(starting_date, ending_date):
-                logger.info(f"Forwarding station {station.code} to next execution")
-                stations.append(station.code)
+                                                    [station], ODH_MINIMUM_STARTING_DATE, batch_size, False)
+            if starting_date is None:
+                logger.info(f"Nothing to process on {station.code}, not forwarded to next execution")
+            else:
+                logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
+                if has_remaining_data(starting_date, ending_date):
+                    logger.info(f"Forwarding station {station.code} to next execution")
+                    stations.append(station.code)
 
         # True if on ODH there are lots of data to be processed (e.g. new station with old unprocessed data)
         run_again = len(stations) > 0

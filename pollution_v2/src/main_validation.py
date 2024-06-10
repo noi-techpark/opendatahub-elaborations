@@ -64,7 +64,8 @@ def compute_data(min_from_date: Optional[datetime] = None,
     collector_connector = ConnectorCollector.build_from_env()
     provenance = Provenance(PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION)
     manager = ValidationManager(collector_connector, provenance, checkpoint_cache)
-    manager.run_computation_and_upload_results(min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION)
+    manager.run_computation_and_upload_results(min_from_date, max_to_date,
+                                               ODH_COMPUTATION_BATCH_SIZE_VALIDATION, True)
 
 
 if __name__ == "__main__":

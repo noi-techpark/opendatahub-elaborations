@@ -83,14 +83,14 @@ class TrafficStationManager(ABC):
         for station in stations:
             measures = connector.get_latest_measures(station=station)
             latest_date = max(list(map(lambda m: m.valid_time, measures)),
-                              default=DEFAULT_TIMEZONE.localize(ODH_MINIMUM_STARTING_DATE))
+                              default=ODH_MINIMUM_STARTING_DATE)
             if latest_date_across_stations is None or latest_date > latest_date_across_stations:
                 latest_date_across_stations = latest_date
         return latest_date_across_stations
 
     def get_starting_date(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector | None,
                           stations: List[TrafficSensorStation], min_from_date: datetime,
-                          batch_size: int) -> datetime:
+                          batch_size: int, keep_looking_for_input_data: bool) -> datetime:
         """
         Returns the starting date for further processing, even managing some fallback values if necessary.
 
@@ -99,6 +99,9 @@ class TrafficStationManager(ABC):
         :param stations: The list of traffic stations to query.
         :param min_from_date: The minimum date to start from.
         :param batch_size: The size of the batch (in days) to be extracted.
+        :param keep_looking_for_input_data: If input data has no data, updates checkpoin and goes on looking for data:
+                                            Useful to find the first traffic data for a station on validation
+                                            To be avoided when there are no validation data on pollution (wait for them)
         :return: Computation starting date.
         """
 
@@ -107,7 +110,8 @@ class TrafficStationManager(ABC):
         from_date_across_stations = None
         for station in stations:
             from_date = self._iterate_while_data_found(output_connector, input_connector,
-                                                       station, min_from_date, batch_size)
+                                                       station, min_from_date, batch_size,
+                                                       keep_looking_for_input_data)
 
             if from_date is not None and from_date.tzinfo is None:
                 from_date = DEFAULT_TIMEZONE.localize(from_date)
@@ -120,47 +124,60 @@ class TrafficStationManager(ABC):
 
     def _iterate_while_data_found(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
                                   station: TrafficSensorStation, min_from_date: datetime,
-                                  batch_size: int) -> datetime:
+                                  batch_size: int, keep_looking_for_input_data: bool) -> datetime:
         from_date, keep_going = min_from_date, True
         while keep_going and from_date < datetime.now(from_date.tzinfo):
             from_date, keep_going = self._get_starting_date_inner(output_connector, input_connector, station,
-                                                                  from_date, batch_size)
+                                                                  from_date, batch_size, keep_looking_for_input_data)
         return from_date
 
     def _get_starting_date_inner(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
                                  station: TrafficSensorStation, min_from_date: datetime,
-                                 batch_size: int) -> Tuple[datetime, bool]:
+                                 batch_size: int, keep_looking_for_input_data: bool) -> Tuple[datetime | None, bool]:
 
-        latest_measure = self.__get_latest_measure(output_connector, station)
+        inconn_str = type(input_connector).__name__
+        outconn_str = type(output_connector).__name__
 
-        if latest_measure is None:
-            logger.info(f"No measures available on [{type(output_connector).__name__}] for [{station.code}]")
-            if self._checkpoint_cache is not None:
+        latest_output_measure = self.__get_latest_measure(output_connector, station)
+
+        missing_input = input_connector and not self.__get_latest_measure(input_connector, station,
+                                                                          update_create_data_types=False)
+        missing_output = not latest_output_measure
+
+        if missing_input and not keep_looking_for_input_data:
+            logger.info(f"No input measures available on [{inconn_str}] for [{station.code}]")
+            return None, False
+        elif missing_output:
+            logger.info(f"No output measures available on [{outconn_str}] for [{station.code}]")
+            if self._checkpoint_cache:
                 checkpoint = self._checkpoint_cache.get(
                     ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
-                if checkpoint is not None:
-                    logger.info(f"Found checkpoint date [{checkpoint.checkpoint_dt}] "
-                                f"on [{type(output_connector).__name__}], "
-                                f"candidate as starting date for [{station.code}]")
+                if checkpoint and checkpoint.checkpoint_dt:
+                    logger.info(f"Found checkpoint date [{checkpoint.checkpoint_dt}] on [{outconn_str}], candidate as starting date for [{station.code}]")
                     from_date = checkpoint.checkpoint_dt
                 else:
-                    # If there isn't any latest measure available,
-                    # the min_from_date is used as starting date for the batch
-                    logger.info(f"No checkpoint on [{type(output_connector).__name__}], "
-                                f"candidate as starting date for [{station.code}] is min date [{min_from_date}]")
+                    # If there isn't any latest measure available, the min_from_date is used as starting date for the batch
+                    logger.info(f"No checkpoint on [{outconn_str}], candidate as starting date for [{station.code}] is min date [{min_from_date}]")
                     from_date = min_from_date
+
+                if not keep_looking_for_input_data:
+                    return self.__normalize_from_date(from_date, min_from_date, station.code)
+
                 # if between from_date and from_date + batch_size there are no input data
                 to_date_tmp = from_date + timedelta(days=batch_size)
+                if to_date_tmp is not None and to_date_tmp.tzinfo is None:
+                    to_date_tmp = DEFAULT_TIMEZONE.localize(to_date_tmp)
                 if input_connector is not None:
                     input_data = (input_connector.
                                   get_measures(from_date=from_date, to_date=to_date_tmp, station=station))
-                    logger.info(f"Looking on measures available on [{type(input_connector).__name__}] "
-                                f"for [{station.code}]: found {len(input_data)}")
+                    logger.info(f"Looking on measures available on [{inconn_str}] for [{station.code}]: found {len(input_data)}")
                 else:
                     input_data = []
                 if len(input_data) == 0:
                     if checkpoint is None or checkpoint.checkpoint_dt is None or checkpoint.checkpoint_dt < to_date_tmp:
                         # it is pointless trying to run model, save the from_date + batch_size as checkpoint for station
+                        logger.info(
+                            f"Caching [{to_date_tmp}] for station [{station.code}] on manager [{self._get_manager_code()}]")
                         self._checkpoint_cache.set(
                             ComputationCheckpoint(
                                 station_code=station.code,
@@ -174,13 +191,22 @@ class TrafficStationManager(ABC):
                 else:
                     return self.__normalize_from_date(from_date, min_from_date, station.code)
             else:
-                # If there isn't any latest measure available,
-                # the min_from_date is used as starting date for the batch
+                # If there isn't any latest measure available, the min_from_date is used as starting date for the batch
                 logger.info(f"No measures, using min date [{min_from_date}] as starting date for [{station.code}]")
                 from_date = min_from_date
         else:
-            logger.debug(f"Measures found, using min date [{latest_measure.valid_time}] as starting date for [{station.code}]")
-            from_date = latest_measure.valid_time
+            if self._checkpoint_cache:
+                checkpoint = self._checkpoint_cache.get(
+                    ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
+                if checkpoint and checkpoint.checkpoint_dt and checkpoint.checkpoint_dt > latest_output_measure.valid_time:
+                    logger.info(f"Found checkpoint date [{checkpoint.checkpoint_dt}] on [{outconn_str}], candidate as starting date for [{station.code}]")
+                    from_date = checkpoint.checkpoint_dt
+                else:
+                    logger.info(f"Measures found and no cache, using min date [{latest_output_measure.valid_time}] as starting date for [{station.code}]")
+                    from_date = latest_output_measure.valid_time
+            else:
+                logger.info(f"Measures found, using min date [{latest_output_measure.valid_time}] as starting date for [{station.code}]")
+                from_date = latest_output_measure.valid_time
 
         return self.__normalize_from_date(from_date, min_from_date, station.code)
 
@@ -207,7 +233,8 @@ class TrafficStationManager(ABC):
         return from_date, False
 
     def __get_latest_measure(self, connector: ODHBaseConnector,
-                             station: Optional[TrafficSensorStation]) -> Optional[Measure]:
+                             station: Optional[TrafficSensorStation],
+                             update_create_data_types: bool = True) -> Optional[Measure]:
         """
         Retrieve the latest measure for a given station. It will be the oldest one among all the measure types
         (for pollution, CO-emissions, CO2-emissions, ...) even though should be the same for all the types.
@@ -217,7 +244,8 @@ class TrafficStationManager(ABC):
         """
         latest_measures = connector.get_latest_measures(station)
         if latest_measures:
-            self._create_data_types = False
+            if update_create_data_types:
+                self._create_data_types = False
             latest_measures.sort(key=lambda x: x.valid_time)
             return latest_measures[0]
 
@@ -284,7 +312,8 @@ class TrafficStationManager(ABC):
                         stations: List[TrafficSensorStation],
                         min_from_date: datetime,
                         max_to_date: datetime,
-                        batch_size: int) -> None:
+                        batch_size: int,
+                        keep_looking_for_input_data: bool) -> None:
         """
         Start the computation of a batch of data measures on a specific station.
         As starting date for the  batch is used the latest measure available on the ODH,
@@ -294,17 +323,20 @@ class TrafficStationManager(ABC):
         :param min_from_date: Traffic measures before this date are discarded if no measures are available.
         :param max_to_date: Ending date for interval; measures after this date are discarded.
         :param batch_size: Number of days to be processed as maximum span.
+        :param keep_looking_for_input_data: If input data has no data, updates checkpoint and goes on looking for data:
+                                            Useful to find the first traffic data for a station on validation
+                                            To be avoided when there are no validation data on pollution (wait for them)
         """
 
         logger.info(f"Determining computation interval for {_get_stations_on_logs(stations)} "
                     f"between [{min_from_date}] and [{max_to_date}]")
 
         start_date = self.get_starting_date(self.get_output_connector(), self.get_input_connector(),
-                                            stations, min_from_date, batch_size)
+                                            stations, min_from_date, batch_size, keep_looking_for_input_data)
 
         # Detect inactive stations:
         # If we're about to request more than one window of measurements, do a check first if there even is any new data
-        if (max_to_date - start_date).days > batch_size:
+        if start_date is not None and (max_to_date - start_date).days > batch_size:
             latest_measurement_date = self._get_latest_date(self.get_input_connector(), stations)
             # traffic data request range end is the latest measurement
             # For inactive stations, this latest measurement date will be < start_date,
@@ -316,13 +348,17 @@ class TrafficStationManager(ABC):
 
         to_date = start_date
 
-        if start_date == max_to_date:
+        if start_date is None or start_date == max_to_date:
             logger.info(f"Not computing data for stations {_get_stations_on_logs(stations)} in interval "
-                        f"[{start_date.isoformat()} - {to_date.isoformat()}] (no timespan)")
+                        f"[{start_date.isoformat() if start_date else 'no-date'} - "
+                        f"{to_date.isoformat() if to_date else 'no-date'}] (no timespan)")
         elif start_date < max_to_date:
             to_date = to_date + timedelta(days=batch_size)
             if to_date > max_to_date:
                 to_date = max_to_date
+
+            if to_date is not None and to_date.tzinfo is None:
+                to_date = DEFAULT_TIMEZONE.localize(to_date)
 
             logger.info(f"Computing data for stations {_get_stations_on_logs(stations)} in interval "
                         f"[{start_date.isoformat()} - {to_date.isoformat()}]")
@@ -338,12 +374,12 @@ class TrafficStationManager(ABC):
                 for station in stations:
                     checkpoint = self._checkpoint_cache.get(
                         ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
-                    if (checkpoint is not None and
-                            checkpoint.checkpoint_dt is not None and checkpoint.checkpoint_dt.tzinfo is None):
-                        checkpoint.checkpoint_dt = DEFAULT_TIMEZONE.localize(checkpoint.checkpoint_dt)
-                    if to_date is not None and to_date.tzinfo is None:
-                        to_date = DEFAULT_TIMEZONE.localize(to_date)
-                    if checkpoint is None or checkpoint.checkpoint_dt < to_date:
+                    if checkpoint and checkpoint.checkpoint_dt:
+                        logger.info(f"Cache found for station [{station.code}] on manager [{self._get_manager_code()}]: "
+                                    f"[{checkpoint.checkpoint_dt}]; comparing with {to_date}")
+                    if checkpoint is None or checkpoint.checkpoint_dt is None or checkpoint.checkpoint_dt < to_date:
+                        logger.info(
+                            f"Caching [{to_date}] for station [{station.code}] on manager [{self._get_manager_code()}]")
                         self._checkpoint_cache.set(
                             ComputationCheckpoint(
                                 station_code=station.code,
@@ -351,6 +387,10 @@ class TrafficStationManager(ABC):
                                 manager_code=self._get_manager_code()
                             )
                         )
+                    else:
+                        logger.info(f"Cache available but cache writing skipped.")
+            else:
+                logger.info(f"Cache unavailable, unable to cache date.")
         else:
             logger.info(f"Nothing to process for stations {_get_stations_on_logs(stations)} in interval "
                         f"[{start_date} - {to_date}]")
@@ -358,7 +398,8 @@ class TrafficStationManager(ABC):
     def run_computation_and_upload_results(self,
                                            min_from_date: datetime,
                                            max_to_date: datetime,
-                                           batch_size: int) -> None:
+                                           batch_size: int,
+                                           run_on_all_stations: bool) -> None:
         """
         Watch-out! Used only from main_*!
 
@@ -368,6 +409,7 @@ class TrafficStationManager(ABC):
         :param min_from_date: Traffic measures before this date are discarded if no measures are available.
         :param max_to_date: Traffic measure after this date are discarded.
         :param batch_size: Number of days to be processed as maximum span.
+        :param run_on_all_stations: Defines if the run must be done on all stations at the same time
         """
 
         if min_from_date.tzinfo is None:
@@ -391,7 +433,17 @@ class TrafficStationManager(ABC):
         logger.info(f"Stations filtered on sensor_type being induction_loop, resulting {len(stations_with_km_indloop)} "
                     f"elements (starting from {len(stations_with_km)})")
 
-        self.run_computation(stations_with_km_indloop, min_from_date, max_to_date, batch_size)
+        if run_on_all_stations:
+            self._run_computation_on_all_stations(stations_with_km_indloop, min_from_date, max_to_date, batch_size)
+        else:
+            self._run_computation_on_single_station(stations_with_km_indloop, min_from_date, max_to_date, batch_size)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
+
+    def _run_computation_on_single_station(self, stations, min_from_date, max_to_date, batch_size):
+        for station in stations:
+            self.run_computation([station], min_from_date, max_to_date, batch_size, False)
+
+    def _run_computation_on_all_stations(self, stations, min_from_date, max_to_date, batch_size):
+        self.run_computation(stations, min_from_date, max_to_date, batch_size, True)
