@@ -67,4 +67,4 @@ COMPUTATION_CHECKPOINT_REDIS_DB = int(Variable.get("COMPUTATION_CHECKPOINT_REDIS
 AIRFLOW_NUM_RETRIES = 3
 
 # use it not empty to add a test prefix to datatype
-DATATYPE_PREFIX = dateutil.parser.parse(Variable.get("DATATYPE_PREFIX", ""))
+DATATYPE_PREFIX = Variable.get("DATATYPE_PREFIX", "")
