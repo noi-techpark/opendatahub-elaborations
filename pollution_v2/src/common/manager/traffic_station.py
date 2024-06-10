@@ -323,7 +323,7 @@ class TrafficStationManager(ABC):
         :param min_from_date: Traffic measures before this date are discarded if no measures are available.
         :param max_to_date: Ending date for interval; measures after this date are discarded.
         :param batch_size: Number of days to be processed as maximum span.
-        :param keep_looking_for_input_data: If input data has no data, updates checkpoin and goes on looking for data:
+        :param keep_looking_for_input_data: If input data has no data, updates checkpoint and goes on looking for data:
                                             Useful to find the first traffic data for a station on validation
                                             To be avoided when there are no validation data on pollution (wait for them)
         """
@@ -409,7 +409,7 @@ class TrafficStationManager(ABC):
         :param min_from_date: Traffic measures before this date are discarded if no measures are available.
         :param max_to_date: Traffic measure after this date are discarded.
         :param batch_size: Number of days to be processed as maximum span.
-        :param run_on_all_stations: Defines if the run must be done on all stations ate the same time
+        :param run_on_all_stations: Defines if the run must be done on all stations at the same time
         """
 
         if min_from_date.tzinfo is None:

@@ -317,7 +317,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         if len(where_conds) > 0:
             query_params["where"] = f'and({",".join(where_conds)})'
 
-        logger.info(f"Retrieving latest measures on [{type(self).__name__}] with where [{query_params['where']}]")
+        logger.debug(f"Retrieving latest measures on [{type(self).__name__}] with where [{query_params['where']}]")
 
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/latest",
@@ -350,7 +350,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         if len(where_conds) > 0:
             query_params["where"] = f'and({",".join(where_conds)})'
 
-        logger.info(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
+        logger.debug(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
                     f"to date [{iso_to_date}] with where [{query_params['where']}]")
 
         raw_measures = self._get_result_list(
