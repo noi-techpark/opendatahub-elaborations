@@ -6,3 +6,4 @@ pyvenv.cfg
 /lib
 /lib64
 /.vscode
+.~lock.*

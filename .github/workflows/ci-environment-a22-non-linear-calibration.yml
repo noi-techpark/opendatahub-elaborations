@@ -24,6 +24,7 @@ jobs:
       - name: Test code
         uses: noi-techpark/github-actions/pip-test@v2
         with:
+          python-version: '3.11'
           working-directory: ${{ env.WORKING_DIRECTORY }}
           test-command: python -m unittest discover test -t src -p Test*.py
 
