@@ -149,7 +149,7 @@ class TrafficStationManager(ABC):
             return None, False
         elif missing_output:
             logger.info(f"No output measures available on [{outconn_str}] for [{station.code}]")
-            if self._checkpoint_cache and keep_looking_for_input_data:
+            if self._checkpoint_cache:
                 checkpoint = self._checkpoint_cache.get(
                     ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
                 if checkpoint and checkpoint.checkpoint_dt:
@@ -159,6 +159,10 @@ class TrafficStationManager(ABC):
                     # If there isn't any latest measure available, the min_from_date is used as starting date for the batch
                     logger.info(f"No checkpoint on [{outconn_str}], candidate as starting date for [{station.code}] is min date [{min_from_date}]")
                     from_date = min_from_date
+
+                if not keep_looking_for_input_data:
+                    return self.__normalize_from_date(from_date, min_from_date, station.code)
+
                 # if between from_date and from_date + batch_size there are no input data
                 to_date_tmp = from_date + timedelta(days=batch_size)
                 if to_date_tmp is not None and to_date_tmp.tzinfo is None:
