@@ -37,6 +37,8 @@ jobs:
           X_LOG_LEVEL: INFO
           X_LOG_LEVEL_LIBS: INFO
 
+          X_SERVER_PORT: 1097
+
           X_pollution-v2_TASK_SCHEDULING_MINUTE: "*/10"
           X_pollution-v2_TASK_SCHEDULING_HOUR: "*"
 
