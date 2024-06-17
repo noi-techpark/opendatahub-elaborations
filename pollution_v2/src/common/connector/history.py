@@ -7,11 +7,12 @@ from __future__ import absolute_import, annotations
 from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
-from common.data_model.traffic import TrafficMeasure, TrafficSensorStation
-from common.settings import PERIOD_10MIN
+from common.data_model.history import HistoryMeasure
+from common.data_model.traffic import TrafficSensorStation
+from common.settings import PERIOD_1DAY
 
 
-class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]):
+class HistoryODHConnector(ODHBaseConnector[HistoryMeasure, TrafficSensorStation]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -31,14 +32,9 @@ class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]
 
         station_type = "TrafficSensor"
         measure_types = [
-            "Nr. Buses",
-            "Nr. Heavy Vehicles",
-            "Nr. Light Vehicles",
-            "Average Speed Buses",
-            "Average Speed Heavy Vehicles",
-            "Average Speed Light Vehicles"
+            "Nr. Vehicles"
         ]
-        period = PERIOD_10MIN
+        period = PERIOD_1DAY
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -63,5 +59,5 @@ class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]
         return TrafficSensorStation.from_odh_repr(raw_station)
 
     @staticmethod
-    def build_measure(raw_measure: dict) -> TrafficMeasure:
-        return TrafficMeasure.from_odh_repr(raw_measure)
+    def build_measure(raw_measure: dict) -> HistoryMeasure:
+        return HistoryMeasure.from_odh_repr(raw_measure)

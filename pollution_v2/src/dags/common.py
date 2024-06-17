@@ -8,11 +8,10 @@ from typing import Optional, Callable
 from airflow import DAG
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
-from common.data_model import StationLatestMeasure
 from common.manager.traffic_station import TrafficStationManager
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
 
-logger = logging.getLogger("dags.common")
+logger = logging.getLogger("pollution_v2.dags.common")
 
 
 class TrafficStationsDAG(DAG):
@@ -27,7 +26,7 @@ class TrafficStationsDAG(DAG):
                               are available. If not specified, the default will be taken from the environmental variable `ODH_MINIMUM_STARTING_DATE`.
         :param max_to_date: Optional, if set the traffic measure after this date are discarded.
                             If not specified, the default will be the current datetime.
-        :return: adjusted dates
+        :return: correctly structured dates
         """
 
         if min_from_date is None:
@@ -45,7 +44,8 @@ class TrafficStationsDAG(DAG):
         return min_from_date, max_to_date
 
     @staticmethod
-    def get_stations_list(manager: TrafficStationManager, **kwargs):
+    def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False,
+                          filter_indloop: bool = False, filter_famas: bool = False, **kwargs):
         """
         Returns the complete list of stations or the filtered list based on previous DAG run
 
@@ -53,40 +53,68 @@ class TrafficStationsDAG(DAG):
         """
         traffic_stations = manager.get_traffic_stations_from_cache()
 
-        stations_from_prev_dag = kwargs["dag_run"].conf.get('stations_to_process')
-        if stations_from_prev_dag:
-            logger.info(f"{len(stations_from_prev_dag)} stations with unprocessed data from previous run, using them")
-            traffic_stations = list(filter(lambda station: station.code in stations_from_prev_dag, traffic_stations))
+        if kwargs.get("dag_run") is not None:
+            stations_from_prev_dag = kwargs["dag_run"].conf.get('stations_to_process')
+            if stations_from_prev_dag:
+                logger.info(f"{len(stations_from_prev_dag)} stations with unprocessed data from previous run, using them")
+                traffic_stations = list(filter(lambda station: station.code in stations_from_prev_dag, traffic_stations))
 
-        logger.info(f"found {len(traffic_stations)} traffic stations")
+        logger.info(f"Found {len(traffic_stations)} traffic stations")
 
-        # Serialization and deserialization is dependent on speed.
-        # Use built-in functions like dict as much as you can and stay away
-        # from using classes and other complex structures.
-        station_dicts = [station.to_json() for station in traffic_stations]
+        res = traffic_stations
 
-        return station_dicts
+        if filter_km_gt0:
+            res = [station for station in res if station.km > 0]
+            logger.info(f"Stations filtered on having km defined: {len(res)} elements")
+
+        if filter_indloop:
+            res = [station for station in res
+                   if station.sensor_type is not None and station.sensor_type == 'induction_loop']
+            logger.info(f"Stations filtered on sensor_type being induction_loop: {len(res)} elements")
+
+        if filter_famas:
+            res = [station for station in res
+                   if station.origin is not None and station.origin != 'FAMAS-traffic']
+            logger.info(f"Stations filtered on origin different from 'FAMAS-traffic': {len(res)} elements")
+
+        return res
 
     @staticmethod
     def trigger_next_dag_run(manager: TrafficStationManager, originator_dag: DAG,
-                             has_remaining_data: Callable[[StationLatestMeasure], bool], **kwargs):
+                             has_remaining_data: Callable[[datetime, datetime], bool],
+                             batch_size: int, filter_km_gt0: bool = False,
+                             filter_indloop: bool = False, filter_famas: bool = False, **kwargs):
         """
         Checks if there are still data to be processed before ending DAG runs
 
         :param manager: the manager to use
         :param originator_dag: the dag to trigger
         :param has_remaining_data: the function to use to check if there are still data to process
+        :param batch_size: batch_size to consider
+        :param filter_km_gt0: filters on km > 0 stations
+        :param filter_indloop: filters on induction loop sensor type
+        :param filter_famas: filters on not famas stations
         """
-        all_latest = manager.get_all_latest_measures()
+
         stations = []
-        for item in all_latest:
-            if has_remaining_data(item):
-                stations.append(item.station_code)
+        all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0, filter_indloop, filter_famas)
+        for station in all_stations:
+            starting_date = manager.get_starting_date(manager.get_output_connector(), manager.get_input_connector(),
+                                                      [station], ODH_MINIMUM_STARTING_DATE, batch_size, False)
+            ending_date = manager.get_starting_date(manager.get_input_connector(), None,
+                                                    [station], ODH_MINIMUM_STARTING_DATE, batch_size, False)
+            if starting_date is None:
+                logger.info(f"Nothing to process on {station.code}, not forwarded to next execution")
+            else:
+                logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
+                if has_remaining_data(starting_date, ending_date):
+                    logger.info(f"Forwarding station {station.code} to next execution")
+                    stations.append(station.code)
 
         # True if on ODH there are lots of data to be processed (e.g. new station with old unprocessed data)
         run_again = len(stations) > 0
 
-        logger.info(f"{'' if run_again else 'NOT '}starting another self-triggered run as {len(stations)} "
+        logger.info(f"{'S' if run_again else 'NOT s'}tarting another self-triggered run as {len(stations)} "
                     f"stations have still unprocessed data")
 
         if run_again:

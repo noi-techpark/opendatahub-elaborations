@@ -58,31 +58,35 @@ In details, the following step describe how the pollution computation DAG works.
 
 ### Setup the project
 
-1. Clone the repository
-2. Create a virtual environment and activate it:
-```commandline
-python3 -m venv venv
-source .venv/bin/activate
-```
+1. Clone the repository from [here](https://lab.u-hopper.com/u-hopper/projects/industrial/open-data-hub-bz/bdp-elaborations)
+2. Move to `pollution_v2` folder
+	```commandline
+	cd bdp-elaborations/pollution_v2
+	```
+3. Create a virtual environment and activate it:
+	```commandline
+	python3 -m venv venv
+	source venv/bin/activate
+	```
 3. Installing the requirements:
-```commandline
-pip install -r requirements.txt
-```
+	```commandline
+	pip install -r requirements.txt
+	```
 4. For a development environment is suggested to install and configure [pre-commit](https://pre-commit.com/). Pre-commit is a framework for managing and maintaining multi-language pre-commit hooks. The configuration available in this project will run some syntax check before each commit.
-```commandline
-pip install pre-commit
-pre-commit install
-```
+	```commandline
+	pip install pre-commit
+	pre-commit install
+	```
 
 ### Project folders
 
 * ```airflow``` contains Airflow installation files (under .gitignore)
-* ```config``` contains configuration files for tasks, e.g. validator
-* ```dags```contains DAG of the project
 * ```documentation``` contains UML diagrams describing the system
 * ```sample_data``` contains any sample data useful to test tasks (under .gitignore); sample data for validator are available [here](https://drive.google.com/file/d/1aPFDXOCECvA_h6npYe_aZ0k8vxHTwlYy/view?usp=drive_link)
 * ```src```contains source files
-* ```test``` contains test files
+  * ```src/config``` contains configuration files for tasks, e.g. validator
+  * ```src/dags```contains DAG of the project
+  * ```src/tests``` contains test files
 * ```venv``` contains Python virtual environment (under .gitignore)
 
 ### Setup Airflow
@@ -191,32 +195,34 @@ airflow tasks test tutorial_of_mines print_date 2015-06-01
 
 #### List of environmental variables for development
 
-| Name                                   | Required       | Description                                                                                                                                                                                                             | Default    |
-|----------------------------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
-| AIRFLOW_HOME                           | Yes            | Airflow home.                                                                                                                                                                                                           | -          |
-| AIRFLOW_VAR_ODH_BASE_READER_URL        | Yes            | The base url for the ODH requests for reading data.                                                                                                                                                                     | -          |
-| AIRFLOW_VAR_ODH_BASE_WRITER_URL        | Yes            | The base url for the ODH requests for writing data.                                                                                                                                                                     | -          |
-| AIRFLOW_VAR_ODH_AUTHENTICATION_URL     | Yes            | The url for ODH authentication endpoints.                                                                                                                                                                               | -          |
-| AIRFLOW_VAR_ODH_USERNAME               | Yes            | The username for the ODH authentication.                                                                                                                                                                                | -          |
-| AIRFLOW_VAR_ODH_PASSWORD               | Yes            | The password for the ODH authentication.                                                                                                                                                                                | -          |
-| AIRFLOW_VAR_ODH_CLIENT_ID              | Yes            | The client ID for the ODH authentication.                                                                                                                                                                               | -          |
-| AIRFLOW_VAR_ODH_CLIENT_SECRET          | Yes            | The client secret for the ODH authentication.                                                                                                                                                                           | -          |
-| AIRFLOW_VAR_ODH_GRANT_TYPE             | Yes            | The token grant type for the ODH authentication. It is possible to specify more types by separating them using `;`.                                                                                                     | "password" |
-| AIRFLOW_VAR_ODH_PAGINATION_SIZE        | No             | The pagination size for the get requests to ODH. Set it to `-1` to disable it.                                                                                                                                          | 200        |
-| AIRFLOW_VAR_ODH_MAX_POST_BATCH_SIZE    | No             | The maximum size of the batch for each post request to ODH. If not present there is not a maximum batch size and all data will sent in a single call.                                                                   | -          |
-| AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE | No             | The maximum size (in days) of a batch to compute                                                                                                                                                                        | 30         |
-| AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE  | No             | The minimum starting date[time] in isoformat (up to one second level of precision, milliseconds for the from date field are not supported in ODH) for downloading data from ODH if no pollution measures are available. | 2018-01-01 |
-| COMPUTATION_CHECKPOINT_REDIS_HOST      | No             | The redis host for the computation checkpoints. Set to enable the computation checkpoints                                                                                                                               |            |
-| COMPUTATION_CHECKPOINT_REDIS_PORT      | No             | The port for the redis server for the computation checkpoints                                                                                                                                                           | 6379       |
-| COMPUTATION_CHECKPOINT_REDIS_DB        | No             | The DB number of the checkpoint redis server                                                                                                                                                                            | 0          |
-| DAG_POLLUTION_EXECUTION_CRONTAB        | No             | The crontab used to schedule pollution computation                                                                                                                                                                      | 0 0 * * *  |
-| DAG_VALIDATION_EXECUTION_CRONTAB       | No             | The crontab used to schedule data validation                                                                                                                                                                            | 0 0 * * *  |
-| AIRFLOW__CORE__REMOTE_LOGGING          | No             | The flag enabling remote logging (install `pip install apache-airflow-providers-amazon` if not present)                                                                                                                 |            |
-| AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER  | No             | The bucket name for remote logging                                                                                                                                                                                      |            |
-| AIRFLOW__CORE__REMOTE_LOG_CONN_ID      | No             | The remote logging connection id                                                                                                                                                                                        |            |
-| AIRFLOW__CORE__ENCRYPT_S3_LOGS         | No             | The flag for remote logs encryption                                                                                                                                                                                     |            |
-| AIRFLOW_CONN_MINIO_S3_CONN             | No             | The MinIO connetion parameters (if expressed as JSON it could be necessary to escape double quotes)                                                                                                                     |            |
-| NO_PROXY                               | Yes (on macOS) | Sets every URL to skip proxy (see [here](https://docs.python.org/3/library/urllib.request.html))                                                                                                                        | -          |                                                                                                                                                                                                   |
+| Name                                                    | Required       | Description                                                                                                                                                                                                            | Default    |
+|---------------------------------------------------------|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------|
+| AIRFLOW_HOME                                            | Yes            | Airflow home.                                                                                                                                                                                                          | -          |
+| AIRFLOW_VAR_ODH_BASE_READER_URL                         | Yes            | The base url for the ODH requests for reading data.                                                                                                                                                                    | -          |
+| AIRFLOW_VAR_ODH_BASE_WRITER_URL                         | Yes            | The base url for the ODH requests for writing data.                                                                                                                                                                    | -          |
+| AIRFLOW_VAR_ODH_AUTHENTICATION_URL                      | Yes            | The url for ODH authentication endpoints.                                                                                                                                                                              | -          |
+| AIRFLOW_VAR_ODH_USERNAME                                | Yes            | The username for the ODH authentication.                                                                                                                                                                               | -          |
+| AIRFLOW_VAR_ODH_PASSWORD                                | Yes            | The password for the ODH authentication.                                                                                                                                                                               | -          |
+| AIRFLOW_VAR_ODH_CLIENT_ID                               | Yes            | The client ID for the ODH authentication.                                                                                                                                                                              | -          |
+| AIRFLOW_VAR_ODH_CLIENT_SECRET                           | Yes            | The client secret for the ODH authentication.                                                                                                                                                                          | -          |
+| AIRFLOW_VAR_ODH_GRANT_TYPE                              | Yes            | The token grant type for the ODH authentication. It is possible to specify more types by separating them using `;`.                                                                                                    | "password" |
+| AIRFLOW_VAR_ODH_PAGINATION_SIZE                         | No             | The pagination size for the get requests to ODH. Set it to `-1` to disable it.                                                                                                                                         | 200        |
+| AIRFLOW_VAR_ODH_MAX_POST_BATCH_SIZE                     | No             | The maximum size of the batch for each post request to ODH. If not present there is not a maximum batch size and all data will sent in a single call.                                                                  | -          |
+| AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION | No             | The maximum size (in days) of a batch to compute pollution                                                                                                                                                             | 30         |
+| AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_VALIDATION       | No             | The maximum size (in days) of a batch to compute validation                                                                                                                                                            | 1          |
+| AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE                   | No             | The minimum starting date[time] in isoformat (up to one second level of precision, milliseconds for the from date field are not supported in ODH) for downloading data from ODH if no pollution measures are available. | 2018-01-01 |
+| AIRFLOW_VAR_DATATYPE_PREFIX                             | No             | The prefix for datatypes (both while reading and while creating), useful to test the system simulating nothing has ever been written before on ODH.                                                                    | ""         |
+| COMPUTATION_CHECKPOINT_REDIS_HOST                       | No             | The redis host for the computation checkpoints. Set to enable the computation checkpoints                                                                                                                              |            |
+| COMPUTATION_CHECKPOINT_REDIS_PORT                       | No             | The port for the redis server for the computation checkpoints                                                                                                                                                          | 6379       |
+| COMPUTATION_CHECKPOINT_REDIS_DB                         | No             | The DB number of the checkpoint redis server                                                                                                                                                                           | 0          |
+| DAG_POLLUTION_EXECUTION_CRONTAB                         | No             | The crontab used to schedule pollution computation                                                                                                                                                                     | 0 0 * * *  |
+| DAG_VALIDATION_EXECUTION_CRONTAB                        | No             | The crontab used to schedule data validation                                                                                                                                                                           | 0 0 * * *  |
+| AIRFLOW__CORE__REMOTE_LOGGING                           | No             | The flag enabling remote logging (install `pip install apache-airflow-providers-amazon` if not present)                                                                                                                |            |
+| AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER                   | No             | The bucket name for remote logging                                                                                                                                                                                     |            |
+| AIRFLOW__CORE__REMOTE_LOG_CONN_ID                       | No             | The remote logging connection id                                                                                                                                                                                       |            |
+| AIRFLOW__CORE__ENCRYPT_S3_LOGS                          | No             | The flag for remote logs encryption                                                                                                                                                                                    |            |
+| AIRFLOW_CONN_MINIO_S3_CONN                              | No             | The MinIO connetion parameters (if expressed as JSON it could be necessary to escape double quotes)                                                                                                                    |            |
+| NO_PROXY                                                | Yes (on macOS) | Sets every URL to skip proxy (see [here](https://docs.python.org/3/library/urllib.request.html))                                                                                                                       | -          |                                                                                                                                                                                                   |
 
 ### Notes on Docker deployment
 
@@ -249,7 +255,26 @@ Use the following commands (could be necessary to use `docker-compose` on older 
 #### Computation checkpoint
 By setting the *COMPUTATION_CHECKPOINT_REDIS_HOST* variable to a valid Redis server, the computation checkpoints will be enabled.
 
-The computation checkpoint store the final date of the last computed interval of data for a station. The checkpoint is used
+The computation checkpoint stores the final date of the last computed interval of data for a station. The checkpoint is used
 as a starting date for the next computation if the station has no pollution data associated.
 This feature has been implemented to avoid attempting a recalculation, at each execution of the task, of all
-the historical data of the stations that have only invalid data for this library
+the historical data of the stations that have only invalid data for this library.
+
+We can use the Redis host made available by airflow when building its containers. The environment variable
+(taken from `docker-compose.yaml`) dictating the redis host used by airflow is:
+
+`AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0`
+
+This is standard for Airflow and means it connects to Redis host at port 6379, with database 0.
+Redis supports up to 16 databases, and they are independent from each other.
+Therefore we can use the redis host already present to check for the computation error, we just need to use a different database.
+We can use these environment variables (db is set to 10, but needs only to be different from 0):
+
+`AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_HOST: 'redis'
+AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
+AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_DB: 10`
+
+By using these settings, the computations persist when errors on the data were found.
+When a task could not compute the validation or pollution computation, it updated the redis cache with the next
+date to retrieve data and then finished with MARK=SUCCESS, thus not breaking the flow of task executions.
+The next planned task for that station retrieves the date available from cache and continues the computation from there.

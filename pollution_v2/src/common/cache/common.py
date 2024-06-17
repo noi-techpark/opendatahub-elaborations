@@ -7,12 +7,19 @@ from __future__ import absolute_import, annotations
 import json
 import logging
 from abc import ABC, abstractmethod
+from enum import Enum
 from json import JSONDecodeError
 from typing import Optional, TypeVar, Generic, Type
 
 import redis
 
-logger = logging.getLogger("pollution_connector.cache.redis_cache")
+logger = logging.getLogger("pollution_v2.common.cache.common")
+
+
+class TrafficManagerClass(Enum):
+
+    POLLUTION = "POLLUTION"
+    VALIDATION = "VALIDATION"
 
 
 class CacheData(ABC):
@@ -41,7 +48,7 @@ class RedisCache(Generic[CacheDataType], ABC):
         self._r = r
 
     def get(self, key: str) -> Optional[CacheDataType]:
-        logger.info(f"Getting cached data for key [{key}]")
+        logger.debug(f"Getting cached data for key [{key}]")
         result = self._r.get(key)
         if result is not None:
             try:
@@ -59,10 +66,9 @@ class RedisCache(Generic[CacheDataType], ABC):
         Cache the data in dict format inside the redis db.
 
         :param data: the data to cache
-        :param key: the key to save the data
         :param ttl: the time to live of the data entry (expressed in seconds)
         """
-        logger.info(f"Caching data for key [{data.unique_id()}] and ttl [{ttl}].")
+        logger.debug(f"Caching data for key [{data.unique_id()}] and ttl [{ttl}].")
         if ttl:
             self._r.set(data.unique_id(), json.dumps(data.to_repr()), ex=ttl)
         else:

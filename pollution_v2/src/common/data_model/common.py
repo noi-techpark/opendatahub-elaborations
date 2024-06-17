@@ -4,12 +4,20 @@
 
 from __future__ import absolute_import, annotations
 
+import ast
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import TypeVar, Generic, List, Iterable, Optional, Dict, Any, ClassVar
+from typing import TypeVar, Generic, List, Optional, Dict, ClassVar
 
 import dateutil.parser
+
+import logging
+
+from common.data_model.entry import GenericEntryType
+from common.data_model.station import StationType, Station
+
+logger = logging.getLogger("pollution_v2.common.data_model.common")
 
 
 class VehicleClass(Enum):
@@ -108,70 +116,6 @@ MeasureType = TypeVar("MeasureType", bound=Measure)
 
 
 @dataclass
-class Station:
-
-    code: str
-    active: bool
-    available: bool
-    coordinates: dict
-    metadata: dict
-    name: str
-    station_type: str
-    origin: Optional[str]
-
-    __version__: ClassVar[int] = 1
-
-    @classmethod
-    def from_odh_repr(cls, raw_data: dict):
-        return cls(
-            code=raw_data["scode"],
-            active=raw_data["sactive"],
-            available=raw_data["savailable"],
-            coordinates=raw_data["scoordinate"],
-            metadata=raw_data["smetadata"],
-            name=raw_data["sname"],
-            station_type=raw_data["stype"],
-            origin=raw_data.get("sorigin")
-        )
-
-    def to_json(self) -> dict:
-        return {
-            "code": self.code,
-            "active": self.active,
-            "available": self.available,
-            "coordinates": self.coordinates,
-            "metadata": self.metadata,
-            "name": self.name,
-            "station_type": self.station_type,
-            "origin": self.origin
-        }
-
-    @classmethod
-    def from_json(cls, dict_data) -> Station:
-        return Station(
-            code=dict_data["code"],
-            active=dict_data["active"],
-            available=dict_data["available"],
-            coordinates=dict_data["coordinates"],
-            metadata=dict_data["metadata"],
-            name=dict_data["name"],
-            station_type=dict_data["station_type"],
-            origin=dict_data["origin"]
-        )
-
-
-@dataclass
-class StationLatestMeasure:
-
-    def __init__(self, station_code, latest_time):
-        self.station_code = station_code
-        self.latest_time = latest_time
-
-
-StationType = TypeVar("StationType", bound=Station)
-
-
-@dataclass
 class MeasureCollection(Generic[MeasureType, StationType]):
     """
     This class represent a collection of measures and contains all the method necessary for filtering nad handling them.
@@ -179,34 +123,35 @@ class MeasureCollection(Generic[MeasureType, StationType]):
 
     measures: List[MeasureType] = field(default_factory=list)
 
-    def with_measure(self, measure: MeasureType) -> MeasureCollection:
-        """
-        Add a new traffic sensor to the collection
-
-        :param measure: the measure to add
-        :return: the updated collection
-        """
-        self.measures.append(measure)
-        return self
-
-    def with_measures(self, measures: Iterable[MeasureType]) -> MeasureCollection:
-        """
-        Add a new traffic sensor to the collection
-
-        :param measures: the measures to add
-        :return: the updated collection
-        """
-        self.measures.extend(measures)
-        return self
-
-    def get_measures_by_station(self, station: StationType) -> List[MeasureType]:
-        """
-        Filter the available measure by the given station
-
-        :param station: the station on which filter the measures
-        :return: the measures filtered by the given station
-        """
-        return list(filter(lambda x: x.station == station, self.measures))
+    # apparently unused
+    # def with_measure(self, measure: MeasureType) -> MeasureCollection:
+    #     """
+    #     Add a new traffic sensor to the collection
+    #
+    #     :param measure: the measure to add
+    #     :return: the updated collection
+    #     """
+    #     self.measures.append(measure)
+    #     return self
+    #
+    # def with_measures(self, measures: Iterable[MeasureType]) -> MeasureCollection:
+    #     """
+    #     Add a new traffic sensor to the collection
+    #
+    #     :param measures: the measures to add
+    #     :return: the updated collection
+    #     """
+    #     self.measures.extend(measures)
+    #     return self
+    #
+    # def get_measures_by_station(self, station: StationType) -> List[MeasureType]:
+    #     """
+    #     Filter the available measure by the given station
+    #
+    #     :param station: the station on which filter the measures
+    #     :return: the measures filtered by the given station
+    #     """
+    #     return list(filter(lambda x: x.station == station, self.measures))
 
     def get_stations(self) -> Dict[str, StationType]:
         """

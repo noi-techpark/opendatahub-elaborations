@@ -7,11 +7,13 @@ from __future__ import absolute_import, annotations
 from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
-from common.data_model.traffic import TrafficMeasure, TrafficSensorStation
+from common.data_model.pollution import PollutionMeasure
+from common.data_model.traffic import TrafficSensorStation
+from common.data_model.validation import ValidationMeasure
 from common.settings import PERIOD_10MIN
 
 
-class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]):
+class ValidationODHConnector(ODHBaseConnector[ValidationMeasure, TrafficSensorStation]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -30,14 +32,7 @@ class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]
                  requests_retry_sleep_time: float) -> None:
 
         station_type = "TrafficSensor"
-        measure_types = [
-            "Nr. Buses",
-            "Nr. Heavy Vehicles",
-            "Nr. Light Vehicles",
-            "Average Speed Buses",
-            "Average Speed Heavy Vehicles",
-            "Average Speed Light Vehicles"
-        ]
+        measure_types = [measure_type.name for measure_type in ValidationMeasure.get_data_types()]
         period = PERIOD_10MIN
 
         super().__init__(base_reader_url,
@@ -63,5 +58,5 @@ class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]
         return TrafficSensorStation.from_odh_repr(raw_station)
 
     @staticmethod
-    def build_measure(raw_measure: dict) -> TrafficMeasure:
-        return TrafficMeasure.from_odh_repr(raw_measure)
+    def build_measure(raw_measure: dict) -> PollutionMeasure:
+        return PollutionMeasure.from_odh_repr(raw_measure)

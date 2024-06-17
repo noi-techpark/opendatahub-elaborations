@@ -6,19 +6,32 @@
 Created on Tue Aug 16 2022
 @author: nicola
 """
+import logging
 import os
 import sqlite3
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
 
+logger = logging.getLogger("pollution_v2.pollution_connector.model.CopertEmission")
+
 
 # stima delle emissioni con metodo di copert
-def copert_emissions(traffic_df):
+def copert_emissions(traffic_df, fc_info_year: str = ""):
+
     # ------------------------------------------------------------------------------
     # 0. INIZIALIZZAZIONE
     # ------------------------------------------------------------------------------
     # Percorsi dei file di input e output
     input_data_path = f"{os.path.dirname(os.path.abspath(__file__))}/input/"
+
+    fc_info_filename = f'fc_info_{fc_info_year}.csv'
+    my_file = Path(input_data_path + fc_info_filename)
+    if not my_file.is_file():
+        logger.warning(f"No fc_info file found for year '{fc_info_year}', using default 'fc_info.csv'")
+        fc_info_filename = f'fc_info.csv'
+
     input_copert = input_data_path + 'copert55.db'
     # Importa tabella dei coefficienti COPERT da DB
     con = sqlite3.connect(input_copert)
@@ -26,11 +39,12 @@ def copert_emissions(traffic_df):
     # Importa file csv di input:
     #   1- fleet-composition: distribuzione percentuale parco macchine per categoria,
     #      alimentazione e classe EURO
-    fc = pd.read_csv(input_data_path + 'fc_info.csv')
+    fc = pd.read_csv(input_data_path + fc_info_filename)
     #   2- geometria dell'asse stradale (chilometrica e quote)
     geometry = pd.read_csv(input_data_path + 'geometry.csv')
     #   3- lista delle stazioni da non considerare (blacklist)
-    blacklist = np.loadtxt(input_data_path + 'blacklist.txt')
+    # no more used after validation algorithm
+    # blacklist = np.loadtxt(input_data_path + 'blacklist.txt')
     #   4- file della chilometrica (temporaneo fino a quando non sarà esposta in ODH)
     km = pd.read_csv(input_data_path + 'km.csv')
     # ------------------------------------------------------------------------------
@@ -38,7 +52,8 @@ def copert_emissions(traffic_df):
     # ------------------------------------------------------------------------------
     adt = traffic_df
     # Eliminazione delle stazioni presenti in black list
-    adt = adt[~adt.Station.isin(blacklist)]
+    # no more used after validation algorithm
+    # adt = adt[~adt.Station.isin(blacklist)]
     # aggiunta valori di chilometrica al df di input se non è presente
     adt = pd.merge(adt, km, on='Station', how='left')
     # trasformazione valore chilometrica da metri a chilometri
