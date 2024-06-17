@@ -79,6 +79,7 @@ jobs:
           X_AIRFLOW_VAR_ODH_GRANT_TYPE: client_credentials
           X_AIRFLOW_VAR_ODH_MAX_POST_BATCH_SIZE: '10000'
           X_AIRFLOW_VAR_ODH_PAGINATION_SIZE: '10000'
+          X_AIRFLOW_WWW_USER_PASSWORD: ${{ secrets.AIRFLOW_WWW_USER_PASSWORD }}
 
           # username/pass not needed with client_credentials
           X_AIRFLOW_VAR_ODH_PASSWORD: 'ODH_PASSWORD'
