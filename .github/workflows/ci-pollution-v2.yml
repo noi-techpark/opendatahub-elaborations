@@ -36,10 +36,10 @@ jobs:
 
           X_LOG_LEVEL: INFO
           X_LOG_LEVEL_LIBS: INFO
-          
+
           X_pollution-v2_TASK_SCHEDULING_MINUTE: "*/10"
           X_pollution-v2_TASK_SCHEDULING_HOUR: "*"
-          
+
           X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.testingmachine.eu
           X_ODH_BASE_WRITER_URL: https://share.opendatahub.testingmachine.eu
           X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.testingmachine.eu/auth/
@@ -77,11 +77,12 @@ jobs:
           X_AIRFLOW_VAR_ODH_GRANT_TYPE: client_credentials
           X_AIRFLOW_VAR_ODH_MAX_POST_BATCH_SIZE: '10000'
           X_AIRFLOW_VAR_ODH_PAGINATION_SIZE: '10000'
-          
+
           # username/pass not needed with client_credentials
           X_AIRFLOW_VAR_ODH_PASSWORD: 'ODH_PASSWORD'
           X_AIRFLOW_VAR_ODH_USERNAME: 'ODH_USERNAME'
           X_AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE: "2017-01-01 00:00:00+00:00"
+          X_ODH_MINIMUM_STARTING_DATE: "2017-01-01 00:00:00+00:00"
           X_AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_HOST: 'pollution-v2-connector-redis'
           X_AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
           X_AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_DB: 3
@@ -93,7 +94,6 @@ jobs:
           # X_AIRFLOW__CORE__ENCRYPT_S3_LOGS: '<your_choice_on_encrypt_logs>'
           # X_AIRFLOW_CONN_MINIO_S3_CONN: '<your_connection_details_for_remote_logging>'
           X_NO_PROXY: '*'
-
 
       - name: Build and push images
         uses: noi-techpark/github-actions/docker-build-and-push@v2
