@@ -47,8 +47,7 @@ x-airflow-common:
     # AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 4
     NO_PROXY: '*'
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/src:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
+    -  pollution-logs:/opt/airflow/logs
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -58,18 +57,6 @@ x-airflow-common:
       condition: service_healthy
 
 services:
-  x-airflow-common:
-    &airflow-common
-    volumes:
-      - pollution-logs:/opt/airflow/logs
-    user: "${AIRFLOW_UID:-50000}:0"
-    depends_on:
-      &airflow-common-depends-on
-    redis:
-      condition: service_healthy
-      postgres:
-        condition: service_healthy
-
   postgres:
     image: postgres:13
     environment:
