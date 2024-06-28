@@ -44,7 +44,7 @@ x-airflow-common:
     # AIRFLOW__CORE__REMOTE_LOG_CONN_ID: '<your_connection_id_for_remote_logging>'
     # AIRFLOW__CORE__ENCRYPT_S3_LOGS: '<your_choice_on_encrypt_logs>'
     # AIRFLOW_CONN_MINIO_S3_CONN: '<your_connection_details_for_remote_logging>'
-    # AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 4
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: ${AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG}
     NO_PROXY: '*'
   volumes:
     -  pollution-logs:/opt/airflow/logs
