@@ -101,6 +101,7 @@ jobs:
           # X_AIRFLOW_CONN_MINIO_S3_CONN: '<your_connection_details_for_remote_logging>'
           X_NO_PROXY: '*'
 
+
       - name: Build and push images
         uses: noi-techpark/github-actions/docker-build-and-push@v2
         with:
