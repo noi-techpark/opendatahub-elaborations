@@ -91,7 +91,7 @@ jobs:
           X_AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_DB: 3
           # X_AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 4
           X_AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: 16
-          X_AIRFLOW_VAR_DATATYPE_PREFIX: test_001
+          # X_AIRFLOW_VAR_DATATYPE_PREFIX: test_001
 
           # Currently no logging enabled
           # X_AIRFLOW__CORE__REMOTE_LOGGING: '<your_choice_on_remote_logging>'
