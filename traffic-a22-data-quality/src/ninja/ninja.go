@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"traffic-a22-data-quality/bdplib"
 )
 
 const RequestTimeFormat = "2006-01-02T15:04:05.000-0700"
@@ -114,7 +113,7 @@ func requestUrl[T any](reqUrl *url.URL, result *NinjaResponse[T]) error {
 
 	req.Header = http.Header{
 		"Referer":       {Referer},
-		"Authorization": {"Bearer " + bdplib.GetToken()},
+		"Authorization": {"Bearer " + AuthFromEnv().getToken()}, // TODO: separate out authentication
 		"Accept":        {"application/json"},
 	}
 

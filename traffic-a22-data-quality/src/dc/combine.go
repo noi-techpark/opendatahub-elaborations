@@ -8,21 +8,21 @@ import (
 	"encoding/json"
 	"regexp"
 	"strings"
-	"traffic-a22-data-quality/bdplib"
 
+	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"golang.org/x/exp/maps"
 )
 
 func combineJob() error {
-	children, err := bdplib.GetStations(baseStationType, origin)
+	children, err := bdp.GetStations(baseStationType, origin)
 	if err != nil {
 		return err
 	}
 
 	parents := combine(children)
 
-	bdplib.SyncStations(parentStationType, parents, true, false)
-	bdplib.SyncStations(baseStationType, children, false, false)
+	bdp.SyncStations(parentStationType, parents, true, false)
+	bdp.SyncStations(baseStationType, children, false, false)
 
 	return nil
 }

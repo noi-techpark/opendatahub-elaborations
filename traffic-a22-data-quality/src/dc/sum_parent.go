@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
-	"traffic-a22-data-quality/bdplib"
 	"traffic-a22-data-quality/ninja"
 
+	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"golang.org/x/exp/maps"
 )
 
@@ -111,6 +111,6 @@ func sumParentJob() {
 				recs.AddRecord(parId, dType, bdplib.CreateRecord(timestamp.UnixMilli(), value, periodAgg))
 			}
 		}
-		bdplib.PushData(parentStationType, recs)
+		bdp.PushData(parentStationType, recs)
 	}
 }
