@@ -113,7 +113,7 @@ func requestUrl[T any](reqUrl *url.URL, result *NinjaResponse[T]) error {
 
 	req.Header = http.Header{
 		"Referer":       {Referer},
-		"Authorization": {"Bearer " + AuthFromEnv().getToken()}, // TODO: separate out authentication
+		"Authorization": {"Bearer " + defaultAuth.getToken()}, // TODO: separate out authentication
 		"Accept":        {"application/json"},
 	}
 

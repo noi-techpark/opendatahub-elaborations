@@ -38,6 +38,8 @@ type Auth struct {
 	tokenExpiry  int64
 }
 
+var defaultAuth Auth = *AuthFromEnv()
+
 func AuthFromEnv() *Auth {
 	a := Auth{}
 	a.TokenUrl = os.Getenv("ODH_TOKEN_URL")
