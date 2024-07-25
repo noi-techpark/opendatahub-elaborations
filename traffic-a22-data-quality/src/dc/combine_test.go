@@ -7,7 +7,8 @@ package dc
 import (
 	"reflect"
 	"testing"
-	"traffic-a22-data-quality/bdplib"
+
+	"github.com/noi-techpark/go-bdp-client/bdplib"
 )
 
 func TestMangleName(t *testing.T) {

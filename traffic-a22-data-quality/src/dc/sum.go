@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
-	"traffic-a22-data-quality/bdplib"
 	"traffic-a22-data-quality/ninja"
 
+	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 )
@@ -115,7 +115,7 @@ func sumJob() {
 			continue
 		}
 
-		bdplib.PushData(baseStationType, bdpMap)
+		bdp.PushData(baseStationType, bdpMap)
 	}
 }
 
