@@ -105,7 +105,7 @@ func sumJob() {
 			}
 		}()
 
-		bdpMap := bdplib.DataMap{}
+		bdpMap := bdp.CreateDataMap()
 		for r := range recs {
 			bdpMap.AddRecord(r.st, r.t, r.r)
 		}
