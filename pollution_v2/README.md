@@ -16,7 +16,7 @@ The TrafficData is periodically pulled from the A22 collection, data validation 
 
 ### Architecture
 
-![project structure](./documentation/UML Architecture.png)
+![project structure](/pollution_v2/documentation/UML Architecture.png)
 
 **Components**:
 
@@ -62,7 +62,7 @@ Layer 3 has no adjustable parameters.
 
 The following sequence diagram describes how Airflow and the DAGs (validation or pollution computing) interact in order to process ODH data.
 
-![sequence diagram](./documentation/UML Sequence Diagram.png)
+![sequence diagram](/pollution_v2/documentation/UML Sequence Diagram.png)
 
 Please note the following, apparently contrasting with Airflow capabilities of scheduling
 DAGs in backfill mode.
@@ -138,6 +138,12 @@ on the considered road.
 The folder `pollution_v2/src/pollution_connector/model/input` contains a dedicated CSV file for each year
 (e.g. `fc_info_2018.csv`) with a default one containing default values in case of processing a year with the
 corresponding file missing (`fc_info.csv`).
+
+When processing data for a specific year, the DAG looks for the file `fc_<year>.csv`: if found, the file is used,
+otherwise the system will use the default file `fc.csv` (e.g. with files `fc_2022.csv`, `fc_2023.csv` and `fc.csv`,
+when processing data for the year 2023 the system will use `fc_2023.csv` and when processing data for 2020 and/or 2024
+the system will use `fc.csv`. No configuration needs to be changed, just add the updated file, clean already
+processed records and let the DAGs run.
 
 To update the "parco circolante" for a specific year, just add the corresponding file (and update the default file, if
 appropriate) and then [reset the Airflow cache](#Reset-Airflow-Redis-cache) for the previously computed data.
