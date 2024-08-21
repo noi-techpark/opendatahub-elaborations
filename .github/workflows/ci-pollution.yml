@@ -1,175 +1,175 @@
-name: CI/CD pollution
-
-on:
-  push:
-    paths:
-      - "pollution/**"
-      - ".github/workflows/ci-pollution.yml"
-      - "!*.md"
-
-env:
-  WORKING_DIRECTORY: pollution
-  PROJECT_NAME: odh-mobility-el-pollution
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-mobility-el-pollution
-  DOCKER_TAG: ${{ github.sha }}
-
-jobs:
-  test:
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout source code
-        uses: noi-techpark/github-actions/checkout@v2
-      - name: REUSE Compliance Check
-        uses: fsfe/reuse-action@v1
-
-      - name: install setuptools needed to use distutils with python > 3.12
-        run: python3 -m pip install setuptools
-
-      - name: Test code
-        uses: noi-techpark/github-actions/pip-test@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-          test-command: |
-            echo "WARNING: NO TESTS FOUND!"
-
-  # Deploy Test
-  deploy-test-pollution:
-    runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
-    needs: test
-    concurrency: deploy-test-pollution
-    env:
-      KEYCLOAK_URL: https://auth.opendatahub.testingmachine.eu
-    steps:
-      - name: Checkout source code
-        uses: noi-techpark/github-actions/checkout@v2
-      - name: Create .env file
-        uses: noi-techpark/github-actions/env-file@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-        env:
-          # General deployment options
-          X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
-          X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
-
-          X_LOG_LEVEL: INFO
-          X_LOG_LEVEL_LIBS: INFO
-
-          X_CELERY_BROKER_URL: redis://pollution-connector-redis:6379/1
-          X_CELERY_BACKEND_URL: redis://pollution-connector-redis:6379/2
-          X_CELERY_RESULT_EXPIRATION_SECONDS: "604800"
-          
-          X_POLLUTION_TASK_SCHEDULING_MINUTE: "*/10"
-          X_POLLUTION_TASK_SCHEDULING_HOUR: "*"
-          
-          X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.testingmachine.eu
-          X_ODH_BASE_WRITER_URL: https://share.opendatahub.testingmachine.eu
-          X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.testingmachine.eu/auth/
-          X_ODH_CLIENT_ID: odh-a22-dataprocessor
-          X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_TEST }}
-          X_ODH_GRANT_TYPE: client_credentials
-          X_ODH_PAGINATION_SIZE: 10000
-          X_ODH_MAX_POST_BATCH_SIZE: 10000
-          X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
-          X_PROVENANCE_VERSION: ${{ github.sha }}
-
-          # Force python to not buffer stdout
-          X_PYTHONUNBUFFERED: "true"
-
-          X_ODH_COMPUTATION_BATCH_SIZE: 7
-          X_COMPUTATION_CHECKPOINT_REDIS_HOST: pollution-connector-redis
-          X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
-          X_COMPUTATION_CHECKPOINT_REDIS_DB: 3
-
-          # use 2018 for first import, otherwise a more recent date
-          # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
-          X_ODH_MINIMUM_STARTING_DATE : "2023-07-01 00:00:00+00:00"
-
-
-      - name: Build and push images
-        uses: noi-techpark/github-actions/docker-build-and-push@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
-          docker-username: ${{ github.actor }}
-          docker-password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy application
-        uses: noi-techpark/github-actions/docker-deploy@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
-          hosts: 'test'
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          docker-username: 'noi-techpark-bot'
-          docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          project-name: ${{ env.PROJECT_NAME }}
-
-  # Deploy Prod
-  deploy-prod-pollution:
-    runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/prod'
-    needs: test
-    concurrency: deploy-prod-pollution
-    env:
-      KEYCLOAK_URL: https://auth.opendatahub.com
-    steps:
-      - name: Checkout source code
-        uses: noi-techpark/github-actions/checkout@v2
-      - name: Create .env file
-        uses: noi-techpark/github-actions/env-file@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-        env:
-          X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
-          X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
-
-          X_LOG_LEVEL: INFO
-          X_LOG_LEVEL_LIBS: INFO
-
-          X_CELERY_BROKER_URL: redis://pollution-connector-redis:6379/1
-          X_CELERY_BACKEND_URL: redis://pollution-connector-redis:6379/2
-          X_CELERY_RESULT_EXPIRATION_SECONDS: "604800"
-          
-          X_POLLUTION_TASK_SCHEDULING_MINUTE: "*/10"
-          X_POLLUTION_TASK_SCHEDULING_HOUR: "*"
-          
-          X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.com
-          X_ODH_BASE_WRITER_URL: https://mobility.share.opendatahub.com
-          X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.com/auth/
-          X_ODH_CLIENT_ID: odh-a22-dataprocessor
-          X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_PROD }}
-          X_ODH_GRANT_TYPE: client_credentials
-          X_ODH_PAGINATION_SIZE: 10000
-          X_ODH_MAX_POST_BATCH_SIZE: 10000
-          X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
-          X_PROVENANCE_VERSION: ${{ github.sha }}
-
-          X_ODH_COMPUTATION_BATCH_SIZE: 7
-          X_COMPUTATION_CHECKPOINT_REDIS_HOST: pollution-connector-redis
-          X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
-          X_COMPUTATION_CHECKPOINT_REDIS_DB: 3
-
-          # use 2018 for first import, otherwise a more recent date
-          # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
-          X_ODH_MINIMUM_STARTING_DATE : "2023-07-01 00:00:00+00:00"
-
-          # Force python to not buffer stdout
-          X_PYTHONUNBUFFERED: "true"
-
-      - name: Build and push images
-        uses: noi-techpark/github-actions/docker-build-and-push@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
-          docker-username: ${{ github.actor }}
-          docker-password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy application
-        uses: noi-techpark/github-actions/docker-deploy@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
-          hosts: 'prod'
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          docker-username: 'noi-techpark-bot'
-          docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          project-name: ${{ env.PROJECT_NAME }}
+# name: CI/CD pollution
+#
+# on:
+#   push:
+#     paths:
+#       - "pollution/**"
+#       - ".github/workflows/ci-pollution.yml"
+#       - "!*.md"
+#
+# env:
+#   WORKING_DIRECTORY: pollution
+#   PROJECT_NAME: odh-mobility-el-pollution
+#   DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-mobility-el-pollution
+#   DOCKER_TAG: ${{ github.sha }}
+#
+# jobs:
+#   test:
+#     runs-on: ubuntu-22.04
+#     steps:
+#       - name: Checkout source code
+#         uses: noi-techpark/github-actions/checkout@v2
+#       - name: REUSE Compliance Check
+#         uses: fsfe/reuse-action@v1
+#
+#       - name: install setuptools needed to use distutils with python > 3.12
+#         run: python3 -m pip install setuptools
+#
+#       - name: Test code
+#         uses: noi-techpark/github-actions/pip-test@v2
+#         with:
+#           working-directory: ${{ env.WORKING_DIRECTORY }}
+#           test-command: |
+#             echo "WARNING: NO TESTS FOUND!"
+#
+#   # Deploy Test
+#   deploy-test-pollution:
+#     runs-on: ubuntu-22.04
+#     if: github.ref == 'refs/heads/main'
+#     needs: test
+#     concurrency: deploy-test-pollution
+#     env:
+#       KEYCLOAK_URL: https://auth.opendatahub.testingmachine.eu
+#     steps:
+#       - name: Checkout source code
+#         uses: noi-techpark/github-actions/checkout@v2
+#       - name: Create .env file
+#         uses: noi-techpark/github-actions/env-file@v2
+#         with:
+#           working-directory: ${{ env.WORKING_DIRECTORY }}
+#         env:
+#           # General deployment options
+#           X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
+#           X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
+#           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
+#
+#           X_LOG_LEVEL: INFO
+#           X_LOG_LEVEL_LIBS: INFO
+#
+#           X_CELERY_BROKER_URL: redis://pollution-connector-redis:6379/1
+#           X_CELERY_BACKEND_URL: redis://pollution-connector-redis:6379/2
+#           X_CELERY_RESULT_EXPIRATION_SECONDS: "604800"
+#
+#           X_POLLUTION_TASK_SCHEDULING_MINUTE: "*/10"
+#           X_POLLUTION_TASK_SCHEDULING_HOUR: "*"
+#
+#           X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.testingmachine.eu
+#           X_ODH_BASE_WRITER_URL: https://share.opendatahub.testingmachine.eu
+#           X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.testingmachine.eu/auth/
+#           X_ODH_CLIENT_ID: odh-a22-dataprocessor
+#           X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_TEST }}
+#           X_ODH_GRANT_TYPE: client_credentials
+#           X_ODH_PAGINATION_SIZE: 10000
+#           X_ODH_MAX_POST_BATCH_SIZE: 10000
+#           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
+#           X_PROVENANCE_VERSION: ${{ github.sha }}
+#
+#           # Force python to not buffer stdout
+#           X_PYTHONUNBUFFERED: "true"
+#
+#           X_ODH_COMPUTATION_BATCH_SIZE: 7
+#           X_COMPUTATION_CHECKPOINT_REDIS_HOST: pollution-connector-redis
+#           X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
+#           X_COMPUTATION_CHECKPOINT_REDIS_DB: 3
+#
+#           # use 2018 for first import, otherwise a more recent date
+#           # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
+#           X_ODH_MINIMUM_STARTING_DATE : "2023-07-01 00:00:00+00:00"
+#
+#
+#       - name: Build and push images
+#         uses: noi-techpark/github-actions/docker-build-and-push@v2
+#         with:
+#           working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
+#           docker-username: ${{ github.actor }}
+#           docker-password: ${{ secrets.GITHUB_TOKEN }}
+#
+#       - name: Deploy application
+#         uses: noi-techpark/github-actions/docker-deploy@v2
+#         with:
+#           working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
+#           hosts: 'test'
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#           docker-username: 'noi-techpark-bot'
+#           docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+#           project-name: ${{ env.PROJECT_NAME }}
+#
+#   # Deploy Prod
+#   deploy-prod-pollution:
+#     runs-on: ubuntu-22.04
+#     if: github.ref == 'refs/heads/prod'
+#     needs: test
+#     concurrency: deploy-prod-pollution
+#     env:
+#       KEYCLOAK_URL: https://auth.opendatahub.com
+#     steps:
+#       - name: Checkout source code
+#         uses: noi-techpark/github-actions/checkout@v2
+#       - name: Create .env file
+#         uses: noi-techpark/github-actions/env-file@v2
+#         with:
+#           working-directory: ${{ env.WORKING_DIRECTORY }}
+#         env:
+#           X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
+#           X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
+#           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
+#
+#           X_LOG_LEVEL: INFO
+#           X_LOG_LEVEL_LIBS: INFO
+#
+#           X_CELERY_BROKER_URL: redis://pollution-connector-redis:6379/1
+#           X_CELERY_BACKEND_URL: redis://pollution-connector-redis:6379/2
+#           X_CELERY_RESULT_EXPIRATION_SECONDS: "604800"
+#
+#           X_POLLUTION_TASK_SCHEDULING_MINUTE: "*/10"
+#           X_POLLUTION_TASK_SCHEDULING_HOUR: "*"
+#
+#           X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.com
+#           X_ODH_BASE_WRITER_URL: https://mobility.share.opendatahub.com
+#           X_ODH_AUTHENTICATION_URL: https://auth.opendatahub.com/auth/
+#           X_ODH_CLIENT_ID: odh-a22-dataprocessor
+#           X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_PROD }}
+#           X_ODH_GRANT_TYPE: client_credentials
+#           X_ODH_PAGINATION_SIZE: 10000
+#           X_ODH_MAX_POST_BATCH_SIZE: 10000
+#           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
+#           X_PROVENANCE_VERSION: ${{ github.sha }}
+#
+#           X_ODH_COMPUTATION_BATCH_SIZE: 7
+#           X_COMPUTATION_CHECKPOINT_REDIS_HOST: pollution-connector-redis
+#           X_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
+#           X_COMPUTATION_CHECKPOINT_REDIS_DB: 3
+#
+#           # use 2018 for first import, otherwise a more recent date
+#           # X_ODH_MINIMUM_STARTING_DATE : "2018-01-01"
+#           X_ODH_MINIMUM_STARTING_DATE : "2023-07-01 00:00:00+00:00"
+#
+#           # Force python to not buffer stdout
+#           X_PYTHONUNBUFFERED: "true"
+#
+#       - name: Build and push images
+#         uses: noi-techpark/github-actions/docker-build-and-push@v2
+#         with:
+#           working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
+#           docker-username: ${{ github.actor }}
+#           docker-password: ${{ secrets.GITHUB_TOKEN }}
+#
+#       - name: Deploy application
+#         uses: noi-techpark/github-actions/docker-deploy@v2
+#         with:
+#           working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
+#           hosts: 'prod'
+#           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+#           docker-username: 'noi-techpark-bot'
+#           docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+#           project-name: ${{ env.PROJECT_NAME }}
