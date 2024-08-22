@@ -51,7 +51,7 @@ public class GTFSWriter {
 
 	public static void writeStop_Times(List<Stop_TimesValues> stopTimesValues) throws Exception {
 		var csv = newCsv();
-		addRow(newCsv(), "trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "timepoint", "shape_dist_traveled");
+		addRow(csv, "trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "timepoint", "shape_dist_traveled");
 		for (var stoptimesvalues : stopTimesValues) {
 			addRow(csv,
 					stoptimesvalues.trip_id(),
