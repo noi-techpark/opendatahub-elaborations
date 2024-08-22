@@ -16,12 +16,11 @@ import org.springframework.util.ObjectUtils;
 
 import com.opencsv.CSVReader;
 import com.opendatahub.gtfs.StopsValue;
-import com.opendatahub.gtfs.Timepoint;
 
 @Service
-public class GTFSCsvFile {
+public class AirportCoordinates {
 
-	private static final Logger LOG = LoggerFactory.getLogger(GTFSCsvFile.class);
+	private static final Logger LOG = LoggerFactory.getLogger(AirportCoordinates.class);
 
 	// start with / to read from resources directory; with no / it reads current class package 
 	private final String CSV_PATH = "/AirportsCoordinates.csv";
