@@ -13,6 +13,9 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -173,14 +176,6 @@ public class JobScheduler {
 
             gtfsRoutes.add(new RoutesValues(flight.id, flight.name, RoutesValues.ROUTE_TYPE_AIR_SERVICE, agencySkyalps.agency_id()));
         }
-        
-        // shapes unique per ID/sequence
-        gtfsShapes = gtfsShapes.stream()
-            .collect(Collectors.toMap(
-                s -> new Object[]{s.shape_id(), s.shape_pt_sequence()}, 
-                Function.identity()))
-            .values().stream()
-            .toList();
         
         GTFSWriter.writeAgency(gtfsAgencies);
         GTFSWriter.writeCalendar_Dates(gtfsCalendarDates);

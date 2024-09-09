@@ -8,9 +8,14 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.opendatahub.gtfs.AgencyValues;
 import com.opendatahub.gtfs.CalendarValues;
@@ -26,7 +31,7 @@ public class GTFSWriter {
 	public static final File FOLDER_FILE = new File("GTFS");
 
 	public static String ZIP_FILE_NAME = FOLDER_FILE + ".zip";
-	
+
 	public static void makeFolder() throws Exception {
 		if (!FOLDER_FILE.exists()) {
 			FOLDER_FILE.mkdirs();
@@ -51,7 +56,8 @@ public class GTFSWriter {
 
 	public static void writeStop_Times(List<Stop_TimesValues> stopTimesValues) throws Exception {
 		var csv = newCsv();
-		addRow(csv, "trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "timepoint", "shape_dist_traveled");
+		addRow(csv, "trip_id", "arrival_time", "departure_time", "stop_id", "stop_sequence", "timepoint",
+				"shape_dist_traveled");
 		for (var stoptimesvalues : stopTimesValues) {
 			addRow(csv,
 					stoptimesvalues.trip_id(),
@@ -172,14 +178,23 @@ public class GTFSWriter {
 		var csv = newCsv();
 		addRow(csv, " shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence", "shape_dist_traveled");
 
-		for (ShapeValue shape : shapes) {
-			addRow(csv,
-					shape.shape_id(),
-					shape.shape_pt_lat(),
-					shape.shape_pt_lon(),
-					String.valueOf(shape.shape_pt_sequence()),
-					shape.shape_dist_traveled());
-		}
+		shapes.stream()
+				// shapes unique per ID/sequence
+				.collect(Collectors.toConcurrentMap(
+						s -> Collections.unmodifiableList(Arrays.asList(s.shape_id(), s.shape_pt_sequence())),
+						Function.identity(),
+						(l, r) -> l))
+				.values().stream()
+				.sorted(Comparator
+						.comparing(ShapeValue::shape_id)
+						.thenComparing(ShapeValue::shape_pt_sequence))
+				.forEach((shape) -> addRow(csv,
+						shape.shape_id(),
+						shape.shape_pt_lat(),
+						shape.shape_pt_lon(),
+						String.valueOf(shape.shape_pt_sequence()),
+						shape.shape_dist_traveled()));
+
 		writeCsv("shape.txt", csv);
 	}
 }
