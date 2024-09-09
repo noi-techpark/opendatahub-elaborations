@@ -45,7 +45,7 @@ class TrafficStationManager(ABC):
     @abstractmethod
     def get_output_connector(self) -> ODHBaseConnector:
         """
-        Returns the colletor of the data in charge of the implementing manager class.
+        Returns the collector of the data in charge of the implementing manager class.
         """
         pass
 
