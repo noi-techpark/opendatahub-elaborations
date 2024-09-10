@@ -7,12 +7,12 @@ from __future__ import absolute_import, annotations
 from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
-from common.data_model.road_weather import RoadWeatherObservationMeasure
+from common.data_model.road_weather import RoadWeatherObservationMeasure, RoadWeatherForecastMeasure, \
+    RoadWeatherObservationMeasureType, RoadWeatherForecastMeasureType
 from common.data_model.traffic import TrafficSensorStation
-from common.settings import PERIOD_6HOURS
 
 
-class RoadWeatherODHConnector(ODHBaseConnector[RoadWeatherObservationMeasure, TrafficSensorStation]):
+class RoadWeatherObservationODHConnector(ODHBaseConnector[RoadWeatherObservationMeasure, TrafficSensorStation]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -30,10 +30,8 @@ class RoadWeatherODHConnector(ODHBaseConnector[RoadWeatherObservationMeasure, Tr
                  requests_sleep_time: float,
                  requests_retry_sleep_time: float) -> None:
 
-        station_type = "Road weather"
-        measure_types = RoadWeatherObservationMeasure.get_data_types()
-        measure_types = [measure_type.name for measure_type in measure_types]
-        period = PERIOD_6HOURS
+        station_type = "RWISstation"
+        measure_types = [measure_type.value for measure_type in RoadWeatherObservationMeasureType]
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -50,8 +48,7 @@ class RoadWeatherODHConnector(ODHBaseConnector[RoadWeatherObservationMeasure, Tr
                          requests_timeout,
                          requests_max_retries,
                          requests_sleep_time,
-                         requests_retry_sleep_time,
-                         period)
+                         requests_retry_sleep_time)
 
     @staticmethod
     def build_station(raw_station: dict) -> TrafficSensorStation:
@@ -60,3 +57,50 @@ class RoadWeatherODHConnector(ODHBaseConnector[RoadWeatherObservationMeasure, Tr
     @staticmethod
     def build_measure(raw_measure: dict) -> RoadWeatherObservationMeasure:
         return RoadWeatherObservationMeasure.from_odh_repr(raw_measure)
+
+
+class RoadWeatherForecastODHConnector(ODHBaseConnector[RoadWeatherForecastMeasure, TrafficSensorStation]):
+
+    def __init__(self,
+                 base_reader_url: str,
+                 base_writer_url: str,
+                 authentication_url: str,
+                 username: Optional[str],
+                 password: Optional[str],
+                 client_id: Optional[str],
+                 client_secret: Optional[str],
+                 grant_type: List[str],
+                 pagination_size: int,
+                 max_post_batch_size: Optional[int],
+                 requests_timeout: float,
+                 requests_max_retries: int,
+                 requests_sleep_time: float,
+                 requests_retry_sleep_time: float) -> None:
+
+        station_type = "RWISstation"
+        measure_types = [measure_type.value for measure_type in RoadWeatherForecastMeasureType]
+
+        super().__init__(base_reader_url,
+                         base_writer_url,
+                         station_type,
+                         measure_types,
+                         authentication_url,
+                         username,
+                         password,
+                         client_id,
+                         client_secret,
+                         grant_type,
+                         pagination_size,
+                         max_post_batch_size,
+                         requests_timeout,
+                         requests_max_retries,
+                         requests_sleep_time,
+                         requests_retry_sleep_time)
+
+    @staticmethod
+    def build_station(raw_station: dict) -> TrafficSensorStation:
+        return TrafficSensorStation.from_odh_repr(raw_station)
+
+    @staticmethod
+    def build_measure(raw_measure: dict) -> RoadWeatherForecastMeasure:
+        return RoadWeatherForecastMeasure.from_odh_repr(raw_measure)

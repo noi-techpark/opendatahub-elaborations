@@ -6,7 +6,7 @@ from __future__ import absolute_import, annotations
 
 from common.connector.history import HistoryODHConnector
 from common.connector.pollution import PollutionODHConnector
-from common.connector.road_weather import RoadWeatherODHConnector
+from common.connector.road_weather import RoadWeatherObservationODHConnector
 from common.connector.traffic import TrafficODHConnector
 from common.connector.validation import ValidationODHConnector
 from common.settings import ODH_AUTHENTICATION_URL, ODH_USERNAME, ODH_PASSWORD, ODH_CLIENT_ID, \
@@ -17,12 +17,14 @@ from common.settings import ODH_AUTHENTICATION_URL, ODH_USERNAME, ODH_PASSWORD, 
 class ConnectorCollector:
 
     def __init__(self, traffic: TrafficODHConnector, history: HistoryODHConnector, validation: ValidationODHConnector,
-                 pollution: PollutionODHConnector, road_weather: RoadWeatherODHConnector):
+                 pollution: PollutionODHConnector, road_weather_observation: RoadWeatherObservationODHConnector,
+                 road_weather_forecast: RoadWeatherObservationODHConnector):
         self.traffic = traffic
         self.history = history
         self.validation = validation
         self.pollution = pollution
-        self.road_weather = road_weather
+        self.road_weather_observation = road_weather_observation
+        self.road_weather_forecast = road_weather_forecast
 
     @staticmethod
     def build_from_env() -> ConnectorCollector:
@@ -46,7 +48,8 @@ class ConnectorCollector:
             "history": HistoryODHConnector,
             "validation": ValidationODHConnector,
             "pollution": PollutionODHConnector,
-            "road_weather": RoadWeatherODHConnector
+            "road_weather_observation": RoadWeatherObservationODHConnector,
+            "road_weather_forecast": RoadWeatherObservationODHConnector
         }
 
         connectors = {}

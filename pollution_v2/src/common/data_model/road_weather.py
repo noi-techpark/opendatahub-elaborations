@@ -4,79 +4,98 @@
 
 from __future__ import absolute_import, annotations
 
+from enum import Enum
+
+import dateutil.parser
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
-from typing import Optional, List, Dict
+from typing import Optional, List
 
-from common.data_model.common import VehicleClass, MeasureCollection, Measure, Provenance, DataType
+from common.data_model.common import MeasureCollection, Measure, DataType, Provenance
 from common.data_model.entry import GenericEntry
-from common.data_model.station import TrafficSensorStation
+from common.data_model.station import TrafficSensorStation, Station
 from common.settings import DATATYPE_PREFIX
 
 
+class RoadWeatherObservationMeasureType(Enum):
+
+    TEMP_ARIA = "temp_aria"
+    TEMP_SOULO = "temp_suolo"
+    TEMP_RUGIADA = "temp_rugiada"
+    PREC_QTA = "prec_qta"
+    VENTO_VEL = "vento_vel"
+
+
+class RoadWeatherForecastMeasureType(Enum):
+
+    # TODO: check if these are correct
+    TEMP_ARIA = "temp_aria"
+    TEMP_RUGIADA = "temp_rugiada"
+    PREC_QTA = "prec_qta"
+    NEVE_QTA = "neve_qta"
+    VENTO_VEL = "vento_vel"
+    PRESS_ATM = "press_atm"
+    COPERTURA_NUVOLOSA = "copertura_nuvolosa"
+    RAD_SOLARE = "rad_solare"
+    RAD_INFRAROSSI = "rad_infrarossi"
+
+
 @dataclass
-class PollutionEntry(GenericEntry):
+class RoadWeatherObservationEntry(GenericEntry):
 
     def __init__(self, station: TrafficSensorStation, valid_time: datetime, temp_aria: float, temp_suolo: float,
-                 temp_rugiada: float, prec_qta: float, vento_vel: float, prec_tipo_desc: str, period: Optional[int]):
+                 temp_rugiada: float, prec_qta: float, vento_vel: float, period: Optional[int]):
         super().__init__(station, valid_time, period)
         self.temp_aria = temp_aria
         self.temp_suolo = temp_suolo
         self.temp_rugiada = temp_rugiada
         self.prec_qta = prec_qta
         self.vento_vel = vento_vel
-        self.prec_tipo_desc = prec_tipo_desc
 
 
 class RoadWeatherObservationMeasure(Measure):
     """
     Measure representing road weather observation.
     """
-
-    @staticmethod
-    def get_data_types() -> List[DataType]:
-        """
-        Returns the data types specific for this measure.
-
-        :return: the data types specific for this measure
-        """
-        data_types = [
-            DataType(f"temp_aria", f"air temperature", "???", "ºC", {}),
-            DataType(f"temp_suolo", f"surface temperature", "???", "ºC", {}),
-            DataType(f"temp_rugiada", f"dew temperature", "???", "ºC", {}),
-            DataType(f"prec_qta", f"precipitation quantity", "???", "mm", {}),
-            DataType(f"vento_vel", f"wind velocity", "???", "km/h", {}),
-            DataType(f"prec_tipo_desc", f"prec_tipo_desc", "???", "-", {}),
-        ]
-        return data_types
+    pass
 
 
 @dataclass
 class RoadWeatherObservationMeasureCollection(MeasureCollection[RoadWeatherObservationMeasure, TrafficSensorStation]):
-
+    """
+    Collection of road weather observation measures.
+    """
     pass
-    # @staticmethod
-    # def build_from_entries(observation_entries: List[PollutionEntry],
-    #                        provenance: Provenance) -> RoadWeatherObservationMeasureCollection:
-    #     """
-    #     Build a RoadWeatherObservationMeasureCollection from the list of road weather observation entries.
-    #
-    #     :param observation_entries: the observation entries from which generate the RoadWeatherObservationMeasureCollection
-    #     :param provenance: the provenance of the observation measures
-    #     :return: a RoadWeatherObservationMeasureCollection object containing the observation measures generated from the observation entries
-    #     """
-    #     data_types_dict: Dict[str, DataType] = {data_type.name: data_type for data_type in RoadWeatherObservationMeasure.get_data_types()}
-    #     observation_measures: List[RoadWeatherObservationMeasure] = []
-    #     for observation_entry in observation_entries:
-    #         observation_measures.append(RoadWeatherObservationMeasure(
-    #             station=observation_entry.station,
-    #             data_type=data_types_dict[f"{DATATYPE_PREFIX}{observation_entry.vehicle_class.name}-{observation_entry.entry_class.name}-emissions"],
-    #             provenance=provenance,
-    #             period=observation_entry.period,
-    #             transaction_time=None,
-    #             valid_time=observation_entry.valid_time,
-    #             value=observation_entry.entry_value
-    #         ))
-    #
-    #     return RoadWeatherObservationMeasureCollection(observation_measures)
+
+
+@dataclass
+class RoadWeatherForecastEntry(GenericEntry):
+
+    def __init__(self, station: TrafficSensorStation, valid_time: datetime, temp_aria: float,
+                 temp_rugiada: float, prec_qta: float, neve_qta: float, vento_vel: float, press_atm: float,
+                 copertura_nuvolosa: float, rad_solare: float, rad_infrarossi: float, period: Optional[int]):
+        super().__init__(station, valid_time, period)
+        self.temp_aria = temp_aria
+        self.temp_rugiada = temp_rugiada
+        self.prec_qta = prec_qta  # TODO: check if this is correct
+        self.neve_qta = neve_qta  # TODO: check if this is correct
+        self.vento_vel = vento_vel
+        self.press_atm = press_atm  # TODO: check if this is correct
+        self.copertura_nuvolosa = copertura_nuvolosa  # TODO: check if this is correct
+        self.rad_solare = rad_solare  # TODO: check if this is correct
+        self.rad_infrarossi = rad_infrarossi  # TODO: check if this is correct
+
+
+class RoadWeatherForecastMeasure(Measure):
+    """
+    Measure representing road weather forecast.
+    """
+    pass
+
+
+@dataclass
+class RoadWeatherForecastMeasureCollection(MeasureCollection[RoadWeatherForecastMeasure, TrafficSensorStation]):
+    """
+    Collection of road weather forecast measures.
+    """
+    pass

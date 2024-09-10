@@ -48,7 +48,7 @@ with TrafficStationsDAG(
     schedule=DAG_ROAD_WEATHER_EXECUTION_CRONTAB,
 
     # execution date starting at (if needed, backfill)
-    start_date=datetime.now(),
+    start_date=ODH_MINIMUM_STARTING_DATE,
 
     # if True, the scheduler creates a DAG Run for each completed interval between start_date and end_date
     # and the scheduler will execute them sequentially
@@ -91,6 +91,7 @@ with TrafficStationsDAG(
 
         :return: list of strings containing stations list
         """
+        logger.info("Retrieving stations list")
         manager = _init_manager()
 
         stations_list = dag.get_stations_list(manager, True, True, True, **kwargs)
@@ -99,6 +100,7 @@ with TrafficStationsDAG(
         # Use built-in functions like dict as much as you can and stay away
         # from using classes and other complex structures.
         station_dicts = [station.to_json() for station in stations_list]
+        logger.info(f"Retrieved {len(station_dicts)} stations")
 
         return station_dicts
 
@@ -116,12 +118,12 @@ with TrafficStationsDAG(
 
         manager = _init_manager()
 
-        min_from_date, max_to_date = dag.init_date_range(None, None)
+        # min_from_date, max_to_date = dag.init_date_range(None, None)
 
         computation_start_dt = datetime.now()
-        logger.info(f"Running computation from [{min_from_date}] to [{max_to_date}]")
-        # manager.run_computation([station], min_from_date, max_to_date,
-        #                         ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, False)
+        # logger.info(f"Running computation from [{min_from_date}] to [{max_to_date}]")
+        logger.info(f"Running computation")
+        manager.run_computation_for_single_station(station)
 
         # TODO:
 
