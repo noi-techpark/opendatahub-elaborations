@@ -50,7 +50,7 @@ jobs:
           X_ODH_GRANT_TYPE: client_credentials
           X_ODH_PAGINATION_SIZE: 10000
           X_ODH_MAX_POST_BATCH_SIZE: 10000
-          X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
+          X_PROVENANCE_NAME: odh-mobility-el-pollution-v2
           X_PROVENANCE_VERSION: ${{ github.sha }}
 
           X_AIRFLOW_PROJ_DIR: /opt/pollution-v2
@@ -161,7 +161,7 @@ jobs:
           X_ODH_GRANT_TYPE: client_credentials
           X_ODH_PAGINATION_SIZE: 10000
           X_ODH_MAX_POST_BATCH_SIZE: 10000
-          X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
+          X_PROVENANCE_NAME: odh-mobility-el-pollution-v2
           X_PROVENANCE_VERSION: ${{ github.sha }}
 
           X_AIRFLOW_PROJ_DIR: /opt/pollution-v2
