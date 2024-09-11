@@ -3,28 +3,29 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 import logging
 from datetime import datetime
-from typing import Optional, Callable
+from typing import Optional, Callable, List
 
 from airflow import DAG
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 
+from common.data_model import Station, TrafficSensorStation
+from common.manager.station import StationManager
 from common.manager.traffic_station import TrafficStationManager
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
 
 logger = logging.getLogger("pollution_v2.dags.common")
 
 
-class TrafficStationsDAG(DAG):
+class StationsDAG(DAG):
 
     @staticmethod
     def init_date_range(min_from_date: Optional[datetime], max_to_date: Optional[datetime]):
         """
-        As starting date for the batch is used the latest pollution measure available on the ODH, if no pollution
-        measures are available min_from_date is used.
+        Initializes the date range for the batch.
 
-        :param min_from_date: Optional, if set traffic measures before this date are discarded if no pollution measures
-                              are available. If not specified, the default will be taken from the environmental variable `ODH_MINIMUM_STARTING_DATE`.
-        :param max_to_date: Optional, if set the traffic measure after this date are discarded.
+        :param min_from_date: Optional, if set the measures before this date are discarded.  If not specified, the
+                              default will be taken from the environmental variable `ODH_MINIMUM_STARTING_DATE`.
+        :param max_to_date: Optional, if set the measures after this date are discarded.
                             If not specified, the default will be the current datetime.
         :return: correctly structured dates
         """
@@ -44,24 +45,49 @@ class TrafficStationsDAG(DAG):
         return min_from_date, max_to_date
 
     @staticmethod
-    def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False,
-                          filter_indloop: bool = False, filter_famas: bool = False, **kwargs):
+    def get_stations_list(manager: StationManager, **kwargs) -> List[Station]:
         """
         Returns the complete list of stations or the filtered list based on previous DAG run
 
         :return: list of strings containing stations list
         """
-        traffic_stations = manager.get_traffic_stations_from_cache()
+        stations = manager.get_station_list()
 
         if kwargs.get("dag_run") is not None:
             stations_from_prev_dag = kwargs["dag_run"].conf.get('stations_to_process')
             if stations_from_prev_dag:
                 logger.info(f"{len(stations_from_prev_dag)} stations with unprocessed data from previous run, using them")
-                traffic_stations = list(filter(lambda station: station.code in stations_from_prev_dag, traffic_stations))
+                stations = list(filter(lambda station: station.code in stations_from_prev_dag, stations))
 
-        logger.info(f"Found {len(traffic_stations)} traffic stations")
+        logger.info(f"Found {len(stations)} stations")
+        return stations
 
-        res = traffic_stations
+
+class TrafficStationsDAG(StationsDAG):
+
+    @staticmethod
+    def init_date_range(min_from_date: Optional[datetime], max_to_date: Optional[datetime]):
+        """
+        As starting date for the batch is used the latest pollution measure available on the ODH, if no pollution
+        measures are available min_from_date is used.
+
+        :param min_from_date: Optional, if set traffic measures before this date are discarded if no pollution measures
+                              are available. If not specified, the default will be taken from the environmental variable `ODH_MINIMUM_STARTING_DATE`.
+        :param max_to_date: Optional, if set the traffic measure after this date are discarded.
+                            If not specified, the default will be the current datetime.
+        :return: correctly structured dates
+        """
+        return super().init_date_range(min_from_date, max_to_date)
+
+    @staticmethod
+    def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False,
+                          filter_indloop: bool = False, filter_famas: bool = False, **kwargs) -> List[TrafficSensorStation]:
+        """
+        Returns the complete list of traffic stations or the filtered list based on previous DAG run
+
+        :return: list of strings containing stations list
+        """
+        res = super().get_stations_list(manager, **kwargs)
 
         if filter_km_gt0:
             res = [station for station in res if station.km > 0]

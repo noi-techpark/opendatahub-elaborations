@@ -4,41 +4,27 @@
 
 from __future__ import absolute_import, annotations
 
-import os
 import logging
 from datetime import datetime, timedelta
 from typing import List, Tuple
 
-from common.cache.common import TrafficManagerClass
 from common.connector.common import ODHBaseConnector
-from common.data_model import TrafficSensorStation, TrafficMeasureCollection, Station
+from common.data_model import TrafficSensorStation, Station
 from common.data_model.entry import GenericEntry
 from common.data_model.road_weather import RoadWeatherObservationMeasureCollection, RoadWeatherForecastMeasureCollection
-from common.data_model.validation import ValidationMeasureCollection
+from common.manager.station import StationManager
 from common.manager.traffic_station import TrafficStationManager
 from common.data_model.common import DataType, MeasureCollection
-from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
-from pollution_connector.model.pollution_computation_model import PollutionComputationModel
 from road_weather.manager._forecast import Forecast
 from road_weather.model.road_weather_model import RoadWeatherModel
 
 logger = logging.getLogger("pollution_v2.road_weather.manager.road_weather")
 
 
-class RoadWeatherManager(TrafficStationManager):
+class RoadWeatherManager(StationManager):
     """
     Manager in charge of executing pollution computation.
     """
-
-    # def _get_manager_code(self) -> str:
-    #     return "ROADWEATHER"
-    #
-    # def get_output_connector(self) -> ODHBaseConnector:
-    #     return self._connector_collector.pollution
-    #
-    # def get_input_connector(self) -> ODHBaseConnector:
-    #     # on v1 it would have been self._connector_collector.traffic
-    #     return self._connector_collector.validation
 
     def _download_observation_data(self,
                                    from_date: datetime,
@@ -54,6 +40,7 @@ class RoadWeatherManager(TrafficStationManager):
         """
 
         connector = self._connector_collector.road_weather_observation
+        logger.info(f"Downloading observation data for station [{traffic_station.code}] from [{from_date}] to [{to_date}]")
         return RoadWeatherObservationMeasureCollection(
             measures=connector.get_measures(from_date=from_date, to_date=to_date, station=traffic_station)
         )
@@ -71,18 +58,31 @@ class RoadWeatherManager(TrafficStationManager):
         # TODO: replace with the actual forecast data when available
 
         station_code = traffic_station.code
-        xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/{station_code}.xml"
 
-        forecast = Forecast(station_code)
+        # ODH station code -> WRF station code
+        # TODO: import whitelist from the configuration file instead
+        station_mapping = {
+            '2021': '01',
+            '2022': '02',
+            '1888': '03',
+            '2023': '04',
+        }
+        if station_code not in station_mapping:
+            logger.error(f"Station code [{station_code}] not found in the mapping")
+            raise ValueError(f"Station code [{station_code}] not found in the mapping")
+
+        wrf_station_code = station_mapping[station_code]
+        xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/1{wrf_station_code}.xml"
+
+        forecast = Forecast(wrf_station_code)
         forecast.download_xml(xml_url)
         forecast.interpolate_hourly()
         forecast.negative_radiation_filter()
         roadcast_start = forecast.start
         print('* forecast - XML processed correctly')
-        project_root = os.path.abspath(os.path.dirname(__name__))
-        forecast_filename = f"{project_root}/data/forecast/forecast_{station_code}_{roadcast_start}.xml"
+        forecast_filename = f"data/forecast/forecast_{wrf_station_code}_{roadcast_start}.xml"
         forecast.to_xml(forecast_filename)
-        print('* forecast - XML saved')
+        print('* forecast - XML saved in ', forecast_filename)
         return forecast_filename, roadcast_start
 
     def _compute_start_end_dates(self, forecast_start: str) -> Tuple[datetime, datetime]:
@@ -101,7 +101,7 @@ class RoadWeatherManager(TrafficStationManager):
         return start_date, end_date
 
 
-    def _download_data_and_compute_for_single_station(self, station: TrafficSensorStation) -> List[GenericEntry]:
+    def _download_data_and_compute(self, station: TrafficSensorStation) -> List[GenericEntry]:
 
         if not station:
             logger.error(f"Cannot compute road condition on empty station")
@@ -134,11 +134,4 @@ class RoadWeatherManager(TrafficStationManager):
 
         :param station: The station for which to run the computation.
         """
-        self._download_data_and_compute_for_single_station(station)
-
-
-    # def _get_data_types(self) -> List[DataType]:
-    #     return PollutionMeasure.get_data_types()
-    #
-    # def _build_from_entries(self, input_entries: List[PollutionEntry]) -> MeasureCollection:
-    #     return PollutionMeasureCollection.build_from_entries(input_entries, self._provenance)
+        self._download_data_and_compute(station)

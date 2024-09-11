@@ -12,9 +12,10 @@ from typing import List, Optional, Tuple
 from common.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
-from common.data_model import TrafficSensorStation
+from common.data_model import TrafficSensorStation, Station
 from common.data_model.common import MeasureType, Provenance, DataType, MeasureCollection, Measure
 from common.data_model.entry import GenericEntry
+from common.manager.station import StationManager
 from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
@@ -25,18 +26,15 @@ def _get_stations_on_logs(stations: List[TrafficSensorStation]):
             f"{' and more (' + str(len(stations)) + ')' if len(stations) > 5 else ''}]")
 
 
-class TrafficStationManager(ABC):
+class TrafficStationManager(StationManager, ABC):
     """
     Abstract class generalising traffic managers, in charge of computing the data given the traffic data.
     """
 
     def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance,
                  checkpoint_cache: Optional[ComputationCheckpointCache] = None):
-        self._checkpoint_cache = checkpoint_cache
-        self._connector_collector = connector_collector
-        self._provenance = provenance
+        super().__init__(connector_collector, provenance, checkpoint_cache)
         self._traffic_stations: List[TrafficSensorStation] = []
-        self._create_data_types = True
 
     @abstractmethod
     def _get_manager_code(self) -> str:
@@ -256,10 +254,16 @@ class TrafficStationManager(ABC):
         :return: List of stations from cache.
         """
         if len(self._traffic_stations) == 0:
-            logger.info("Retrieving station list from ODH")
+            logger.info("Retrieving traffic station list from ODH")
             self._traffic_stations = self.__get_station_list()
 
         return self._traffic_stations
+
+    def get_station_list(self) -> List[TrafficSensorStation]:
+        """
+        Retrieve the list of all the available stations. Override method from StationManager.
+        """
+        return self.get_traffic_stations_from_cache()
 
     def __get_station_list(self) -> List[TrafficSensorStation]:
         """

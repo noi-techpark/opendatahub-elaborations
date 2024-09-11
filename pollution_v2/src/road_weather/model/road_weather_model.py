@@ -39,10 +39,12 @@ class RoadWeatherModel:
         :return: The list of road conditions
         """
 
-        logger.info(f"Computing pollution for station [{station.code}]")
+        logger.info(f"Computing road condition for station [{station.code}]")
         logger.info(f"Observation measures available: {len(observation.measures)}")
         logger.info(f"Forecast file name: {forecast_filename}")
         logger.info(f"Forecast start: {forecast_start}")
+
+        # TODO: convert to dataframe and compute road condition
 
         # validation_data_types = {str(measure.data_type) for measure in validation.measures}
         # traffic_data_types = {str(measure.data_type) for measure in traffic.measures}

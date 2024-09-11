@@ -9,7 +9,7 @@ from airflow.decorators import task
 from airflow.utils.trigger_rule import TriggerRule
 from redis.client import Redis
 
-from dags.common import TrafficStationsDAG
+from dags.common import StationsDAG
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
@@ -39,7 +39,7 @@ default_args = {
 
 THIS_DAG_ID = "road_weather"
 
-with TrafficStationsDAG(
+with StationsDAG(
     THIS_DAG_ID,
 
     # execution interval if no backfill step length on date increment if backfill (interval determined by first slot
@@ -94,7 +94,11 @@ with TrafficStationsDAG(
         logger.info("Retrieving stations list")
         manager = _init_manager()
 
-        stations_list = dag.get_stations_list(manager, True, True, True, **kwargs)
+        stations_list = dag.get_stations_list(manager, **kwargs)
+
+        whitelist = []  # TODO: fetch whitelist from config/road_weather.yaml
+        if whitelist:
+            stations_list = [station for station in stations_list if station.code in whitelist]
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
@@ -102,7 +106,7 @@ with TrafficStationsDAG(
         station_dicts = [station.to_json() for station in stations_list]
         logger.info(f"Retrieved {len(station_dicts)} stations")
 
-        return station_dicts
+        return station_dicts[:2]
 
 
     @task
