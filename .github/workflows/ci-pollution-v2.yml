@@ -9,7 +9,6 @@ on:
 
 env:
   WORKING_DIRECTORY: pollution_v2
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-mobility-el-pollution-v2
 
 jobs:
   # Deploy Test
@@ -153,7 +152,7 @@ jobs:
           X_pollution-v2_TASK_SCHEDULING_HOUR: "*"
 
           X_ODH_BASE_READER_URL: https://mobility.api.opendatahub.com
-          X_ODH_BASE_WRITER_URL: https://share.opendatahub.com
+          X_ODH_BASE_WRITER_URL: 'https://mobility.share.opendatahub.com'
           X_ODH_AUTHENTICATION_URL: ${{ env.KEYCLOAK_URL }}/auth/
           X_ODH_CLIENT_ID: odh-a22-dataprocessor
           X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_PROD }}
