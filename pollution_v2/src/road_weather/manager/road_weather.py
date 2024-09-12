@@ -58,7 +58,7 @@ class RoadWeatherManager(StationManager):
         """
 
         # !!!: temporarily downloading forecast data of WRF from CISMA
-        # TODO: replace with the actual forecast data when available
+        # TODO: replace with the actual forecast data from ODH when available
 
         station_code = traffic_station.code
 
@@ -86,12 +86,12 @@ class RoadWeatherManager(StationManager):
         print('* forecast - XML saved in ', forecast_filename)
         return forecast_filename, roadcast_start
 
-    def _compute_start_end_dates(self, forecast_start: str) -> Tuple[datetime, datetime]:
+    def _compute_observation_start_end_dates(self, forecast_start: str) -> Tuple[datetime, datetime]:
         """
-        Compute the start and end dates for the computation.
+        Compute the start and end dates for the observation computation.
 
         :param forecast_start: The forecast start date string.
-        :return: The start and end dates for the computation.
+        :return: The start and end dates for the observation computation.
         """
 
         # start_obs = forecast.start - 12 h
@@ -112,10 +112,10 @@ class RoadWeatherManager(StationManager):
         forecast_data_xml_path = ""
         forecast_start = ""
         try:
-            # TODO: change with actual implementation when available
+            # TODO: change with actual implementation from ODH when available
             forecast_data_xml_path, forecast_start = self._download_forecast_data(station)
 
-            start_date, to_date = self._compute_start_end_dates(forecast_start)
+            start_date, to_date = self._compute_observation_start_end_dates(forecast_start)
 
             observation_data = self._download_observation_data(start_date, to_date, station)
         except Exception as e:

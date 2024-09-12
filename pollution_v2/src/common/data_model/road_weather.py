@@ -12,7 +12,7 @@ from typing import Optional
 
 from common.data_model.common import MeasureCollection, Measure
 from common.data_model.entry import GenericEntry
-from common.data_model.station import TrafficSensorStation
+from common.data_model.station import Station
 
 
 class RoadWeatherObservationMeasureType(Enum):
@@ -41,7 +41,7 @@ class RoadWeatherForecastMeasureType(Enum):
 @dataclass
 class RoadWeatherObservationEntry(GenericEntry):
 
-    def __init__(self, station: TrafficSensorStation, valid_time: datetime, temp_aria: float, temp_suolo: float,
+    def __init__(self, station: Station, valid_time: datetime, temp_aria: float, temp_suolo: float,
                  temp_rugiada: float, prec_qta: float, vento_vel: float, period: Optional[int]):
         super().__init__(station, valid_time, period)
         self.temp_aria = temp_aria
@@ -59,7 +59,7 @@ class RoadWeatherObservationMeasure(Measure):
 
 
 @dataclass
-class RoadWeatherObservationMeasureCollection(MeasureCollection[RoadWeatherObservationMeasure, TrafficSensorStation]):
+class RoadWeatherObservationMeasureCollection(MeasureCollection[RoadWeatherObservationMeasure, Station]):
     """
     Collection of road weather observation measures.
     """
@@ -69,7 +69,7 @@ class RoadWeatherObservationMeasureCollection(MeasureCollection[RoadWeatherObser
 @dataclass
 class RoadWeatherForecastEntry(GenericEntry):
 
-    def __init__(self, station: TrafficSensorStation, valid_time: datetime, temp_aria: float,
+    def __init__(self, station: Station, valid_time: datetime, temp_aria: float,
                  temp_rugiada: float, prec_qta: float, neve_qta: float, vento_vel: float, press_atm: float,
                  copertura_nuvolosa: float, rad_solare: float, rad_infrarossi: float, period: Optional[int]):
         super().__init__(station, valid_time, period)
@@ -92,7 +92,7 @@ class RoadWeatherForecastMeasure(Measure):
 
 
 @dataclass
-class RoadWeatherForecastMeasureCollection(MeasureCollection[RoadWeatherForecastMeasure, TrafficSensorStation]):
+class RoadWeatherForecastMeasureCollection(MeasureCollection[RoadWeatherForecastMeasure, Station]):
     """
     Collection of road weather forecast measures.
     """
