@@ -13,7 +13,7 @@ from dags.common import StationsDAG
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
-from common.data_model import TrafficSensorStation
+from common.data_model import Station
 from common.settings import (ODH_MINIMUM_STARTING_DATE, COMPUTATION_CHECKPOINT_REDIS_DB,
                              COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST,
                              PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION,
@@ -95,14 +95,16 @@ with StationsDAG(
         manager = _init_manager()
 
         stations_list = dag.get_stations_list(manager, **kwargs)
+        logger.info("Found station codes: " + str([station.code for station in stations_list]))
 
         with open(ROAD_WEATHER_CONFIG_FILE, 'r') as file:
             config = yaml.safe_load(file)
             whitelist = config.get('whitelist', [])
 
         if whitelist:
+            whitelist = list(map(str, whitelist))
             logger.info(f"Filtering stations with whitelist: {whitelist}")
-            stations_list = [station for station in stations_list if station.code in whitelist]
+            stations_list = [station for station in stations_list if str(station.code) in whitelist]
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
@@ -121,7 +123,7 @@ with StationsDAG(
         :param station_dict: the station to process
         """
 
-        station = TrafficSensorStation.from_json(station_dict)
+        station = Station.from_json(station_dict)
         logger.info(f"Received station {station}")
 
         manager = _init_manager()

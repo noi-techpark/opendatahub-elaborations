@@ -6,17 +6,19 @@ from __future__ import absolute_import, annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import yaml
 
+from common.cache.computation_checkpoint import ComputationCheckpointCache
+from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation, Station
 from common.data_model.entry import GenericEntry
 from common.data_model.road_weather import RoadWeatherObservationMeasureCollection, RoadWeatherForecastMeasureCollection
 from common.manager.station import StationManager
 from common.manager.traffic_station import TrafficStationManager
-from common.data_model.common import DataType, MeasureCollection
+from common.data_model.common import DataType, MeasureCollection, Provenance
 from common.settings import ROAD_WEATHER_CONFIG_FILE
 from road_weather.manager._forecast import Forecast
 from road_weather.model.road_weather_model import RoadWeatherModel
@@ -28,6 +30,11 @@ class RoadWeatherManager(StationManager):
     """
     Manager in charge of executing pollution computation.
     """
+
+    def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance,
+                 checkpoint_cache: Optional[ComputationCheckpointCache] = None) -> None:
+        super().__init__(connector_collector, provenance, checkpoint_cache)
+        self.station_list_connector = connector_collector.road_weather_observation
 
     def _download_observation_data(self,
                                    from_date: datetime,
@@ -67,12 +74,15 @@ class RoadWeatherManager(StationManager):
             # ODH station code -> WRF station code
             station_mapping = config['mappings']
 
-        if station_code not in station_mapping:
+        station_mapping = {str(k): str(v) for k, v in station_mapping.items()}
+        if str(station_code) not in station_mapping:
             logger.error(f"Station code [{station_code}] not found in the mapping [{ROAD_WEATHER_CONFIG_FILE}]")
             raise ValueError(f"Station code [{station_code}] not found in the mapping")
 
-        logger.info("Downloading forecast data for station [{station_code}] from CISMA")
-        wrf_station_code = station_mapping[station_code]
+        logger.info("Found mapping for ODH station code [" + str(str(station_code)) + "] -> "
+                    "CISMA station code [" + str(station_mapping[station_code]) + "]")
+        logger.info(f"Downloading forecast data for station [{station_code}] from CISMA")
+        wrf_station_code = station_mapping[str(station_code)]
         xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/1{wrf_station_code}.xml"
 
         forecast = Forecast(wrf_station_code)
