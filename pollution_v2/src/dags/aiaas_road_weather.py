@@ -70,6 +70,7 @@ with StationsDAG(
         """
 
         checkpoint_cache = None
+        # TODO: decide if we want to use the checkpoint cache
         # if COMPUTATION_CHECKPOINT_REDIS_HOST:
         #     logger.info("Enabled checkpoint cache")
         #     checkpoint_cache = ComputationCheckpointCache(Redis(host=COMPUTATION_CHECKPOINT_REDIS_HOST,
@@ -100,6 +101,7 @@ with StationsDAG(
             whitelist = config.get('whitelist', [])
 
         if whitelist:
+            logger.info(f"Filtering stations with whitelist: {whitelist}")
             stations_list = [station for station in stations_list if station.code in whitelist]
 
         # Serialization and deserialization is dependent on speed.
@@ -124,6 +126,7 @@ with StationsDAG(
 
         manager = _init_manager()
 
+        # TODO: are the dates needed? backfill?
         # min_from_date, max_to_date = dag.init_date_range(None, None)
 
         computation_start_dt = datetime.now()
