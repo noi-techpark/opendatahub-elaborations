@@ -69,3 +69,5 @@ AIRFLOW_NUM_RETRIES = 3
 
 # use it not empty to add a test prefix to datatype
 DATATYPE_PREFIX = Variable.get("DATATYPE_PREFIX", "")
+
+ROAD_WEATHER_CONFIG_FILE = Variable.get("ROAD_WEATHER_CONFIG_FILE", "src/config/road_weather.yaml")

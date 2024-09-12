@@ -5,8 +5,8 @@
 import logging
 from datetime import timedelta, datetime
 
+import yaml
 from airflow.decorators import task
-from airflow.utils.trigger_rule import TriggerRule
 from redis.client import Redis
 
 from dags.common import StationsDAG
@@ -17,9 +17,8 @@ from common.data_model import TrafficSensorStation
 from common.settings import (ODH_MINIMUM_STARTING_DATE, COMPUTATION_CHECKPOINT_REDIS_DB,
                              COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST,
                              PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION,
-                             PROVENANCE_VERSION, DAG_POLLUTION_EXECUTION_CRONTAB, DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN,
-                             DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, AIRFLOW_NUM_RETRIES,
-                             DAG_ROAD_WEATHER_EXECUTION_CRONTAB)
+                             PROVENANCE_VERSION, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION,
+                             AIRFLOW_NUM_RETRIES, DAG_ROAD_WEATHER_EXECUTION_CRONTAB, ROAD_WEATHER_CONFIG_FILE)
 from road_weather.manager.road_weather import RoadWeatherManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -96,7 +95,10 @@ with StationsDAG(
 
         stations_list = dag.get_stations_list(manager, **kwargs)
 
-        whitelist = []  # TODO: fetch whitelist from config/road_weather.yaml
+        with open(ROAD_WEATHER_CONFIG_FILE, 'r') as file:
+            config = yaml.safe_load(file)
+            whitelist = config.get('whitelist', [])
+
         if whitelist:
             stations_list = [station for station in stations_list if station.code in whitelist]
 
@@ -129,7 +131,7 @@ with StationsDAG(
         logger.info(f"Running computation")
         manager.run_computation_for_single_station(station)
 
-        # TODO:
+        # TODO: run container with METRo
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")

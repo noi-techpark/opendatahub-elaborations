@@ -6,15 +6,13 @@ from __future__ import absolute_import, annotations
 
 from enum import Enum
 
-import dateutil.parser
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
-from common.data_model.common import MeasureCollection, Measure, DataType, Provenance
+from common.data_model.common import MeasureCollection, Measure
 from common.data_model.entry import GenericEntry
-from common.data_model.station import TrafficSensorStation, Station
-from common.settings import DATATYPE_PREFIX
+from common.data_model.station import TrafficSensorStation
 
 
 class RoadWeatherObservationMeasureType(Enum):

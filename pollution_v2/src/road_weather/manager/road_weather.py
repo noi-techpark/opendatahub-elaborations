@@ -8,6 +8,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Tuple
 
+import yaml
+
 from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation, Station
 from common.data_model.entry import GenericEntry
@@ -15,6 +17,7 @@ from common.data_model.road_weather import RoadWeatherObservationMeasureCollecti
 from common.manager.station import StationManager
 from common.manager.traffic_station import TrafficStationManager
 from common.data_model.common import DataType, MeasureCollection
+from common.settings import ROAD_WEATHER_CONFIG_FILE
 from road_weather.manager._forecast import Forecast
 from road_weather.model.road_weather_model import RoadWeatherModel
 
@@ -59,18 +62,16 @@ class RoadWeatherManager(StationManager):
 
         station_code = traffic_station.code
 
-        # ODH station code -> WRF station code
-        # TODO: import whitelist from the configuration file instead
-        station_mapping = {
-            '2021': '01',
-            '2022': '02',
-            '1888': '03',
-            '2023': '04',
-        }
+        with open(ROAD_WEATHER_CONFIG_FILE, 'r') as file:
+            config = yaml.safe_load(file)
+            # ODH station code -> WRF station code
+            station_mapping = config['mappings']
+
         if station_code not in station_mapping:
-            logger.error(f"Station code [{station_code}] not found in the mapping")
+            logger.error(f"Station code [{station_code}] not found in the mapping [{ROAD_WEATHER_CONFIG_FILE}]")
             raise ValueError(f"Station code [{station_code}] not found in the mapping")
 
+        logger.info("Downloading forecast data for station [{station_code}] from CISMA")
         wrf_station_code = station_mapping[station_code]
         xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/1{wrf_station_code}.xml"
 

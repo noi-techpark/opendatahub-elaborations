@@ -6,6 +6,7 @@ from __future__ import absolute_import, annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 from typing import Optional, Dict, Iterator, List
 
 import dateutil.parser
@@ -14,6 +15,16 @@ from common.data_model.common import VehicleClass, Measure, MeasureCollection, D
     Provenance
 from common.data_model.entry import GenericEntry
 from common.data_model.station import TrafficSensorStation
+
+
+class TrafficMeasureType(Enum):
+
+    NR_BUSES = "Nr. Buses"
+    NR_HEAVY_VEHICLES = "Nr. Heavy Vehicles"
+    NR_LIGHT_VEHICLES = "Nr. Light Vehicles"
+    AVERAGE_SPEED_BUSES = "Average Speed Buses"
+    AVERAGE_SPEED_HEAVY_VEHICLES = "Average Speed Heavy Vehicles"
+    AVERAGE_SPEED_LIGHT_VEHICLES = "Average Speed Light Vehicles"
 
 
 @dataclass
