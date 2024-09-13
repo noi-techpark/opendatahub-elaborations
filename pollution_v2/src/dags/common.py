@@ -78,7 +78,7 @@ class TrafficStationsDAG(StationsDAG):
                             If not specified, the default will be the current datetime.
         :return: correctly structured dates
         """
-        return super().init_date_range(min_from_date, max_to_date)
+        return StationsDAG.init_date_range(min_from_date, max_to_date)
 
     @staticmethod
     def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False,
@@ -88,7 +88,7 @@ class TrafficStationsDAG(StationsDAG):
 
         :return: list of strings containing stations list
         """
-        res = super().get_stations_list(manager, **kwargs)
+        res = StationsDAG.get_stations_list(manager, **kwargs)
 
         if filter_km_gt0:
             res = [station for station in res if station.km > 0]
