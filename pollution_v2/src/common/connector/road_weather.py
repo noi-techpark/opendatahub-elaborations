@@ -9,6 +9,7 @@ from typing import Optional, List
 from common.connector.common import ODHBaseConnector
 from common.data_model import RoadWeatherObservationMeasure, RoadWeatherForecastMeasure, \
     RoadWeatherObservationMeasureType, RoadWeatherForecastMeasureType, Station
+from common.settings import PERIOD_1SEC
 
 
 class RoadWeatherObservationODHConnector(ODHBaseConnector[RoadWeatherObservationMeasure, Station]):
@@ -31,6 +32,8 @@ class RoadWeatherObservationODHConnector(ODHBaseConnector[RoadWeatherObservation
 
         station_type = "RWISstation"
         measure_types = [measure_type.value for measure_type in RoadWeatherObservationMeasureType]
+        period = PERIOD_1SEC
+
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -47,7 +50,8 @@ class RoadWeatherObservationODHConnector(ODHBaseConnector[RoadWeatherObservation
                          requests_timeout,
                          requests_max_retries,
                          requests_sleep_time,
-                         requests_retry_sleep_time)
+                         requests_retry_sleep_time,
+                         period)
 
     @staticmethod
     def build_station(raw_station: dict) -> Station:
@@ -78,6 +82,7 @@ class RoadWeatherForecastODHConnector(ODHBaseConnector[RoadWeatherForecastMeasur
 
         station_type = "RWISstation"
         measure_types = [measure_type.value for measure_type in RoadWeatherForecastMeasureType]
+        period = PERIOD_1SEC
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -94,7 +99,8 @@ class RoadWeatherForecastODHConnector(ODHBaseConnector[RoadWeatherForecastMeasur
                          requests_timeout,
                          requests_max_retries,
                          requests_sleep_time,
-                         requests_retry_sleep_time)
+                         requests_retry_sleep_time,
+                         period)
 
     @staticmethod
     def build_station(raw_station: dict) -> Station:

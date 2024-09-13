@@ -18,6 +18,7 @@ logger = logging.getLogger("pollution_v2.dags.common")
 
 class StationsDAG(DAG):
 
+    # TODO: decide if this method is necessary or should be moved to TrafficStationsDAG
     @staticmethod
     def init_date_range(min_from_date: Optional[datetime], max_to_date: Optional[datetime]):
         """
