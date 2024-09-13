@@ -12,13 +12,9 @@ import yaml
 
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
-from common.connector.common import ODHBaseConnector
-from common.data_model import TrafficSensorStation, Station
+from common.data_model import TrafficSensorStation, Station, RoadWeatherObservationMeasureCollection, Provenance
 from common.data_model.entry import GenericEntry
-from common.data_model.road_weather import RoadWeatherObservationMeasureCollection, RoadWeatherForecastMeasureCollection
 from common.manager.station import StationManager
-from common.manager.traffic_station import TrafficStationManager
-from common.data_model.common import DataType, MeasureCollection, Provenance
 from common.settings import ROAD_WEATHER_CONFIG_FILE
 from road_weather.manager._forecast import Forecast
 from road_weather.model.road_weather_model import RoadWeatherModel

@@ -6,17 +6,10 @@ from __future__ import absolute_import, annotations
 
 import datetime
 import logging
-from typing import List, Dict
+from typing import List
 
-import pandas as pd
-
-from common.data_model.common import VehicleClass
-from common.data_model.pollution import PollutionEntry, PollutantClass
-from common.data_model import TrafficMeasureCollection, TrafficSensorStation
-from common.data_model.road_weather import RoadWeatherObservationMeasureCollection, RoadWeatherForecastMeasureCollection
-from common.data_model.validation import ValidationMeasureCollection
+from common.data_model import TrafficSensorStation, RoadWeatherObservationMeasureCollection
 from common.model.helper import ModelHelper
-from pollution_connector.model.CopertEmissions import copert_emissions
 
 logger = logging.getLogger("pollution_v2.road_weather.model.road_weather_model")
 
