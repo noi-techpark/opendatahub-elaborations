@@ -110,6 +110,7 @@ with StationsDAG(
         station_dicts = [station.to_json() for station in stations_list]
         logger.info(f"Retrieved {len(station_dicts)} stations")
 
+        # TODO restore full list
         return station_dicts[:2]
 
 
