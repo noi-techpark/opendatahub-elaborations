@@ -106,7 +106,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                  requests_max_retries: int,
                  requests_sleep_time: float,
                  requests_retry_sleep_time: float,
-                 period: int):
+                 period: Optional[int] = None):
 
         self._authentication_url = authentication_url
         self._base_reader_url = base_reader_url
