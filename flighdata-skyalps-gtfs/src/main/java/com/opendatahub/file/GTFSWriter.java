@@ -174,9 +174,9 @@ public class GTFSWriter {
 		writeCsv("feed_info.txt", csv);
 	}
 
-	public static void writeShape(List<ShapeValue> shapes) throws Exception {
+	public static void writeShapes(List<ShapeValue> shapes) throws Exception {
 		var csv = newCsv();
-		addRow(csv, " shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence", "shape_dist_traveled");
+		addRow(csv, "shape_id", "shape_pt_lat", "shape_pt_lon", "shape_pt_sequence", "shape_dist_traveled");
 
 		shapes.stream()
 				// shapes unique per ID/sequence
@@ -195,6 +195,6 @@ public class GTFSWriter {
 						String.valueOf(shape.shape_pt_sequence()),
 						shape.shape_dist_traveled()));
 
-		writeCsv("shape.txt", csv);
+		writeCsv("shapes.txt", csv);
 	}
 }

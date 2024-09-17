@@ -185,7 +185,7 @@ public class JobScheduler {
         GTFSWriter.writeRoutes(gtfsRoutes);
         GTFSWriter.writeTrips(gtfsTrips);
         GTFSWriter.writeFeedInfo(gtfsFeedInfos);
-        GTFSWriter.writeShape(gtfsShapes);
+        GTFSWriter.writeShapes(gtfsShapes);
 
         uploadToS3();
     }
@@ -196,7 +196,7 @@ public class JobScheduler {
             Math.sin(lat1 * (Math.PI/180)) * Math.sin(lat2 * (Math.PI/180)) + 
             Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.cos(theta * (Math.PI/180))
         );
-        return distance * 1.609344;
+        return distance * 1609.344;
     }
 
     private void uploadToS3() throws Exception {
