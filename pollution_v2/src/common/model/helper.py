@@ -9,7 +9,7 @@ import pandas as pd
 import json
 import logging
 
-from common.data_model import TrafficSensorStation
+from common.data_model import TrafficSensorStation, RoadWeatherObservationEntry
 from common.data_model.history import HistoryEntry
 from common.data_model.traffic import TrafficEntry
 
@@ -78,6 +78,32 @@ class ModelHelper:
                     "Period": entry.period,
                     "KM": km
                 })
+
+        return pd.DataFrame(temp)
+
+    @staticmethod
+    def get_observation_dataframe(observation_entries: Iterable[RoadWeatherObservationEntry]) -> pd.DataFrame:
+        """
+        Get a dataframe from the given observation entries. The resulting dataframe will have the following columns:
+        time,station_code,prec_qta,stato_meteo,temp_aria,temp_rugiada,temp_suolo,vento_vel
+
+        :param observation_entries: the observation entries
+        :return: the observation dataframe
+        """
+        temp = []
+        for entry in observation_entries:
+            temp.append({
+                "date": entry.valid_time.date().isoformat(),
+                "time": entry.valid_time.time().isoformat(),
+                "Location": entry.station.id_strada,
+                "Station": entry.station.id_stazione,
+                "Lane": entry.station.id_corsia,
+                "Category": entry.vehicle_class.value,
+                "Transits": entry.nr_of_vehicles,
+                "Speed": entry.average_speed,
+                "Period": entry.period,
+                "KM": km
+            })
 
         return pd.DataFrame(temp)
 

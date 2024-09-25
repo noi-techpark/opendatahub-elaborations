@@ -15,7 +15,7 @@ from common.connector.collector import ConnectorCollector
 from common.data_model import TrafficSensorStation, Station, RoadWeatherObservationMeasureCollection, Provenance
 from common.data_model.entry import GenericEntry
 from common.manager.station import StationManager
-from common.settings import ROAD_WEATHER_CONFIG_FILE
+from common.settings import ROAD_WEATHER_CONFIG_FILE, TMP_DIR
 from road_weather.manager._forecast import Forecast
 from road_weather.model.road_weather_model import RoadWeatherModel
 
@@ -86,10 +86,10 @@ class RoadWeatherManager(StationManager):
         forecast.interpolate_hourly()
         forecast.negative_radiation_filter()
         roadcast_start = forecast.start
-        print('* forecast - XML processed correctly')
-        forecast_filename = f"data/forecast/forecast_{wrf_station_code}_{roadcast_start}.xml"
+        logger.info('forecast - XML processed correctly')
+        forecast_filename = f"{TMP_DIR}/forecast_{wrf_station_code}_{roadcast_start}.xml"
         forecast.to_xml(forecast_filename)
-        print('* forecast - XML saved in ', forecast_filename)
+        logger.info(f'forecast - XML saved in {forecast_filename} ')
         return forecast_filename, roadcast_start
 
     def _compute_observation_start_end_dates(self, forecast_start: str) -> Tuple[datetime, datetime]:
@@ -107,8 +107,7 @@ class RoadWeatherManager(StationManager):
         end_date = forecast_start + timedelta(hours=8)
         return start_date, end_date
 
-
-    def _download_data_and_compute(self, station: TrafficSensorStation) -> List[GenericEntry]:
+    def _download_data_and_compute(self, station: Station) -> List[GenericEntry]:
 
         if not station:
             logger.error(f"Cannot compute road condition on empty station")
@@ -135,7 +134,7 @@ class RoadWeatherManager(StationManager):
 
         return []
 
-    def run_computation_for_single_station(self, station: TrafficSensorStation) -> None:
+    def run_computation_for_single_station(self, station: Station) -> None:
         """
         Run the computation for a single station.
 
