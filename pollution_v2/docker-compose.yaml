@@ -309,6 +309,12 @@ services:
 
   metro:
     image: road_weather:latest
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     restart: always
 
 volumes:

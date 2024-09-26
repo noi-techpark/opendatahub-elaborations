@@ -74,7 +74,7 @@ class RoadWeatherModel:
         logger.info(f"Forecast start: {forecast_start}")
 
         # TODO cablato
-        url = "http://metro:80/predict/?station_code=101"
+        url = f"http://metro:80/predict/?station_code=1{station.wrf_code}"
 
         # List of files to upload
         files_to_upload = [forecast_filename, observation_filename]

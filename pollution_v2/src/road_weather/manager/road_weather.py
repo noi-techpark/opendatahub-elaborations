@@ -63,31 +63,15 @@ class RoadWeatherManager(StationManager):
         # !!!: temporarily downloading forecast data of WRF from CISMA
         # TODO: replace with the actual forecast data from ODH when available
 
-        station_code = traffic_station.code
+        xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/1{traffic_station.wrf_code}.xml"
 
-        with open(ROAD_WEATHER_CONFIG_FILE, 'r') as file:
-            config = yaml.safe_load(file)
-            # ODH station code -> WRF station code
-            station_mapping = config['mappings']
-
-        station_mapping = {str(k): str(v) for k, v in station_mapping.items()}
-        if str(station_code) not in station_mapping:
-            logger.error(f"Station code [{station_code}] not found in the mapping [{ROAD_WEATHER_CONFIG_FILE}]")
-            raise ValueError(f"Station code [{station_code}] not found in the mapping")
-
-        logger.info("Found mapping for ODH station code [" + str(str(station_code)) + "] -> "
-                    "CISMA station code [" + str(station_mapping[station_code]) + "]")
-        logger.info(f"Downloading forecast data for station [{station_code}] from CISMA")
-        wrf_station_code = station_mapping[str(station_code)]
-        xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/1{wrf_station_code}.xml"
-
-        forecast = Forecast(wrf_station_code)
+        forecast = Forecast(traffic_station.wrf_code)
         forecast.download_xml(xml_url)
         forecast.interpolate_hourly()
         forecast.negative_radiation_filter()
         roadcast_start = forecast.start
         logger.info('forecast - XML processed correctly')
-        forecast_filename = f"{TMP_DIR}/forecast_{wrf_station_code}_{roadcast_start}.xml"
+        forecast_filename = f"{TMP_DIR}/forecast_{traffic_station.wrf_code}_{roadcast_start}.xml"
         forecast.to_xml(forecast_filename)
         logger.info(f'forecast - XML saved in {forecast_filename} ')
         return forecast_filename, roadcast_start
