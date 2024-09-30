@@ -87,8 +87,6 @@ class Station:
             station_type=dict_data["station_type"],
             origin=dict_data["origin"]
         )
-        if "wrf_code" in dict_data.keys():
-            res.wrf_code = dict_data["wrf_code"]
         return res
 
 
