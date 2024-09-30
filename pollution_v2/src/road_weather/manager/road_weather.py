@@ -63,7 +63,7 @@ class RoadWeatherManager(StationManager):
         # !!!: temporarily downloading forecast data of WRF from CISMA
         # TODO: replace with the actual forecast data from ODH when available
 
-        xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/1{traffic_station.wrf_code}.xml"
+        xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/{traffic_station.wrf_code}.xml"
 
         forecast = Forecast(traffic_station.wrf_code)
         forecast.download_xml(xml_url)
