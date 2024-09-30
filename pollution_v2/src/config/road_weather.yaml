@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 whitelist:
   - 2021
   - 2022
@@ -5,7 +9,7 @@ whitelist:
   - 2023
 
 mappings:
-  2021: 01
-  2022: 02
-  1888: 03
-  2023: 04
+  2021: "101"
+  2022: "102"
+  1888: "103"
+  2023: "104"

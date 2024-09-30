@@ -6,17 +6,17 @@ from __future__ import absolute_import, annotations
 
 import datetime
 import logging
-from typing import List, Dict
+import time
+import urllib
+from typing import List
 
-import pandas as pd
-
-from common.data_model.common import VehicleClass
-from common.data_model.pollution import PollutionEntry, PollutantClass
-from common.data_model import TrafficMeasureCollection, TrafficSensorStation
-from common.data_model.road_weather import RoadWeatherObservationMeasureCollection, RoadWeatherForecastMeasureCollection
-from common.data_model.validation import ValidationMeasureCollection
+from common.data_model import TrafficSensorStation, RoadWeatherObservationMeasureCollection
 from common.model.helper import ModelHelper
-from pollution_connector.model.CopertEmissions import copert_emissions
+
+import urllib.request
+import mimetypes
+
+from common.settings import TMP_DIR, METRO_WS_PREDICTION_ENDPOINT
 
 logger = logging.getLogger("pollution_v2.road_weather.model.road_weather_model")
 
@@ -25,6 +25,24 @@ class RoadWeatherModel:
     """
     The model for computing road condition.
     """
+
+    @classmethod
+    def create_multipart_formdata(cls, files):
+
+        boundary = '----------Boundary'
+        lines = []
+        for filename in files:
+            content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+            lines.append(f'--{boundary}'.encode())
+            lines.append(f'Content-Disposition: form-data; name="files"; filename="{filename}"'.encode())
+            lines.append(f'Content-Type: {content_type}'.encode())
+            lines.append(''.encode())
+            with open(filename, 'rb') as f:
+                lines.append(f.read())
+        lines.append(f'--{boundary}--'.encode())
+        lines.append(''.encode())
+        body = b'\r\n'.join(lines)
+        return body, boundary
 
     def compute_data(self, observation: RoadWeatherObservationMeasureCollection,
                      forecast_filename: str,  # TODO: change with RoadWeatherForecastMeasureCollection
@@ -39,12 +57,37 @@ class RoadWeatherModel:
         :return: The list of road conditions
         """
 
-        logger.info(f"Computing road condition for station [{station.code}]")
-        logger.info(f"Observation measures available: {len(observation.measures)}")
-        logger.info(f"Forecast file name: {forecast_filename}")
+        logger.info(f"Creating observations file from {len(observation.measures)} measures")
+
+        entries = observation.get_entries()
+        observation_filename = f"{TMP_DIR}/observations_{round(time.time() * 1000)}.csv"
+        with open(observation_filename, 'a') as tmp_csv:
+            tmp_csv.write('"time","station_code","prec_qta","stato_meteo",'
+                          '"temp_aria","temp_rugiada","temp_suolo","vento_vel"\n')
+            for entry in entries:
+                tmp_csv.write(f'{entry.valid_time.strftime("%Y-%m-%d %H:%M:%S")},{entry.station.code},{entry.prec_qta},'
+                              f'{entry.stato_meteo},{entry.temp_aria},{entry.temp_rugiada},{entry.temp_suolo},'
+                              f'{entry.vento_vel}\n')
+
+        logger.info(f"Computing road condition for station [{station.code}] with observations from "
+                    f"{observation_filename} and forecast from {forecast_filename}")
         logger.info(f"Forecast start: {forecast_start}")
 
-        # TODO: convert to dataframe and compute road condition
+        url = f"{METRO_WS_PREDICTION_ENDPOINT}{station.wrf_code}"
+
+        # List of files to upload
+        files_to_upload = [forecast_filename, observation_filename]
+
+        # Create multipart form data
+        body, boundary = RoadWeatherModel.create_multipart_formdata(files_to_upload)
+
+        # Create a request object
+        req = urllib.request.Request(url, data=body)
+        req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
+
+        with urllib.request.urlopen(req) as response:
+            response_data = response.read()
+            print(response_data.decode('utf-8'))  # Print the response from the server
 
         # validation_data_types = {str(measure.data_type) for measure in validation.measures}
         # traffic_data_types = {str(measure.data_type) for measure in traffic.measures}

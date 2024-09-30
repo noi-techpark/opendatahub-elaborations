@@ -7,7 +7,7 @@ from __future__ import absolute_import, annotations
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Type
 
 from common.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
 from common.connector.collector import ConnectorCollector
@@ -35,6 +35,7 @@ class TrafficStationManager(StationManager, ABC):
                  checkpoint_cache: Optional[ComputationCheckpointCache] = None):
         super().__init__(connector_collector, provenance, checkpoint_cache)
         self._traffic_stations: List[TrafficSensorStation] = []
+        self.station_list_connector = connector_collector.traffic
 
     @abstractmethod
     def _get_manager_code(self) -> str:
@@ -269,7 +270,7 @@ class TrafficStationManager(StationManager, ABC):
         """
         Retrieve the list of all the available stations.
         """
-        return self._connector_collector.traffic.get_station_list()
+        return self.station_list_connector.get_station_list()
 
     def _download_traffic_data(self,
                                from_date: datetime,

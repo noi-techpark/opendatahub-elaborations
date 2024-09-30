@@ -6,7 +6,7 @@ from __future__ import absolute_import, annotations
 
 from common.connector.history import HistoryODHConnector
 from common.connector.pollution import PollutionODHConnector
-from common.connector.road_weather import RoadWeatherObservationODHConnector
+from common.connector.road_weather import RoadWeatherObservationODHConnector, RoadWeatherForecastODHConnector
 from common.connector.traffic import TrafficODHConnector
 from common.connector.validation import ValidationODHConnector
 from common.settings import ODH_AUTHENTICATION_URL, ODH_USERNAME, ODH_PASSWORD, ODH_CLIENT_ID, \
@@ -49,7 +49,7 @@ class ConnectorCollector:
             "validation": ValidationODHConnector,
             "pollution": PollutionODHConnector,
             "road_weather_observation": RoadWeatherObservationODHConnector,
-            "road_weather_forecast": RoadWeatherObservationODHConnector
+            "road_weather_forecast": RoadWeatherForecastODHConnector
         }
 
         connectors = {}

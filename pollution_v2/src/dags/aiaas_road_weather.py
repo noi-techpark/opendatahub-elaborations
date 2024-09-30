@@ -13,7 +13,7 @@ from dags.common import StationsDAG
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
-from common.data_model import TrafficSensorStation
+from common.data_model import Station
 from common.settings import (ODH_MINIMUM_STARTING_DATE, COMPUTATION_CHECKPOINT_REDIS_DB,
                              COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST,
                              PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION,
@@ -95,23 +95,39 @@ with StationsDAG(
         manager = _init_manager()
 
         stations_list = dag.get_stations_list(manager, **kwargs)
+        logger.info("Found station codes: " + str([station.code for station in stations_list]))
 
         with open(ROAD_WEATHER_CONFIG_FILE, 'r') as file:
             config = yaml.safe_load(file)
             whitelist = config.get('whitelist', [])
+            station_mapping = {str(k): str(v) for k, v in config['mappings'].items()}
 
         if whitelist:
+            whitelist = list(map(str, whitelist))
             logger.info(f"Filtering stations with whitelist: {whitelist}")
-            stations_list = [station for station in stations_list if station.code in whitelist]
+            stations_list = [station for station in stations_list if str(station.code) in whitelist]
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
         # from using classes and other complex structures.
-        station_dicts = [station.to_json() for station in stations_list]
+        station_dicts = []
+        for station in stations_list:
+            if str(station.code) not in station_mapping:
+                logger.error(f"Station code [{station.code}] not found in the mapping [{ROAD_WEATHER_CONFIG_FILE}]")
+                raise ValueError(f"Station code [{station.code}] not found in the mapping")
+
+            logger.info("Found mapping for ODH station code "
+                        "[" + str(str(station.code)) + "] -> CISMA station code "
+                                                       "[" + str(station_mapping[station.code]) + "]")
+            logger.info(f"Downloading forecast data for station [{station.code}] from CISMA")
+            wrf_station_code = station_mapping[str(station.code)]
+            station.wrf_code = wrf_station_code
+
+            station_dicts.append(station.to_json())
+
         logger.info(f"Retrieved {len(station_dicts)} stations")
 
-        # TODO restore full list
-        return station_dicts[:2]
+        return station_dicts
 
 
     @task
@@ -122,7 +138,7 @@ with StationsDAG(
         :param station_dict: the station to process
         """
 
-        station = TrafficSensorStation.from_json(station_dict)
+        station = Station.from_json(station_dict)
         logger.info(f"Received station {station}")
 
         manager = _init_manager()
@@ -131,11 +147,8 @@ with StationsDAG(
         # min_from_date, max_to_date = dag.init_date_range(None, None)
 
         computation_start_dt = datetime.now()
-        # logger.info(f"Running computation from [{min_from_date}] to [{max_to_date}]")
         logger.info(f"Running computation")
         manager.run_computation_for_single_station(station)
-
-        # TODO: run container with METRo
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")

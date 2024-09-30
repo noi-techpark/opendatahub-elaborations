@@ -7,13 +7,12 @@ from __future__ import absolute_import, annotations
 from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
-from common.data_model.road_weather import RoadWeatherObservationMeasure, RoadWeatherForecastMeasure, \
-    RoadWeatherObservationMeasureType, RoadWeatherForecastMeasureType
-from common.data_model.traffic import TrafficSensorStation
+from common.data_model import RoadWeatherObservationMeasure, RoadWeatherForecastMeasure, \
+    RoadWeatherObservationMeasureType, RoadWeatherForecastMeasureType, Station
 from common.settings import PERIOD_1SEC
 
 
-class RoadWeatherObservationODHConnector(ODHBaseConnector[RoadWeatherObservationMeasure, TrafficSensorStation]):
+class RoadWeatherObservationODHConnector(ODHBaseConnector[RoadWeatherObservationMeasure, Station]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -55,15 +54,15 @@ class RoadWeatherObservationODHConnector(ODHBaseConnector[RoadWeatherObservation
                          period)
 
     @staticmethod
-    def build_station(raw_station: dict) -> TrafficSensorStation:
-        return TrafficSensorStation.from_odh_repr(raw_station)
+    def build_station(raw_station: dict) -> Station:
+        return Station.from_odh_repr(raw_station)
 
     @staticmethod
     def build_measure(raw_measure: dict) -> RoadWeatherObservationMeasure:
         return RoadWeatherObservationMeasure.from_odh_repr(raw_measure)
 
 
-class RoadWeatherForecastODHConnector(ODHBaseConnector[RoadWeatherForecastMeasure, TrafficSensorStation]):
+class RoadWeatherForecastODHConnector(ODHBaseConnector[RoadWeatherForecastMeasure, Station]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -104,8 +103,8 @@ class RoadWeatherForecastODHConnector(ODHBaseConnector[RoadWeatherForecastMeasur
                          period)
 
     @staticmethod
-    def build_station(raw_station: dict) -> TrafficSensorStation:
-        return TrafficSensorStation.from_odh_repr(raw_station)
+    def build_station(raw_station: dict) -> Station:
+        return Station.from_odh_repr(raw_station)
 
     @staticmethod
     def build_measure(raw_measure: dict) -> RoadWeatherForecastMeasure:

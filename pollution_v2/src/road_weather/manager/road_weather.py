@@ -6,18 +6,16 @@ from __future__ import absolute_import, annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import yaml
 
-from common.connector.common import ODHBaseConnector
-from common.data_model import TrafficSensorStation, Station
+from common.cache.computation_checkpoint import ComputationCheckpointCache
+from common.connector.collector import ConnectorCollector
+from common.data_model import TrafficSensorStation, Station, RoadWeatherObservationMeasureCollection, Provenance
 from common.data_model.entry import GenericEntry
-from common.data_model.road_weather import RoadWeatherObservationMeasureCollection, RoadWeatherForecastMeasureCollection
 from common.manager.station import StationManager
-from common.manager.traffic_station import TrafficStationManager
-from common.data_model.common import DataType, MeasureCollection
-from common.settings import ROAD_WEATHER_CONFIG_FILE
+from common.settings import ROAD_WEATHER_CONFIG_FILE, TMP_DIR
 from road_weather.manager._forecast import Forecast
 from road_weather.model.road_weather_model import RoadWeatherModel
 
@@ -28,6 +26,11 @@ class RoadWeatherManager(StationManager):
     """
     Manager in charge of executing pollution computation.
     """
+
+    def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance,
+                 checkpoint_cache: Optional[ComputationCheckpointCache] = None) -> None:
+        super().__init__(connector_collector, provenance, checkpoint_cache)
+        self.station_list_connector = connector_collector.road_weather_observation
 
     def _download_observation_data(self,
                                    from_date: datetime,
@@ -60,30 +63,17 @@ class RoadWeatherManager(StationManager):
         # !!!: temporarily downloading forecast data of WRF from CISMA
         # TODO: replace with the actual forecast data from ODH when available
 
-        station_code = traffic_station.code
+        xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/{traffic_station.wrf_code}.xml"
 
-        with open(ROAD_WEATHER_CONFIG_FILE, 'r') as file:
-            config = yaml.safe_load(file)
-            # ODH station code -> WRF station code
-            station_mapping = config['mappings']
-
-        if station_code not in station_mapping:
-            logger.error(f"Station code [{station_code}] not found in the mapping [{ROAD_WEATHER_CONFIG_FILE}]")
-            raise ValueError(f"Station code [{station_code}] not found in the mapping")
-
-        logger.info("Downloading forecast data for station [{station_code}] from CISMA")
-        wrf_station_code = station_mapping[station_code]
-        xml_url = f"https://www.cisma.bz.it/wrf-alpha/CR/1{wrf_station_code}.xml"
-
-        forecast = Forecast(wrf_station_code)
+        forecast = Forecast(traffic_station.wrf_code)
         forecast.download_xml(xml_url)
         forecast.interpolate_hourly()
         forecast.negative_radiation_filter()
         roadcast_start = forecast.start
-        print('* forecast - XML processed correctly')
-        forecast_filename = f"data/forecast/forecast_{wrf_station_code}_{roadcast_start}.xml"
+        logger.info('forecast - XML processed correctly')
+        forecast_filename = f"{TMP_DIR}/forecast_{traffic_station.wrf_code}_{roadcast_start}.xml"
         forecast.to_xml(forecast_filename)
-        print('* forecast - XML saved in ', forecast_filename)
+        logger.info(f'forecast - XML saved in {forecast_filename} ')
         return forecast_filename, roadcast_start
 
     def _compute_observation_start_end_dates(self, forecast_start: str) -> Tuple[datetime, datetime]:
@@ -101,8 +91,7 @@ class RoadWeatherManager(StationManager):
         end_date = forecast_start + timedelta(hours=8)
         return start_date, end_date
 
-
-    def _download_data_and_compute(self, station: TrafficSensorStation) -> List[GenericEntry]:
+    def _download_data_and_compute(self, station: Station) -> List[GenericEntry]:
 
         if not station:
             logger.error(f"Cannot compute road condition on empty station")
@@ -129,7 +118,7 @@ class RoadWeatherManager(StationManager):
 
         return []
 
-    def run_computation_for_single_station(self, station: TrafficSensorStation) -> None:
+    def run_computation_for_single_station(self, station: Station) -> None:
         """
         Run the computation for a single station.
 
