@@ -109,8 +109,7 @@ class RoadWeatherObservationMeasureCollection(MeasureCollection[RoadWeatherObser
                 result[group_by_station][group_by_time] = RoadWeatherObservationEntry(
                     station=stations[group_by_station],
                     valid_time=group_by_time,
-                    # TODO check
-                    period=-1,
+                    period=1,
                     temp_aria=entry['temp_aria'],
                     temp_suolo=entry['temp_suolo'],
                     temp_rugiada=entry['temp_rugiada'],
