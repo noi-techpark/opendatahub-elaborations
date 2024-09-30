@@ -16,7 +16,7 @@ from common.model.helper import ModelHelper
 import urllib.request
 import mimetypes
 
-from common.settings import TMP_DIR
+from common.settings import TMP_DIR, METRO_WS_PREDICTION_ENDPOINT
 
 logger = logging.getLogger("pollution_v2.road_weather.model.road_weather_model")
 
@@ -73,8 +73,7 @@ class RoadWeatherModel:
                     f"{observation_filename} and forecast from {forecast_filename}")
         logger.info(f"Forecast start: {forecast_start}")
 
-        # TODO cablato
-        url = f"http://metro:80/predict/?station_code={station.wrf_code}"
+        url = f"{METRO_WS_PREDICTION_ENDPOINT}{station.wrf_code}"
 
         # List of files to upload
         files_to_upload = [forecast_filename, observation_filename]

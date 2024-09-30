@@ -78,3 +78,5 @@ MAIN_DIR = os.getenv("MAIN_DIR", ".")
 TMP_DIR = f'{MAIN_DIR}/tmp'
 if not os.path.exists(TMP_DIR):
     os.makedirs(TMP_DIR)
+
+METRO_WS_PREDICTION_ENDPOINT = Variable.get("METRO_WS_PREDICTION_ENDPOINT", "http://metro:80/predict/?station_code=")
