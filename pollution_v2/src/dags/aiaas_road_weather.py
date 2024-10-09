@@ -7,18 +7,14 @@ from datetime import timedelta, datetime
 
 import yaml
 from airflow.decorators import task
-from redis.client import Redis
 
 from dags.common import StationsDAG
-from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
 from common.data_model import Station
-from common.settings import (ODH_MINIMUM_STARTING_DATE, COMPUTATION_CHECKPOINT_REDIS_DB,
-                             COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST,
-                             PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION,
-                             PROVENANCE_VERSION, DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION,
-                             AIRFLOW_NUM_RETRIES, DAG_ROAD_WEATHER_EXECUTION_CRONTAB, ROAD_WEATHER_CONFIG_FILE)
+from common.settings import (ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE,
+                             PROVENANCE_NAME_POLL_ELABORATION, PROVENANCE_VERSION, AIRFLOW_NUM_RETRIES,
+                             DAG_ROAD_WEATHER_EXECUTION_CRONTAB, ROAD_WEATHER_CONFIG_FILE)
 from road_weather.manager.road_weather import RoadWeatherManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
