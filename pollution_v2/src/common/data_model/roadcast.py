@@ -26,10 +26,54 @@ class RoadCastTypeClass(Enum):
     on the basis of the number of forecasts requested
     """
 
-    RW_FORECAST_60 = "forecast-60"
-    RW_FORECAST_120 = "forecast-120"
-    RW_FORECAST_180 = "forecast-180"
-    RW_FORECAST_240 = "forecast-240"
+    RW_FORECAST_60 = 'forecast-60'
+    RW_FORECAST_120 = 'forecast-120'
+    RW_FORECAST_180 = 'forecast-180'
+    RW_FORECAST_240 = 'forecast-240'
+    RW_FORECAST_300 = 'forecast-300'
+    RW_FORECAST_360 = 'forecast-360'
+    RW_FORECAST_420 = 'forecast-420'
+    RW_FORECAST_480 = 'forecast-480'
+    RW_FORECAST_540 = 'forecast-540'
+    RW_FORECAST_600 = 'forecast-600'
+    RW_FORECAST_660 = 'forecast-660'
+    RW_FORECAST_720 = 'forecast-720'
+    RW_FORECAST_780 = 'forecast-780'
+    RW_FORECAST_840 = 'forecast-840'
+    RW_FORECAST_900 = 'forecast-900'
+    RW_FORECAST_960 = 'forecast-960'
+    RW_FORECAST_1020 = 'forecast-1020'
+    RW_FORECAST_1080 = 'forecast-1080'
+    RW_FORECAST_1140 = 'forecast-1140'
+    RW_FORECAST_1200 = 'forecast-1200'
+    RW_FORECAST_1260 = 'forecast-1260'
+    RW_FORECAST_1320 = 'forecast-1320'
+    RW_FORECAST_1380 = 'forecast-1380'
+    RW_FORECAST_1440 = 'forecast-1440'
+    RW_FORECAST_1500 = 'forecast-1500'
+    RW_FORECAST_1560 = 'forecast-1560'
+    RW_FORECAST_1620 = 'forecast-1620'
+    RW_FORECAST_1680 = 'forecast-1680'
+    RW_FORECAST_1740 = 'forecast-1740'
+    RW_FORECAST_1800 = 'forecast-1800'
+    RW_FORECAST_1860 = 'forecast-1860'
+    RW_FORECAST_1920 = 'forecast-1920'
+    RW_FORECAST_1980 = 'forecast-1980'
+    RW_FORECAST_2040 = 'forecast-2040'
+    RW_FORECAST_2100 = 'forecast-2100'
+    RW_FORECAST_2160 = 'forecast-2160'
+    RW_FORECAST_2220 = 'forecast-2220'
+    RW_FORECAST_2280 = 'forecast-2280'
+    RW_FORECAST_2340 = 'forecast-2340'
+    RW_FORECAST_2400 = 'forecast-2400'
+    RW_FORECAST_2460 = 'forecast-2460'
+    RW_FORECAST_2520 = 'forecast-2520'
+    RW_FORECAST_2580 = 'forecast-2580'
+    RW_FORECAST_2640 = 'forecast-2640'
+    RW_FORECAST_2700 = 'forecast-2700'
+    RW_FORECAST_2760 = 'forecast-2760'
+    RW_FORECAST_2820 = 'forecast-2820'
+    RW_FORECAST_2880 = 'forecast-2880'
 
     @classmethod
     def get_by_suffix(cls, suffix: str):

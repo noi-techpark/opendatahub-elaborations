@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import List
 from xml.etree import ElementTree
+from zoneinfo import ZoneInfo
 
 from common.data_model import TrafficSensorStation, RoadWeatherObservationMeasureCollection, Station
 
@@ -18,7 +19,8 @@ import urllib.request
 import mimetypes
 
 from common.data_model.roadcast import RoadCastEntry, RoadCastTypeClass, RoadCastClass
-from common.settings import TMP_DIR, METRO_WS_PREDICTION_ENDPOINT
+from common.settings import TMP_DIR, METRO_WS_PREDICTION_ENDPOINT, ROAD_WEATHER_NUM_FORECASTS, \
+    ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
 
 logger = logging.getLogger("pollution_v2.road_weather.model.road_weather_model")
 
@@ -113,12 +115,10 @@ class RoadWeatherModel:
     @staticmethod
     def _get_entries_from_xml(response_data, station: Station) -> List[RoadCastEntry]:
 
-        # TODO cablati
-        # first_forecast_format = '%Y-%m-%dT%H:%M'
+        # TODO cablatio
         roadcast_format = '%Y-%m-%dT%H:%M%z'
 
         root = ElementTree.fromstring(response_data.decode('utf-8'))
-        # first_forecast_element = root.findall('.//first-roadcast')
         prediction_list_elements = root.findall('.//prediction-list')
         predictions_list = []
         for prediction_list_element in prediction_list_elements:
@@ -133,19 +133,21 @@ class RoadWeatherModel:
             rc_by_datetime[datetime.strptime(prediction['roadcast-time'], roadcast_format)] = prediction['rc']
         min_roadcast_time = min([datetime.strptime(prediction['roadcast-time'], roadcast_format)
                                  for prediction in predictions_list])
+
+        tz = ZoneInfo("Europe/Rome")
+
         out_entries = []
-        # TODO 5 cablato
-        for delta in range(1, 5):
+        for delta in range(1, ROAD_WEATHER_NUM_FORECASTS + 1):
             roadcast_time = min_roadcast_time + timedelta(hours=delta)
 
-            minutes = delta * 60
+            minutes = delta * ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
             out_entries.append(RoadCastEntry(
                 station=station,
-                valid_time=roadcast_time,
+                valid_time=roadcast_time.replace(tzinfo=tz),
                 roadcast_class=RoadCastClass.ROADCAST,
                 entry_class=RoadCastTypeClass.get_by_suffix(str(minutes)),
                 entry_value=rc_by_datetime.get(roadcast_time),
-                period=minutes * 60
+                period=minutes * ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
             ))
         [print(entry) for entry in out_entries]
         return out_entries
