@@ -27,7 +27,6 @@ class RoadWeatherObservationMeasureType(Enum):
 
 class RoadWeatherForecastMeasureType(Enum):
 
-    # TODO: check if these are correct
     TEMP_ARIA = "temp_aria"
     TEMP_RUGIADA = "temp_rugiada"
     PREC_QTA = "prec_qta"

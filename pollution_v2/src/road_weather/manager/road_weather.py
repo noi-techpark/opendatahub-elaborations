@@ -8,14 +8,14 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Tuple, Optional
 
-import yaml
-
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
-from common.data_model import TrafficSensorStation, Station, RoadWeatherObservationMeasureCollection, Provenance
+from common.connector.common import ODHBaseConnector
+from common.data_model import Station, RoadWeatherObservationMeasureCollection, Provenance, DataType, MeasureCollection
 from common.data_model.entry import GenericEntry
+from common.data_model.roadcast import RoadCastMeasure, RoadCastEntry, RoadCastMeasureCollection
 from common.manager.station import StationManager
-from common.settings import ROAD_WEATHER_CONFIG_FILE, TMP_DIR
+from common.settings import TMP_DIR
 from road_weather.manager._forecast import Forecast
 from road_weather.model.road_weather_model import RoadWeatherModel
 
@@ -30,7 +30,20 @@ class RoadWeatherManager(StationManager):
     def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance,
                  checkpoint_cache: Optional[ComputationCheckpointCache] = None) -> None:
         super().__init__(connector_collector, provenance, checkpoint_cache)
-        self.station_list_connector = connector_collector.road_weather_observation
+        # TODO a che serve?
+        self.station_list_connector = self.get_input_connector()
+
+    def get_input_connector(self) -> ODHBaseConnector:
+        return self._connector_collector.road_weather_observation
+
+    def get_output_connector(self) -> ODHBaseConnector:
+        return self._connector_collector.road_weather_forecast
+
+    def _get_data_types(self) -> List[DataType]:
+        return RoadCastMeasure.get_data_types()
+
+    def _build_from_entries(self, input_entries: List[RoadCastEntry]) -> MeasureCollection:
+        return RoadCastMeasureCollection.build_from_entries(input_entries, self._provenance)
 
     def _download_observation_data(self,
                                    from_date: datetime,
@@ -45,7 +58,7 @@ class RoadWeatherManager(StationManager):
         :return: The resulting RoadWeatherObservationMeasureCollection containing the road weather observation data.
         """
 
-        connector = self._connector_collector.road_weather_observation
+        connector = self.get_input_connector()
         logger.info(f"Downloading observation data for station [{traffic_station.code}] from [{from_date}] to [{to_date}]")
         return RoadWeatherObservationMeasureCollection(
             measures=connector.get_measures(from_date=from_date, to_date=to_date, station=traffic_station)
@@ -84,10 +97,10 @@ class RoadWeatherManager(StationManager):
         :return: The start and end dates for the observation computation.
         """
 
-        # start_obs = forecast.start - 12 h
+        # start_obs = forecast.start - 16 h
         # end_obs = forecast.start + 8 h
         forecast_start = datetime.strptime(forecast_start, '%Y-%m-%dT%H:%M')
-        start_date = forecast_start - timedelta(hours=12)
+        start_date = forecast_start - timedelta(hours=16)
         end_date = forecast_start + timedelta(hours=8)
         return start_date, end_date
 
@@ -124,4 +137,5 @@ class RoadWeatherManager(StationManager):
 
         :param station: The station for which to run the computation.
         """
-        self._download_data_and_compute(station)
+        entries = self._download_data_and_compute(station)
+        self._upload_data(entries)
