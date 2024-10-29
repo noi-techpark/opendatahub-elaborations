@@ -38,6 +38,11 @@ class RoadWeatherForecastMeasureType(Enum):
     RAD_INFRAROSSI = "rad_infrarossi"
 
 
+class RoadWeatherConfLevelMeasureType(Enum):
+
+    CONF_LEVEL = "conf_level"
+
+
 @dataclass
 class RoadWeatherObservationEntry(GenericEntry):
 
@@ -141,6 +146,13 @@ class RoadWeatherForecastEntry(GenericEntry):
 class RoadWeatherForecastMeasure(Measure):
     """
     Measure representing road weather forecast.
+    """
+    pass
+
+
+class RoadWeatherConfLevelMeasure(Measure):
+    """
+    Measure representing road weather forecast confidence level.
     """
     pass
 

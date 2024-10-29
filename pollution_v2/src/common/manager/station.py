@@ -67,7 +67,8 @@ class StationManager(ABC):
 
         return self.station_list_connector.get_station_list()
 
-    def _upload_data(self, input_entries: List[GenericEntry]) -> None:
+    def _upload_data(self, input_entries: List[GenericEntry],
+                     output_alternative_connector: ODHBaseConnector = None) -> None:
         """
         Upload the input data on ODH.
         If a data is already present it will be not overridden and
@@ -76,14 +77,18 @@ class StationManager(ABC):
         :param input_entries: The entries to be processed.
         """
 
+        output_connector = self.get_output_connector()
+        if output_alternative_connector:
+            output_connector = output_alternative_connector
+
         logger.info(f"Posting provenance {self._provenance}")
         if not self._provenance.provenance_id:
-            self._provenance.provenance_id = self.get_output_connector().post_provenance(self._provenance)
+            self._provenance.provenance_id = output_connector.post_provenance(self._provenance)
 
         logger.info(f"Posting data types {self._get_data_types()}")
         if self._create_data_types:
-            self.get_output_connector().post_data_types(self._get_data_types(), self._provenance)
+            output_connector.post_data_types(self._get_data_types(), self._provenance)
 
         data = self._build_from_entries(input_entries)
         logger.info(f"Posting measures {len(data.measures)}")
-        self.get_output_connector().post_measures(data.measures)
+        output_connector.post_measures(data.measures)

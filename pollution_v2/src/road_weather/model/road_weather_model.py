@@ -18,24 +18,29 @@ from common.data_model import TrafficSensorStation, RoadWeatherObservationMeasur
 import urllib.request
 import mimetypes
 
-from common.data_model.roadcast import RoadCastEntry, RoadCastTypeClass, RoadCastClass
+from common.data_model.roadcast import RoadCastEntry, RoadCastTypeClass, RoadCastClass, ExtendedRoadCastEntry
 from common.settings import TMP_DIR, METRO_WS_PREDICTION_ENDPOINT, ROAD_WEATHER_NUM_FORECASTS, \
     ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
 
 logger = logging.getLogger("pollution_v2.road_weather.model.road_weather_model")
 
 
-# TODO usare?
 class RoadConditions(Enum):
-    RC1 = "strada asciutta: la quantità di acqua e ghiaccio/neve è minore di 0.2 mm di altezza d’acqua equivalente"
-    RC2 = "strada bagnata: la quantità di acqua è maggiore di 0.2 mm"
-    RC3 = "ghiaccio/neve: la quantità di ghiaccio/neve è maggiore di 0.2 mm di altezza d’acqua equivalente"
-    RC4 = ("misto acqua/neve: le quantità di acqua e ghiaccio/neve sono entrambe maggiori di 0.2 mm di altezza "
-           "d’acqua equivalente")
-    RC5 = "rugiada: condensa con temperatura della superficie stradale maggiore di 0°C"
-    RC6 = "neve sciolta: presenza di precipitazione nevosa con temperatura della superficie stradale maggiore di 0°C"
-    RC7 = "ghiaccio da condensa: condensa sulla strada quando la temperatura della superficie stradale è minore di 0°C"
-    RC8 = "pioggia ghiacciata: presenza di pioggia quando la temperatura della superficie stradale è minore di 0°C"
+    RC1 = "Dry road"
+    RC2 = "Wet road"
+    RC3 = "Ice / snow on the road"
+    RC4 = "Mix water / snow on the road"
+    RC5 = "Dew"
+    RC6 = "Melting snow"
+    RC7 = "Frost"
+    RC8 = "Icing rain"
+
+    @staticmethod
+    def get_enum_member_value(name: str) -> str | None:
+        try:
+            return RoadConditions[name].value
+        except:
+            return None
 
 
 class RoadWeatherModel:
@@ -64,7 +69,7 @@ class RoadWeatherModel:
     def compute_data(self, observation: RoadWeatherObservationMeasureCollection,
                      forecast_filename: str,  # TODO: change with RoadWeatherForecastMeasureCollection
                      forecast_start: str,  # TODO: check if needed
-                     station: TrafficSensorStation) -> List[RoadCastEntry]:
+                     station: TrafficSensorStation) -> List[ExtendedRoadCastEntry]:
         """
         Compute the road condition for the given station.
         :param observation: The road weather observation measure collection
@@ -106,16 +111,33 @@ class RoadWeatherModel:
         try:
             with urllib.request.urlopen(req) as response:
                 response_data = response.read()
-                logger.debug(f"server response: \n{response_data.decode('utf-8')}")
-                return self._get_entries_from_xml(response_data, station)
+                response_content = response_data.decode('utf-8')
+                logger.debug(f"server response: \n{response_content}")
+
+                root = ElementTree.fromstring(response_content)
+                header_element = root.findall('.//header')[0]
+                for tags in header_element:
+                    if tags.tag == 'conf_level':
+                        conf_level = tags.text
+                        logger.info(f"conf level found: {conf_level}")
+                        break
+
+                res = []
+                for entry in self._get_entries_from_xml(response_data, conf_level, station):
+                    extended_entry = ExtendedRoadCastEntry(entry.station, entry.valid_time, entry.roadcast_class,
+                                                           entry.entry_class, entry.entry_value, entry.period)
+                    extended_entry.set_conf_level(conf_level)
+                    res.append(extended_entry)
+
+                return res
         except Exception as e:
             logger.error(f"error while processing request: {e}")
             return []
 
     @staticmethod
-    def _get_entries_from_xml(response_data, station: Station) -> List[RoadCastEntry]:
+    def _get_entries_from_xml(response_data, conf_level: str, station: Station) -> List[RoadCastEntry]:
 
-        # TODO cablatio
+        # TODO cablato
         roadcast_format = '%Y-%m-%dT%H:%M%z'
 
         root = ElementTree.fromstring(response_data.decode('utf-8'))
@@ -130,7 +152,8 @@ class RoadWeatherModel:
                 predictions_list.append(prediction_dict)
         rc_by_datetime = {}
         for prediction in predictions_list:
-            rc_by_datetime[datetime.strptime(prediction['roadcast-time'], roadcast_format)] = prediction['rc']
+            rc_by_datetime[datetime.strptime(prediction['roadcast-time'], roadcast_format)] = (
+                RoadConditions.get_enum_member_value(f"RC{prediction['rc']}"))
         min_roadcast_time = min([datetime.strptime(prediction['roadcast-time'], roadcast_format)
                                  for prediction in predictions_list])
 

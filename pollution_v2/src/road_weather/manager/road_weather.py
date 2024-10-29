@@ -13,7 +13,8 @@ from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
 from common.data_model import Station, RoadWeatherObservationMeasureCollection, Provenance, DataType, MeasureCollection
 from common.data_model.entry import GenericEntry
-from common.data_model.roadcast import RoadCastMeasure, RoadCastEntry, RoadCastMeasureCollection
+from common.data_model.roadcast import RoadCastMeasure, RoadCastEntry, RoadCastMeasureCollection, RoadCastClass, \
+    RoadCastTypeClass
 from common.manager.station import StationManager
 from common.settings import TMP_DIR
 from road_weather.manager._forecast import Forecast
@@ -38,6 +39,9 @@ class RoadWeatherManager(StationManager):
 
     def get_output_connector(self) -> ODHBaseConnector:
         return self._connector_collector.road_weather_forecast
+
+    def get_output_additional_connector(self) -> ODHBaseConnector:
+        return self._connector_collector.road_weather_conf_level
 
     def _get_data_types(self) -> List[DataType]:
         return RoadCastMeasure.get_data_types()
@@ -139,3 +143,17 @@ class RoadWeatherManager(StationManager):
         """
         entries = self._download_data_and_compute(station)
         self._upload_data(entries)
+
+        if (len(entries) > 0 and
+                hasattr(self, "get_output_additional_connector") and self.get_output_additional_connector()):
+            reference_entry = entries[0]
+            entry = RoadCastEntry(
+                station=reference_entry.station,
+                valid_time=reference_entry.valid_time,
+                roadcast_class=RoadCastClass.ROADCAST,
+                entry_class=RoadCastTypeClass.RW_FORECAST_CONF_LEVEL,
+                entry_value=reference_entry.conf_level,
+                period=1
+            )
+            self._upload_data([entry], self.get_output_additional_connector())
+
