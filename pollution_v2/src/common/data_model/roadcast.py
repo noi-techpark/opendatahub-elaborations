@@ -26,6 +26,8 @@ class RoadCastTypeClass(Enum):
     on the basis of the number of forecasts requested
     """
 
+    RW_FORECAST_CONF_LEVEL = 'forecast-conf_level'
+
     RW_FORECAST_60 = 'forecast-60'
     RW_FORECAST_120 = 'forecast-120'
     RW_FORECAST_180 = 'forecast-180'
@@ -94,8 +96,27 @@ class RoadCastEntry(GenericEntry):
         self.entry_value = entry_value
 
     def __str__(self):
-        return (f"station: {self.station.code}, valid_time: {self.valid_time}, roadcast_class: {self.roadcast_class.name}, "
-                f"entry_class: {self.entry_class}, entry_value: {self.entry_value}, period: {self.period}")
+        return (
+            f"station: {self.station.code}, valid_time: {self.valid_time}, roadcast_class: {self.roadcast_class.name}, "
+            f"entry_class: {self.entry_class}, entry_value: {self.entry_value}, period: {self.period}")
+
+
+@dataclass
+class ExtendedRoadCastEntry(RoadCastEntry):
+    conf_level = None
+
+    def __init__(self, station: Station, valid_time: datetime, roadcast_class: RoadCastClass,
+                 entry_class: RoadCastTypeClass, entry_value: Optional[float], period: Optional[int]):
+        super().__init__(station, valid_time, roadcast_class, entry_class, entry_value, period)
+
+    def set_conf_level(self, value):
+        self.conf_level = value
+
+    def __str__(self):
+        return (
+            f"station: {self.station.code}, valid_time: {self.valid_time}, roadcast_class: {self.roadcast_class.name}, "
+            f"entry_class: {self.entry_class}, entry_value: {self.entry_value}, period: {self.period}, "
+            f"conf_level: {self.conf_level}")
 
 
 class RoadCastMeasure(Measure):
