@@ -144,6 +144,7 @@ class RoadWeatherManager(StationManager):
         entries = self._download_data_and_compute(station)
         self._upload_data(entries)
 
+        # reading entries, extracts the confidence level and creates a dedicated entry
         if (len(entries) > 0 and
                 hasattr(self, "get_output_additional_connector") and self.get_output_additional_connector()):
             reference_entry = entries[0]
