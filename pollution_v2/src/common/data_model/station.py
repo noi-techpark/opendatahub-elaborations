@@ -127,6 +127,7 @@ class TrafficSensorStation(Station):
 
     @classmethod
     def from_json(cls, dict_data) -> TrafficSensorStation:
+        wrf_code = dict_data.get("wrf_code") if dict_data.get("wrf_code") is not None else None
         return TrafficSensorStation(
             code=dict_data["code"],
             active=dict_data["active"],
@@ -135,5 +136,6 @@ class TrafficSensorStation(Station):
             metadata=dict_data["metadata"],
             name=dict_data["name"],
             station_type=dict_data["station_type"],
-            origin=dict_data["origin"]
+            origin=dict_data["origin"],
+            wrf_code=wrf_code
         )
