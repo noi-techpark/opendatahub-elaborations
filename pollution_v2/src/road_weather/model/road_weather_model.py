@@ -68,7 +68,7 @@ class RoadWeatherModel:
 
     def compute_data(self, observation: RoadWeatherObservationMeasureCollection,
                      forecast_filename: str,  # TODO: change with RoadWeatherForecastMeasureCollection
-                     forecast_start: str,  # TODO: check if needed
+                     forecast_start: datetime,  # TODO: check if needed
                      station: TrafficSensorStation) -> List[ExtendedRoadCastEntry]:
         """
         Compute the road condition for the given station.

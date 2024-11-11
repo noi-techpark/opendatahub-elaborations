@@ -14,9 +14,9 @@ from common.connector.common import ODHBaseConnector
 from common.data_model import Station, RoadWeatherObservationMeasureCollection, Provenance, DataType, MeasureCollection
 from common.data_model.entry import GenericEntry
 from common.data_model.roadcast import RoadCastMeasure, RoadCastEntry, RoadCastMeasureCollection, RoadCastClass, \
-    RoadCastTypeClass
+    RoadCastTypeClass, ExtendedRoadCastEntry
 from common.manager.station import StationManager
-from common.settings import TMP_DIR
+from common.settings import TMP_DIR, DEFAULT_TIMEZONE
 from road_weather.manager._forecast import Forecast
 from road_weather.model.road_weather_model import RoadWeatherModel
 
@@ -68,7 +68,7 @@ class RoadWeatherManager(StationManager):
             measures=connector.get_measures(from_date=from_date, to_date=to_date, station=traffic_station)
         )
 
-    def _download_forecast_data(self, traffic_station: Station) -> Tuple[str, str]: # TODO: change with RoadWeatherForecastMeasureCollection
+    def _download_forecast_data(self, traffic_station: Station) -> Tuple[str, datetime]: # TODO: change with RoadWeatherForecastMeasureCollection
         """
         Download forecast data measures in the given interval.
 
@@ -91,9 +91,14 @@ class RoadWeatherManager(StationManager):
         forecast_filename = f"{TMP_DIR}/forecast_{traffic_station.wrf_code}_{roadcast_start}.xml"
         forecast.to_xml(forecast_filename)
         logger.info(f'forecast - XML saved in {forecast_filename} ')
+
+        roadcast_start = datetime.strptime(roadcast_start, '%Y-%m-%dT%H:%M')
+        if roadcast_start.tzinfo is None:
+            roadcast_start = DEFAULT_TIMEZONE.localize(roadcast_start)
+
         return forecast_filename, roadcast_start
 
-    def _compute_observation_start_end_dates(self, forecast_start: str) -> Tuple[datetime, datetime]:
+    def _compute_observation_start_end_dates(self, forecast_start: datetime) -> Tuple[datetime, datetime]:
         """
         Compute the start and end dates for the observation computation.
 
@@ -102,10 +107,15 @@ class RoadWeatherManager(StationManager):
         """
 
         # start_obs = forecast.start - 16 h
-        # end_obs = forecast.start + 8 h
-        forecast_start = datetime.strptime(forecast_start, '%Y-%m-%dT%H:%M')
         start_date = forecast_start - timedelta(hours=16)
+        if start_date.tzinfo is None:
+            start_date = DEFAULT_TIMEZONE.localize(start_date)
+
+        # end_obs = forecast.start + 8 h
         end_date = forecast_start + timedelta(hours=8)
+        if end_date.tzinfo is None:
+            end_date = DEFAULT_TIMEZONE.localize(end_date)
+
         return start_date, end_date
 
     def _download_data_and_compute(self, station: Station) -> List[GenericEntry]:
@@ -115,8 +125,10 @@ class RoadWeatherManager(StationManager):
             return []
 
         observation_data = []
+        to_date = None
         forecast_data_xml_path = ""
-        forecast_start = ""
+        forecast_start = None
+        max_observation_data = None
         try:
             # TODO: change with actual implementation from ODH when available
             forecast_data_xml_path, forecast_start = self._download_forecast_data(station)
@@ -124,14 +136,20 @@ class RoadWeatherManager(StationManager):
             start_date, to_date = self._compute_observation_start_end_dates(forecast_start)
 
             observation_data = self._download_observation_data(start_date, to_date, station)
+            max_observation_data = max([item.valid_time for item in observation_data.get_entries()])
         except Exception as e:
             logger.exception(
                 f"Unable to download observation and forecast data for station [{station.code}]",
                 exc_info=e)
 
-        if observation_data and forecast_data_xml_path:
+        if max_observation_data and observation_data and forecast_data_xml_path:
             model = RoadWeatherModel()
-            return model.compute_data(observation_data, forecast_data_xml_path, forecast_start, station)
+            res: list[ExtendedRoadCastEntry] = model.compute_data(observation_data, forecast_data_xml_path,
+                                                                  forecast_start, station)
+            logger.info(f"Received {len(res)} records from road weahter WS")
+            res = [item for item in res if item.valid_time > max_observation_data]
+            logger.info(f"Remaining with {len(res)} records from road weahter WS once filter on date {max_observation_data} is applied")
+            return res
 
         return []
 
