@@ -49,7 +49,8 @@ class TestDAGCommon(TestCase):
             "metadata": {"a22_metadata": "{\"metro\":\"123\"}", "sensor_type": "induction_loop"},
             "name": "station",
             "station_type": "type",
-            "origin": "origin"
+            "origin": "origin",
+            "wrf_code": None
         }
 
         self.station2_dict = self.station_dict.copy()
