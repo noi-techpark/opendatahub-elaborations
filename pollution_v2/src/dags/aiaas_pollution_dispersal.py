@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import logging
+import requests
 from datetime import timedelta, datetime
 
-import yaml
 from airflow.decorators import task
 
 from dags.common import StationsDAG
@@ -14,7 +14,7 @@ from common.data_model.common import Provenance
 from common.data_model import Station
 from common.settings import (ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE,
                              PROVENANCE_NAME_POLL_ELABORATION, PROVENANCE_VERSION, AIRFLOW_NUM_RETRIES,
-                             DAG_POLLUTION_DISPERSAL_EXECUTION_CRONTAB)
+                             DAG_POLLUTION_DISPERSAL_EXECUTION_CRONTAB, POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT)
 from pollution_dispersal.manager.pollution_dispersal import PollutionDispersalManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -94,31 +94,37 @@ with StationsDAG(
         logger.info("Found station codes: " + str([station.code for station in stations_list]))
 
         # TODO: call ws endpoint to retrieve the mapping
-        station_mapping = {
-            "A22:684:1": "83200MS",
-        }
+        response = requests.get(POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT)
+        if (response.status_code != 200):
+            logger.error(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
+            raise ValueError(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
+        logger.info(f"Retrieved station mapping: {response.text}")
+        station_mapping = response.json()
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
         # from using classes and other complex structures.
         station_dicts = []
         for station in stations_list:
-            if str(station.code) not in station_mapping:
-                logger.error(f"Station code [{station.code}] not found in the mapping [{station_mapping}]")
+            if (station.code != "A22:684:1"):
+                continue
+            station_id = str(station.id_stazione)
+            if station_id not in station_mapping:
+                logger.error(f"Station code [{station_id}] not found in the mapping [{station_mapping}]")
                 # TODO: decide if we want to raise an error or just skip the station
                 # raise ValueError(f"Station code [{station.code}] not found in the mapping")
                 continue
 
-            logger.info("Found mapping for ODH traffic station code [" + str(str(station.code)) + "]" +
-                        " -> ODH meteo station code [" + str(station_mapping[station.code]) + "]")
-            meteo_station_code = station_mapping[str(station.code)]
+            logger.info("Found mapping for ODH traffic station code [" + station_id + "]" +
+                        " -> ODH meteo station code [" + str(station_mapping[station_id]) + "]")
+            meteo_station_code = station_mapping[station_id]
             station.meteo_station_code = meteo_station_code
 
             station_dicts.append(station.to_json())
 
         logger.info(f"Retrieved {len(station_dicts)} stations")
 
-        return [station for station in station_dicts if station['code'] == "A22:684:1"][:1]
+        return station_dicts[:1]
 
 
     @task
