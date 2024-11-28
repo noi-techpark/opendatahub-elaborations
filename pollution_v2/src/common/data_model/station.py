@@ -18,6 +18,7 @@ class Station:
 
     code: str
     wrf_code: Optional[str]
+    meteo_station_code: Optional[str]
     active: bool
     available: bool
     coordinates: dict
@@ -51,7 +52,8 @@ class Station:
     def from_odh_repr(cls, raw_data: dict):
         return cls(
             code=raw_data["scode"],
-            wrf_code=raw_data.get("wrf_code"),
+            wrf_code=raw_data.get("wrf_code", None),
+            meteo_station_code=raw_data.get("meteo_station_code", None),
             active=raw_data["sactive"],
             available=raw_data["savailable"],
             coordinates=raw_data["scoordinate"],
@@ -65,6 +67,7 @@ class Station:
         return {
             "code": self.code,
             "wrf_code": self.wrf_code,
+            "meteo_station_code": self.meteo_station_code,
             "active": self.active,
             "available": self.available,
             "coordinates": self.coordinates,
@@ -78,7 +81,8 @@ class Station:
     def from_json(cls, dict_data) -> Station:
         res = Station(
             code=dict_data["code"],
-            wrf_code=dict_data.get("wrf_code"),
+            wrf_code=dict_data.get("wrf_code", None),
+            meteo_station_code=dict_data.get("meteo_station_code", None),
             active=dict_data["active"],
             available=dict_data["available"],
             coordinates=dict_data["coordinates"],
@@ -128,6 +132,7 @@ class TrafficSensorStation(Station):
     @classmethod
     def from_json(cls, dict_data) -> TrafficSensorStation:
         wrf_code = dict_data.get("wrf_code") if dict_data.get("wrf_code") is not None else None
+        meteo_station_code = dict_data.get("meteo_station_code") if dict_data.get("meteo_station_code") is not None else None
         return TrafficSensorStation(
             code=dict_data["code"],
             active=dict_data["active"],
@@ -137,5 +142,6 @@ class TrafficSensorStation(Station):
             name=dict_data["name"],
             station_type=dict_data["station_type"],
             origin=dict_data["origin"],
-            wrf_code=wrf_code
+            wrf_code=wrf_code,
+            meteo_station_code=meteo_station_code
         )

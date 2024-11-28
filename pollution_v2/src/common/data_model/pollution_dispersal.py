@@ -10,16 +10,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, List, Iterator, Dict
 
-from common.data_model.common import MeasureCollection, Measure
+from common.data_model.common import MeasureCollection, Measure, DataType
 from common.data_model.entry import GenericEntry
 from common.data_model.station import Station
 
 
 class PollutionDispersalMeasureType(Enum):
 
-    YEAR = 'Year'
-    JULIAN_DAY = 'Julian_Day'
-    HOUR = 'Hour'
     X_COORDINATE = 'X-Coordinate'
     Y_COORDINATE = 'Y-Coordinate'
     Z_COORDINATE = 'Z-Coordinate'
@@ -30,12 +27,9 @@ class PollutionDispersalMeasureType(Enum):
 @dataclass
 class PollutionDispersalEntry(GenericEntry):
 
-    def __init__(self, station: Station, valid_time: datetime, year: int, julian_day: int, hour: int, x_coordinate: float,
-                 y_coordinate: float, z_coordinate: float, c_a22: float, unnamed: int, period: Optional[int]):  # TODO: check name of last parameter
+    def __init__(self, station: Station, valid_time: datetime, x_coordinate: float, y_coordinate: float,
+                 z_coordinate: float, c_a22: float, unnamed: int, period: Optional[int]):  # TODO: check name of last parameter
         super().__init__(station, valid_time, period)
-        self.year = year
-        self.julian_day = julian_day
-        self.hour = hour
         self.x_coordinate = x_coordinate
         self.y_coordinate = y_coordinate
         self.z_coordinate = z_coordinate
@@ -49,7 +43,9 @@ class PollutionDispersalMeasure(Measure):
     """
 
     # TODO: implement get_data_types method
-    pass
+    @staticmethod
+    def get_data_types() -> List[DataType]:
+        pass
 
 
 @dataclass
@@ -57,7 +53,6 @@ class PollutionDispersalMeasureCollection(MeasureCollection[PollutionDispersalMe
     """
     Collection of pollution dispersal measure measures.
     """
-    pass
 
     def get_entries(self) -> List[PollutionDispersalEntry]:
         """
@@ -102,9 +97,6 @@ class PollutionDispersalMeasureCollection(MeasureCollection[PollutionDispersalMe
                     station=stations[group_by_station],
                     valid_time=group_by_time,
                     period=1,
-                    year=entry[PollutionDispersalMeasureType.YEAR],
-                    julian_day=entry[PollutionDispersalMeasureType.JULIAN_DAY],
-                    hour=entry[PollutionDispersalMeasureType.HOUR],
                     x_coordinate=entry[PollutionDispersalMeasureType.X_COORDINATE],
                     y_coordinate=entry[PollutionDispersalMeasureType.Y_COORDINATE],
                     z_coordinate=entry[PollutionDispersalMeasureType.Z_COORDINATE],

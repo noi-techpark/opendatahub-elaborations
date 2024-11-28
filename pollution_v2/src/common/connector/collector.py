@@ -10,6 +10,7 @@ from common.connector.road_weather import RoadWeatherObservationODHConnector, Ro
     RoadWeatherConfLevelODHConnector
 from common.connector.traffic import TrafficODHConnector
 from common.connector.validation import ValidationODHConnector
+from common.connector.weather import WeatherODHConnector
 from common.settings import ODH_AUTHENTICATION_URL, ODH_USERNAME, ODH_PASSWORD, ODH_CLIENT_ID, \
     ODH_CLIENT_SECRET, ODH_PAGINATION_SIZE, REQUESTS_TIMEOUT, REQUESTS_MAX_RETRIES, REQUESTS_SLEEP_TIME, \
     REQUESTS_RETRY_SLEEP_TIME, ODH_BASE_READER_URL, ODH_BASE_WRITER_URL, ODH_GRANT_TYPE, ODH_MAX_POST_BATCH_SIZE
@@ -20,7 +21,7 @@ class ConnectorCollector:
     def __init__(self, traffic: TrafficODHConnector, history: HistoryODHConnector, validation: ValidationODHConnector,
                  pollution: PollutionODHConnector, road_weather_observation: RoadWeatherObservationODHConnector,
                  road_weather_forecast: RoadWeatherForecastODHConnector,
-                 road_weather_conf_level: RoadWeatherConfLevelODHConnector):
+                 road_weather_conf_level: RoadWeatherConfLevelODHConnector, weather: WeatherODHConnector) -> None:
         self.traffic = traffic
         self.history = history
         self.validation = validation
@@ -28,6 +29,7 @@ class ConnectorCollector:
         self.road_weather_observation = road_weather_observation
         self.road_weather_forecast = road_weather_forecast
         self.road_weather_conf_level = road_weather_conf_level
+        self.weather = weather
 
     @staticmethod
     def build_from_env() -> ConnectorCollector:
@@ -53,7 +55,8 @@ class ConnectorCollector:
             "pollution": PollutionODHConnector,
             "road_weather_observation": RoadWeatherObservationODHConnector,
             "road_weather_forecast": RoadWeatherForecastODHConnector,
-            "road_weather_conf_level": RoadWeatherConfLevelODHConnector
+            "road_weather_conf_level": RoadWeatherConfLevelODHConnector,
+            "weather": WeatherODHConnector
         }
 
         connectors = {}

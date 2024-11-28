@@ -7,12 +7,12 @@ from __future__ import absolute_import, annotations
 from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
-from common.data_model import PollutionDispersalMeasure, Station
-from common.data_model.pollution_dispersal import PollutionDispersalMeasureType
-from common.settings import PERIOD_1SEC
+from common.data_model import Station
+from common.data_model.weather import WeatherMeasureType, WeatherMeasure
+from common.settings import PERIOD_10MIN
 
 
-class PollutionDispersalODHConnector(ODHBaseConnector[PollutionDispersalMeasure, Station]):
+class WeatherODHConnector(ODHBaseConnector[WeatherMeasure, Station]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -30,10 +30,9 @@ class PollutionDispersalODHConnector(ODHBaseConnector[PollutionDispersalMeasure,
                  requests_sleep_time: float,
                  requests_retry_sleep_time: float) -> None:
 
-        station_type = "TrafficStation"  # TODO: check if correct
-        measure_types = [measure_type.value for measure_type in PollutionDispersalMeasureType]
-        period = PERIOD_1SEC
-
+        station_type = "MeteoStation"
+        measure_types = [measure_type.value for measure_type in WeatherMeasureType]
+        period = PERIOD_10MIN
 
         super().__init__(base_reader_url,
                          base_writer_url,
@@ -58,5 +57,5 @@ class PollutionDispersalODHConnector(ODHBaseConnector[PollutionDispersalMeasure,
         return Station.from_odh_repr(raw_station)
 
     @staticmethod
-    def build_measure(raw_measure: dict) -> PollutionDispersalMeasure:
-        return PollutionDispersalMeasure.from_odh_repr(raw_measure)
+    def build_measure(raw_measure: dict) -> WeatherMeasure:
+        return WeatherMeasure.from_odh_repr(raw_measure)

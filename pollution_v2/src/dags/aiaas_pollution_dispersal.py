@@ -93,15 +93,10 @@ with StationsDAG(
         stations_list = dag.get_stations_list(manager, **kwargs)
         logger.info("Found station codes: " + str([station.code for station in stations_list]))
 
-        with open(POLLUTION_DISPERSAL_CONFIG_FILE, 'r') as file:
-            config = yaml.safe_load(file)
-            whitelist = config.get('whitelist', [])
-            station_mapping = {str(k): str(v) for k, v in config['mappings'].items()}
-
-        if whitelist:
-            whitelist = list(map(str, whitelist))
-            logger.info(f"Filtering stations with whitelist: {whitelist}")
-            stations_list = [station for station in stations_list if str(station.code) in whitelist]
+        # TODO: call ws endpoint to retrieve the mapping
+        station_mapping = {
+            "A22:684:1": "83200MS",
+        }
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
@@ -109,21 +104,21 @@ with StationsDAG(
         station_dicts = []
         for station in stations_list:
             if str(station.code) not in station_mapping:
-                logger.error(f"Station code [{station.code}] not found in the mapping [{POLLUTION_DISPERSAL_CONFIG_FILE}]")
-                raise ValueError(f"Station code [{station.code}] not found in the mapping")
+                logger.error(f"Station code [{station.code}] not found in the mapping [{station_mapping}]")
+                # TODO: decide if we want to raise an error or just skip the station
+                # raise ValueError(f"Station code [{station.code}] not found in the mapping")
+                continue
 
-            logger.info("Found mapping for ODH station code "
-                        "[" + str(str(station.code)) + "] -> CISMA station code "
-                                                       "[" + str(station_mapping[station.code]) + "]")
-            logger.info(f"Downloading forecast data for station [{station.code}] from CISMA")
-            wrf_station_code = station_mapping[str(station.code)]
-            station.wrf_code = wrf_station_code
+            logger.info("Found mapping for ODH traffic station code [" + str(str(station.code)) + "]" +
+                        " -> ODH meteo station code [" + str(station_mapping[station.code]) + "]")
+            meteo_station_code = station_mapping[str(station.code)]
+            station.meteo_station_code = meteo_station_code
 
             station_dicts.append(station.to_json())
 
         logger.info(f"Retrieved {len(station_dicts)} stations")
 
-        return station_dicts
+        return [station for station in station_dicts if station['code'] == "A22:684:1"][:1]
 
 
     @task
@@ -140,11 +135,13 @@ with StationsDAG(
         manager = _init_manager()
 
         # TODO: are the dates needed? backfill?
-        # min_from_date, max_to_date = dag.init_date_range(None, None)
+        from_date = datetime.now() - timedelta(days=4, hours=1)
+        to_date = datetime.now() - timedelta(days=4)
+        from_date, to_date = dag.init_date_range(from_date, to_date)
 
         computation_start_dt = datetime.now()
         logger.info(f"Running computation")
-        manager.run_computation_for_single_station(station)
+        manager.run_computation_for_single_station(station, from_date, to_date)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")

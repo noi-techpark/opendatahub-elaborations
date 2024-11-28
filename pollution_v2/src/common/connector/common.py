@@ -352,6 +352,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         logger.debug(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
                      f"to date [{iso_to_date}] with where [{query_params['where']}]")
+        # TODO: remove
+        print(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
+                     f"to date [{iso_to_date}] with where [{query_params['where']}]")
 
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/{iso_from_date}/{iso_to_date}",
