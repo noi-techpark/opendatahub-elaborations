@@ -350,10 +350,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         if len(where_conds) > 0:
             query_params["where"] = f'and({",".join(where_conds)})'
 
-        logger.debug(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
-                     f"to date [{iso_to_date}] with where [{query_params['where']}]")
-        # TODO: remove
-        print(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
+        # TODO: change back to logger.debug
+        logger.info(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
                      f"to date [{iso_to_date}] with where [{query_params['where']}]")
 
         raw_measures = self._get_result_list(

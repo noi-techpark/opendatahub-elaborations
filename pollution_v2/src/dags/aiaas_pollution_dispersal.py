@@ -7,14 +7,17 @@ import requests
 from datetime import timedelta, datetime
 
 from airflow.decorators import task
+from airflow.utils.trigger_rule import TriggerRule
 
 from dags.common import StationsDAG
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
-from common.data_model import Station
+from common.data_model import Station, TrafficSensorStation
 from common.settings import (ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE,
                              PROVENANCE_NAME_POLL_ELABORATION, PROVENANCE_VERSION, AIRFLOW_NUM_RETRIES,
-                             DAG_POLLUTION_DISPERSAL_EXECUTION_CRONTAB, POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT)
+                             DAG_POLLUTION_DISPERSAL_EXECUTION_CRONTAB, POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT,
+                             DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN,
+                             ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL)
 from pollution_dispersal.manager.pollution_dispersal import PollutionDispersalManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -93,7 +96,6 @@ with StationsDAG(
         stations_list = dag.get_stations_list(manager, **kwargs)
         logger.info("Found station codes: " + str([station.code for station in stations_list]))
 
-        # TODO: call ws endpoint to retrieve the mapping
         response = requests.get(POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT)
         if (response.status_code != 200):
             logger.error(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
@@ -128,29 +130,54 @@ with StationsDAG(
 
 
     @task
-    def process_station(station_dict: dict, **kwargs):
+    def process_stations(station_dicts: list[dict], **kwargs):
         """
         Process a single station
 
-        :param station_dict: the station to process
+        :param station_dicts: the stations to process
         """
 
-        station = Station.from_json(station_dict)
-        logger.info(f"Received station {station}")
+        stations = [TrafficSensorStation.from_json(station_dict) for station_dict in station_dicts]
+        logger.info(f"Received stations {stations}")
 
         manager = _init_manager()
 
         # TODO: are the dates needed? backfill?
-        from_date = datetime.now() - timedelta(days=4, hours=1)
-        to_date = datetime.now() - timedelta(days=4)
-        from_date, to_date = dag.init_date_range(from_date, to_date)
+        min_from_date, max_to_date = dag.init_date_range(None, None)
 
         computation_start_dt = datetime.now()
         logger.info(f"Running computation")
-        manager.run_computation_for_single_station(station, from_date, to_date)
+        manager.run_computation(stations, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL, True, True)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
 
 
-    processed_stations = process_station.expand(station_dict=get_stations_list())
+    # @task(trigger_rule=TriggerRule.ALL_DONE)
+    # def whats_next(already_processed_stations, **kwargs):
+    #     """
+    #     Checks if there are still data to be processed before ending DAG runs
+    #
+    #     :param already_processed_stations: the stations already processed (not used)
+    #     """
+    #     manager = _init_manager()
+    #
+    #     def has_remaining_data(starting_date: datetime, ending_date: datetime) -> bool:
+    #         """
+    #         Determines if there are still enough data to be processed for another DAG run on the specific station.
+    #
+    #         :param starting_date: the date on which data availability starts
+    #         :param ending_date: the date on which data availability ends
+    #         :return: true if there are enough data to run another DAG on this station
+    #         """
+    #         return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN
+    #
+    #     dag.trigger_next_dag_run(manager, dag, has_remaining_data,
+    #                              ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,True, True, True, **kwargs)
+
+    tmp = get_stations_list()
+
+    processed_stations = process_stations(tmp)
+
+    # TODO: implement
+    # whats_next(processed_stations)
