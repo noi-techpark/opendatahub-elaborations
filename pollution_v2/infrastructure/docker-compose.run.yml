@@ -76,6 +76,8 @@ services:
     image: redis:latest
     expose:
       - 6379
+    volumes:
+      - redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -257,3 +259,4 @@ services:
 volumes:
   postgres-db-volume:
   pollution-logs:
+  redis:
