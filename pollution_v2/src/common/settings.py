@@ -71,7 +71,7 @@ AIRFLOW_NUM_RETRIES = 3
 # use it not empty to add a test prefix to datatype
 DATATYPE_PREFIX = Variable.get("DATATYPE_PREFIX", "")
 
-VALIDATOR_CONFIG_FILE = Variable.get("VALIDATOR_CONFIG_FILE", "src/config/validator.yaml")
+VALIDATOR_CONFIG_FILE = Variable.get("VALIDATOR_CONFIG_FILE", "config/validator.yaml")
 
 MAIN_DIR = os.getenv("MAIN_DIR", ".")
 TMP_DIR = f'{MAIN_DIR}/tmp'
