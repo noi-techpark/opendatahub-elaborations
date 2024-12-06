@@ -322,7 +322,7 @@ class TrafficStationManager(StationManager, ABC):
 
             try:
                 entries = self._download_data_and_compute(start_date, to_date, stations)
-                # self._upload_data(entries)
+                # self._upload_data(entries)  # TODO: RESTORE
             except Exception as e:
                 logger.exception(f"Unable to compute data from stations {_get_stations_on_logs(stations)} in the "
                                  f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)

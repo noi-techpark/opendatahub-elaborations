@@ -18,6 +18,7 @@ from common.data_model.entry import GenericEntry
 from common.data_model.pollution_dispersal import PollutionDispersalEntry
 from common.data_model.weather import WeatherMeasureCollection
 from common.manager.traffic_station import TrafficStationManager
+from pollution_dispersal.model.pollution_dispersal_model import PollutionDispersalModel
 
 logger = logging.getLogger("pollution_v2.pollution_dispersal.manager.pollution_dispersal")
 
@@ -48,7 +49,6 @@ class PollutionDispersalManager(TrafficStationManager):
         return PollutionDispersalMeasure.get_data_types()
 
     def _build_from_entries(self, input_entries: List[PollutionDispersalEntry]) -> MeasureCollection:
-        # return PollutionDispersalMeasureCollection.build_from_entries(input_entries, self._provenance)
         # TODO: implement when needed
         pass
 
@@ -108,6 +108,9 @@ class PollutionDispersalManager(TrafficStationManager):
         if pollution_data and weather_data:
             print("pollution_data", pollution_data)
             print("weather_data", weather_data)
+
+            model = PollutionDispersalModel()
+            return model.compute_data(pollution_data, weather_data, stations)
 
             # map pollution data to weather data by station codes
 

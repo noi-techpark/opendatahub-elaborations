@@ -48,7 +48,7 @@ class WeatherMeasure(Measure):
 @dataclass
 class WeatherEntry(GenericEntry):
 
-    def __init__(self, station: TrafficSensorStation, valid_time: datetime, period: Optional[int],
+    def __init__(self, station: Station, valid_time: datetime, period: Optional[int],
                  air_temperature: float, air_humidity: float, wind_speed: float, wind_direction: float,
                  global_radiation: float, precipitation: float):
         super().__init__(station, valid_time, period)
@@ -64,8 +64,37 @@ class WeatherEntry(GenericEntry):
 class WeatherMeasureCollection(MeasureCollection[WeatherMeasure, Station]):
 
     def _build_entries_dictionary(self) -> Dict:
-        # TODO: implement
-        pass
+        # A temporary dictionary used for faster aggregation of the results
+        tmp: Dict[str, Dict[datetime, dict]] = {}
+        stations: Dict[str, Station] = {}
+        for measure in self.measures:
+            if measure.station.code not in stations:
+                stations[measure.station.code] = measure.station
+            if measure.station.code not in tmp:
+                tmp[measure.station.code] = {}
+            if measure.valid_time not in tmp[measure.station.code]:
+                tmp[measure.station.code][measure.valid_time] = {}
+            tmp[measure.station.code][measure.valid_time][measure.data_type.name] = measure.value
+
+        result: Dict[str, Dict[datetime, WeatherEntry]] = {}
+        for group_by_station in tmp:
+            if group_by_station not in result:
+                result[group_by_station] = {}
+            for group_by_time in tmp[group_by_station]:
+                entry = tmp[group_by_station][group_by_time]
+                result[group_by_station][group_by_time] = WeatherEntry(
+                    station=stations[group_by_station],
+                    valid_time=group_by_time,
+                    period=1,
+                    air_temperature=entry[WeatherMeasureType.AIR_TEMPERATURE.name],
+                    air_humidity=entry[WeatherMeasureType.AIR_HUMIDITY.name],
+                    wind_speed=entry[WeatherMeasureType.WIND_SPEED.name],
+                    wind_direction=entry[WeatherMeasureType.WIND_DIRECTION.name],
+                    global_radiation=entry[WeatherMeasureType.GLOBAL_RADIATION.name],
+                    precipitation=entry[WeatherMeasureType.PRECIPITATION.name]
+                )
+
+        return result
 
     def _get_entries_iterator(self) -> Iterator[WeatherEntry]:
         """
