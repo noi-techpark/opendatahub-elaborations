@@ -10,9 +10,8 @@ from enum import Enum
 from typing import List, Dict, Iterator, Optional
 
 from common.data_model import Station, TrafficSensorStation
-from common.data_model.common import VehicleClass, MeasureCollection, Measure, DataType
+from common.data_model.common import MeasureCollection, Measure, DataType
 from common.data_model.entry import GenericEntry
-from common.settings import DATATYPE_PREFIX
 
 
 class WeatherMeasureType(Enum):
@@ -40,7 +39,7 @@ class WeatherMeasure(Measure):
         data_types = []
         for weather_measure in WeatherMeasureType:
             data_types.append(
-                DataType(f"{DATATYPE_PREFIX}{weather_measure.name}", f"{weather_measure.value}", "total", "-", {})
+                DataType(f"{weather_measure.name}", f"{weather_measure.value}", "total", "-", {})  # TODO: restore DATATYPE_PREFIX
             )
         return data_types
 
@@ -86,14 +85,15 @@ class WeatherMeasureCollection(MeasureCollection[WeatherMeasure, Station]):
                     station=stations[group_by_station],
                     valid_time=group_by_time,
                     period=1,
-                    air_temperature=entry[WeatherMeasureType.AIR_TEMPERATURE.name],
-                    air_humidity=entry[WeatherMeasureType.AIR_HUMIDITY.name],
-                    wind_speed=entry[WeatherMeasureType.WIND_SPEED.name],
-                    wind_direction=entry[WeatherMeasureType.WIND_DIRECTION.name],
-                    global_radiation=entry[WeatherMeasureType.GLOBAL_RADIATION.name],
-                    precipitation=entry[WeatherMeasureType.PRECIPITATION.name]
+                    air_temperature=entry[WeatherMeasureType.AIR_TEMPERATURE.value] if WeatherMeasureType.AIR_TEMPERATURE.value in entry else "",
+                    air_humidity=entry[WeatherMeasureType.AIR_HUMIDITY.value] if WeatherMeasureType.AIR_HUMIDITY.value in entry else "",
+                    wind_speed=entry[WeatherMeasureType.WIND_SPEED.value] if WeatherMeasureType.WIND_SPEED.value in entry else "",
+                    wind_direction=entry[WeatherMeasureType.WIND_DIRECTION.value] if WeatherMeasureType.WIND_DIRECTION.value in entry else "",
+                    global_radiation=entry[WeatherMeasureType.GLOBAL_RADIATION.value] if WeatherMeasureType.GLOBAL_RADIATION.value in entry else "",
+                    precipitation=entry[WeatherMeasureType.PRECIPITATION.value] if WeatherMeasureType.PRECIPITATION.value in entry else ""
                 )
 
+        print(result)
         return result
 
     def _get_entries_iterator(self) -> Iterator[WeatherEntry]:
@@ -104,8 +104,9 @@ class WeatherMeasureCollection(MeasureCollection[WeatherMeasure, Station]):
         """
         for station_dict in self._build_entries_dictionary().values():
             for date_dict in station_dict.values():
-                for weather_entry in date_dict.values():
-                    yield weather_entry
+                yield date_dict
+                # for weather_entry in date_dict.values():
+                #     yield weather_entry
 
     def get_entries(self) -> List[WeatherEntry]:
         """

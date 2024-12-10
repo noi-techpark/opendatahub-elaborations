@@ -142,7 +142,7 @@ with StationsDAG(
 
         manager = _init_manager()
 
-        # TODO: are the dates needed? backfill?
+        # TODO: remove backfill
         min_from_date, max_to_date = dag.init_date_range(None, None)
 
         computation_start_dt = datetime.now()

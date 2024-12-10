@@ -13,7 +13,7 @@ from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
 from common.data_model import Provenance, DataType, MeasureCollection, PollutionMeasureCollection, \
-    PollutionDispersalMeasure, TrafficSensorStation
+    PollutionDispersalMeasure, TrafficSensorStation, PollutionMeasure, PollutantClass
 from common.data_model.entry import GenericEntry
 from common.data_model.pollution_dispersal import PollutionDispersalEntry
 from common.data_model.weather import WeatherMeasureCollection
@@ -66,8 +66,12 @@ class PollutionDispersalManager(TrafficStationManager):
 
         connector = self.get_input_connector()
         logger.info(f"Downloading pollution data from [{from_date}] to [{to_date}]")
+        nox_pollutants = PollutionMeasure.get_data_types([PollutantClass.NOx])
+        conditions = ["tname.eq." + data_type.name for data_type in nox_pollutants]
+        condition = "or(" + ",".join(conditions) + ")"
+        print("conditions", conditions)
         return PollutionMeasureCollection(
-            measures=connector.get_measures(from_date=from_date, to_date=to_date)
+            measures=connector.get_measures(from_date=from_date, to_date=to_date, conditions=[condition])  # TODO: fix
         )
 
     def _download_weather_data(self,

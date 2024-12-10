@@ -41,7 +41,7 @@ class PollutionMeasure(Measure):
     """
 
     @staticmethod
-    def get_data_types() -> List[DataType]:
+    def get_data_types(pollutant_classes: list[PollutantClass] = None) -> List[DataType]:
         """
         Returns the data types specific for this measure.
 
@@ -50,8 +50,9 @@ class PollutionMeasure(Measure):
         data_types = []
         for vehicle in VehicleClass:
             for pollutant in PollutantClass:
-                data_types.append(DataType(f"{DATATYPE_PREFIX}{vehicle.name}-{pollutant.name}-emissions",
-                                           f"{vehicle.value} emissions of {pollutant.name}", "total", "g/km", {}))
+                if pollutant_classes is None or pollutant in pollutant_classes:
+                    data_types.append(DataType(f"{DATATYPE_PREFIX}{vehicle.name}-{pollutant.name}-emissions",
+                                               f"{vehicle.value} emissions of {pollutant.name}", "total", "g/km", {}))
         return data_types
 
 
@@ -93,11 +94,12 @@ class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSens
                 entry = PollutionEntry(
                     station=measure.station,
                     valid_time=measure.valid_time,
-                    vehicle_class=VehicleClass[measure.data_type.name.split("-")[0]].value,
-                    entry_class=PollutantClass(PollutantClass[measure.data_type.name.split("-")[1]].value),
+                    vehicle_class=VehicleClass(measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]),
+                    entry_class=PollutantClass(measure.data_type.name.split("-")[1]),
                     entry_value=measure.value,
                     period=measure.period
                 )
+                print(measure.data_type.name, entry.vehicle_class)
                 result[measure.station.code][measure.valid_time] = entry
 
         for station_dict in result.values():

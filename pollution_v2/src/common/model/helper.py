@@ -188,27 +188,30 @@ class ModelHelper:
 
         # TODO: remove example station and entries
 
-        example_station = TrafficSensorStation(code="asdf", wrf_code="", meteo_station_code="", active=False, available=False, coordinates={}, metadata={}, name="", station_type="", origin="")
+        # example_station = TrafficSensorStation(code="asdf", wrf_code="", meteo_station_code="", active=False, available=False, coordinates={}, metadata={}, name="", station_type="", origin="")
+        #
+        # example_pollution_entries = [
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 5.0, 600),
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 10.0, 600),
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.BUSES, PollutantClass.NOx, 7.0, 600),
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 11.0, 600),
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 4.0, 600),
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.BUSES, PollutantClass.NOx, 9.0, 600),
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 11.0, 600),
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 4.0, 600),
+        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.BUSES, PollutantClass.NOx, 9.0, 600)
+        # ]
 
-        example_pollution_entries = [
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 5.0, 600),
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 10.0, 600),
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.BUSES, PollutantClass.NOx, 7.0, 600),
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 11.0, 600),
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 4.0, 600),
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.BUSES, PollutantClass.NOx, 9.0, 600),
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 11.0, 600),
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 4.0, 600),
-            PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.BUSES, PollutantClass.NOx, 9.0, 600)
-        ]
-
+        print(set([entry.vehicle_class for entry in pollution_entries]))
         pollution_df = pd.DataFrame([{
             "timestamp": entry.valid_time.isoformat(),
             "station-id": entry.station.code,
             "pollutant": entry.entry_class.value,
             "vehicle_class": entry.vehicle_class.value.lower(),
             "pollution_value": entry.entry_value
-        } for entry in example_pollution_entries])
+        } for entry in pollution_entries])
+
+        print(pollution_df.to_string(line_width=100))
 
         pollution_df = pollution_df.pivot_table(
             index=["timestamp", "station-id", "pollutant"],
@@ -216,5 +219,7 @@ class ModelHelper:
             values="pollution_value",
             aggfunc="sum"
         ).reset_index().fillna(0)
+
+        print(pollution_df.to_string(line_width=100))
 
         return pollution_df

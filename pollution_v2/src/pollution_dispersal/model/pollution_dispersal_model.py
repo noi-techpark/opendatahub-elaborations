@@ -126,8 +126,6 @@ class PollutionDispersalModel:
     def compute_data(self, pollution: PollutionMeasureCollection,
                      weather: WeatherMeasureCollection, stations: List[TrafficSensorStation]) -> List[PollutionEntry]:  # TODO: check if stations parameter is needed
 
-        # TODO: check this compute method implementation (copied from pollution_computation)
-
         pollution_data_types = {str(measure.data_type) for measure in pollution.measures}
         weather_data_types = {str(measure.data_type) for measure in weather.measures}
 
@@ -135,16 +133,16 @@ class PollutionDispersalModel:
                     f"on {len(pollution_data_types)} data types")
         logger.info(f"{len(weather.measures)} weather measures available "
                     f"on {len(weather_data_types)} data types")
+        print(pollution_data_types)
 
         weather_entries = weather.get_entries()
         pollution_entries = pollution.get_entries()
 
-        if True: #len(weather_entries) > 0: and len(pollution_entries) > 0: # TODO: restore
+        if len(weather_entries) > 0 and len(pollution_entries) > 0: # TODO: restore
             weather_df = ModelHelper.get_weather_dataframe(weather_entries)
             pollution_df = ModelHelper.get_pollution_dataframe(pollution_entries)
 
-            # todo: Convert weather_df and pollution_df to a zip and send them to ws
-            #       upload first file emissions and then weather
+            # TODO: Upload first file emissions and then weather
 
             pollution_filename = self._create_temp_pollution_csv(pollution_df)
             weather_filename = self._create_temp_weather_csv(weather_df)
