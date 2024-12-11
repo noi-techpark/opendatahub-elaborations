@@ -86,25 +86,26 @@ class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSens
 
     def _build_entries_iterator(self) -> Iterator[PollutionEntry]:
         # A temporary dictionary used for faster aggregation of the results
-        result: Dict[str, Dict[datetime, PollutionEntry]] = {}
+        result: Dict[str, Dict[datetime, Dict[VehicleClass, PollutionEntry]]] = {}
         for measure in self.measures:
             if measure.station.code not in result:
                 result[measure.station.code] = {}
             if measure.valid_time not in result[measure.station.code]:
-                entry = PollutionEntry(
-                    station=measure.station,
-                    valid_time=measure.valid_time,
-                    vehicle_class=VehicleClass(measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]),
-                    entry_class=PollutantClass(measure.data_type.name.split("-")[1]),
-                    entry_value=measure.value,
-                    period=measure.period
-                )
-                print(measure.data_type.name, entry.vehicle_class)
-                result[measure.station.code][measure.valid_time] = entry
+                result[measure.station.code][measure.valid_time] = {}
+            entry = PollutionEntry(
+                station=measure.station,
+                valid_time=measure.valid_time,
+                vehicle_class=VehicleClass(measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]),
+                entry_class=PollutantClass(measure.data_type.name.split("-")[1]),
+                entry_value=measure.value,
+                period=measure.period
+            )
+            result[measure.station.code][measure.valid_time][entry.vehicle_class] = entry
 
         for station_dict in result.values():
             for entry in station_dict.values():
-                yield entry
+                for vehicle_class, vehicle_entry in entry.items():
+                    yield vehicle_entry
 
     def get_entries(self) -> List[PollutionEntry]:
         """

@@ -67,11 +67,8 @@ class PollutionDispersalManager(TrafficStationManager):
         connector = self.get_input_connector()
         logger.info(f"Downloading pollution data from [{from_date}] to [{to_date}]")
         nox_pollutants = PollutionMeasure.get_data_types([PollutantClass.NOx])
-        conditions = ["tname.eq." + data_type.name for data_type in nox_pollutants]
-        condition = "or(" + ",".join(conditions) + ")"
-        print("conditions", conditions)
         return PollutionMeasureCollection(
-            measures=connector.get_measures(from_date=from_date, to_date=to_date, conditions=[condition])  # TODO: fix
+            measures=connector.get_measures(from_date=from_date, to_date=to_date, measure_types=list(map(lambda x: x.name, nox_pollutants)))
         )
 
     def _download_weather_data(self,
@@ -110,8 +107,8 @@ class PollutionDispersalManager(TrafficStationManager):
                 exc_info=e)
 
         if pollution_data and weather_data:
-            print("pollution_data", pollution_data)
-            print("weather_data", weather_data)
+            print("pollution_data", len(pollution_data))
+            print("weather_data", len(weather_data))
 
             model = PollutionDispersalModel()
             return model.compute_data(pollution_data, weather_data, stations)

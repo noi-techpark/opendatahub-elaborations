@@ -327,7 +327,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         return [self.build_measure(raw_measure) for raw_measure in raw_measures]
 
     def get_measures(self, from_date: datetime, to_date: datetime, station: Optional[Station or str] = None,
-                     period_to_include: int = None, conditions: list[str] = None) -> List[MeasureType]:
+                     period_to_include: int = None, conditions: list[str] = None, measure_types: list[str] = None) -> List[MeasureType]:
         """
         Retrieve the measures for the connector DataType in the given interval.
 
@@ -337,6 +337,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                         representing the station code or a Station object.
         :param period_to_include: If set, it allows filtering including period; otherwise, no filter on period
         :param conditions: Additional conditions to be added to the where clause
+        :param measure_types: If set, it passed the measure types to retrieve data
         :return: the list of Measures
         """
 
@@ -355,8 +356,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         logger.info(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
                      f"to date [{iso_to_date}] with where [{query_params['where']}]")
 
+        measure_types = measure_types if measure_types else self._measure_types
         raw_measures = self._get_result_list(
-            path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/{iso_from_date}/{iso_to_date}",
+            path=f"/v2/flat,node/{self._station_type}/{','.join(measure_types)}/{iso_from_date}/{iso_to_date}",
             query_params=query_params
         )
 

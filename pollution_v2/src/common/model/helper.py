@@ -202,7 +202,6 @@ class ModelHelper:
         #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.BUSES, PollutantClass.NOx, 9.0, 600)
         # ]
 
-        print(set([entry.vehicle_class for entry in pollution_entries]))
         pollution_df = pd.DataFrame([{
             "timestamp": entry.valid_time.isoformat(),
             "station-id": entry.station.code,
@@ -211,8 +210,6 @@ class ModelHelper:
             "pollution_value": entry.entry_value
         } for entry in pollution_entries])
 
-        print(pollution_df.to_string(line_width=100))
-
         pollution_df = pollution_df.pivot_table(
             index=["timestamp", "station-id", "pollutant"],
             columns="vehicle_class",
@@ -220,6 +217,9 @@ class ModelHelper:
             aggfunc="sum"
         ).reset_index().fillna(0)
 
-        print(pollution_df.to_string(line_width=100))
+        # if column 'buses', 'light_vehicles' or 'heavy_vehicles' is missing, add it with value 0
+        for vehicle_class in ['buses', 'light_vehicles', 'heavy_vehicles']:
+            if vehicle_class not in pollution_df.columns:
+                pollution_df[vehicle_class] = 0
 
         return pollution_df

@@ -124,7 +124,9 @@ class PollutionDispersalModel:
             return []
 
     def compute_data(self, pollution: PollutionMeasureCollection,
-                     weather: WeatherMeasureCollection, stations: List[TrafficSensorStation]) -> List[PollutionEntry]:  # TODO: check if stations parameter is needed
+                     weather: WeatherMeasureCollection, stations: List[TrafficSensorStation]) -> List[PollutionEntry]:
+
+        # TODO: should the input data be filtered by the station list?
 
         pollution_data_types = {str(measure.data_type) for measure in pollution.measures}
         weather_data_types = {str(measure.data_type) for measure in weather.measures}
@@ -133,12 +135,11 @@ class PollutionDispersalModel:
                     f"on {len(pollution_data_types)} data types")
         logger.info(f"{len(weather.measures)} weather measures available "
                     f"on {len(weather_data_types)} data types")
-        print(pollution_data_types)
 
         weather_entries = weather.get_entries()
         pollution_entries = pollution.get_entries()
 
-        if len(weather_entries) > 0 and len(pollution_entries) > 0: # TODO: restore
+        if len(weather_entries) > 0 and len(pollution_entries) > 0:
             weather_df = ModelHelper.get_weather_dataframe(weather_entries)
             pollution_df = ModelHelper.get_pollution_dataframe(pollution_entries)
 
@@ -153,5 +154,5 @@ class PollutionDispersalModel:
 
             return self._get_pollution_entries_from_df(pollution_df, weather.get_stations())
         else:
-            logger.info("0 validated entries found skipping pollution dispersal")
+            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}), skipping computation")
             return []
