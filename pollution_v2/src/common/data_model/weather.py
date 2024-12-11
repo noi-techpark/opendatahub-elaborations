@@ -39,7 +39,7 @@ class WeatherMeasure(Measure):
         data_types = []
         for weather_measure in WeatherMeasureType:
             data_types.append(
-                DataType(f"{weather_measure.name}", f"{weather_measure.value}", "total", "-", {})  # TODO: restore DATATYPE_PREFIX
+                DataType(f"{weather_measure.name}", f"{weather_measure.value}", "total", "-", {})
             )
         return data_types
 
@@ -93,7 +93,6 @@ class WeatherMeasureCollection(MeasureCollection[WeatherMeasure, Station]):
                     precipitation=entry[WeatherMeasureType.PRECIPITATION.value] if WeatherMeasureType.PRECIPITATION.value in entry else ""
                 )
 
-        print(result)
         return result
 
     def _get_entries_iterator(self) -> Iterator[WeatherEntry]:

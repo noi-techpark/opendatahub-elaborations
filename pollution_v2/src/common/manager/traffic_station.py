@@ -266,8 +266,7 @@ class TrafficStationManager(StationManager, ABC):
                         min_from_date: datetime,
                         max_to_date: datetime,
                         batch_size: int,
-                        keep_looking_for_input_data: bool,
-                        use_hours_for_batch_size: bool = False) -> None:
+                        keep_looking_for_input_data: bool) -> None:
         """
         Start the computation of a batch of data measures on a specific station.
         As starting date for the  batch is used the latest measure available on the ODH,
@@ -307,10 +306,7 @@ class TrafficStationManager(StationManager, ABC):
                         f"[{start_date.isoformat() if start_date else 'no-date'} - "
                         f"{to_date.isoformat() if to_date else 'no-date'}] (no timespan)")
         elif start_date < max_to_date:
-            if use_hours_for_batch_size:
-                to_date = to_date + timedelta(hours=batch_size)
-            else:
-                to_date = to_date + timedelta(days=batch_size)
+            to_date = to_date + timedelta(days=batch_size)
             if to_date > max_to_date:
                 to_date = max_to_date
 
@@ -322,7 +318,7 @@ class TrafficStationManager(StationManager, ABC):
 
             try:
                 entries = self._download_data_and_compute(start_date, to_date, stations)
-                # self._upload_data(entries)  # TODO: RESTORE
+                self._upload_data(entries)
             except Exception as e:
                 logger.exception(f"Unable to compute data from stations {_get_stations_on_logs(stations)} in the "
                                  f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)

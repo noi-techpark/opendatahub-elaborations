@@ -108,9 +108,16 @@ with StationsDAG(
         # from using classes and other complex structures.
         station_dicts = []
         for station in stations_list:
-            if (station.code != "A22:684:1"):
+            try:
+                station_id = str(station.id_stazione)
+            except ValueError:
+                # some stations have different codes (such as "16:verso Bolzano"), so we skip them
+                # TODO: or should we split the station in a different way and keep them?
                 continue
-            station_id = str(station.id_stazione)
+
+            if station_id != "684":
+                continue
+            print("Found station 684", station)
             if station_id not in station_mapping:
                 logger.error(f"Station code [{station_id}] not found in the mapping [{station_mapping}]")
                 # TODO: decide if we want to raise an error or just skip the station
@@ -126,13 +133,13 @@ with StationsDAG(
 
         logger.info(f"Retrieved {len(station_dicts)} stations")
 
-        return station_dicts[:1]
+        return station_dicts
 
 
     @task
     def process_stations(station_dicts: list[dict], **kwargs):
         """
-        Process a single station
+        Process a list of stations
 
         :param station_dicts: the stations to process
         """
@@ -142,42 +149,14 @@ with StationsDAG(
 
         manager = _init_manager()
 
-        # TODO: remove backfill
-        min_from_date, max_to_date = dag.init_date_range(None, None)
-
         computation_start_dt = datetime.now()
         logger.info(f"Running computation")
-        manager.run_computation(stations, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL, True, True)
+        manager.run_computation_for_multiple_stations(stations)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
 
 
-    # @task(trigger_rule=TriggerRule.ALL_DONE)
-    # def whats_next(already_processed_stations, **kwargs):
-    #     """
-    #     Checks if there are still data to be processed before ending DAG runs
-    #
-    #     :param already_processed_stations: the stations already processed (not used)
-    #     """
-    #     manager = _init_manager()
-    #
-    #     def has_remaining_data(starting_date: datetime, ending_date: datetime) -> bool:
-    #         """
-    #         Determines if there are still enough data to be processed for another DAG run on the specific station.
-    #
-    #         :param starting_date: the date on which data availability starts
-    #         :param ending_date: the date on which data availability ends
-    #         :return: true if there are enough data to run another DAG on this station
-    #         """
-    #         return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN
-    #
-    #     dag.trigger_next_dag_run(manager, dag, has_remaining_data,
-    #                              ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,True, True, True, **kwargs)
-
     tmp = get_stations_list()
 
     processed_stations = process_stations(tmp)
-
-    # TODO: implement
-    # whats_next(processed_stations)

@@ -86,21 +86,27 @@ class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSens
 
     def _build_entries_iterator(self) -> Iterator[PollutionEntry]:
         # A temporary dictionary used for faster aggregation of the results
-        result: Dict[str, Dict[datetime, Dict[VehicleClass, PollutionEntry]]] = {}
+        result: Dict[str, Dict[datetime, Dict[str, PollutionEntry]]] = {}
         for measure in self.measures:
-            if measure.station.code not in result:
-                result[measure.station.code] = {}
-            if measure.valid_time not in result[measure.station.code]:
-                result[measure.station.code][measure.valid_time] = {}
-            entry = PollutionEntry(
-                station=measure.station,
-                valid_time=measure.valid_time,
-                vehicle_class=VehicleClass(measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]),
-                entry_class=PollutantClass(measure.data_type.name.split("-")[1]),
-                entry_value=measure.value,
-                period=measure.period
-            )
-            result[measure.station.code][measure.valid_time][entry.vehicle_class] = entry
+            station_code = TrafficSensorStation.split_station_code(measure.station.code)[1]
+            if station_code not in result:
+                result[station_code] = {}
+            if measure.valid_time not in result[station_code]:
+                result[station_code][measure.valid_time] = {}
+            vehicle_class = measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]
+            if vehicle_class not in result[station_code][measure.valid_time]:
+                entry = PollutionEntry(
+                    station=measure.station,  # TODO: pollution measure collection is of type station even if it receives a TrafficSensorStation. Change it?
+                    valid_time=measure.valid_time,
+                    vehicle_class=VehicleClass(measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]),
+                    entry_class=PollutantClass(measure.data_type.name.split("-")[1]),
+                    entry_value=measure.value,
+                    period=measure.period
+                )
+                result[station_code][measure.valid_time][vehicle_class] = entry
+            else:
+                # Summing up the pollution values for each lane of the station
+                result[station_code][measure.valid_time][vehicle_class].entry_value += measure.value
 
         for station_dict in result.values():
             for entry in station_dict.values():

@@ -103,30 +103,31 @@ class TrafficSensorStation(Station):
     Class representing a traffic station.
     """
 
-    def split_station_code(self) -> (str, int, int):
+    @staticmethod
+    def split_station_code(code: str) -> (str, int, int):
         """
         splits the station code using the pattern ID_strada:ID_stazione:ID_corsia and returns a tuple
         with the following structure (ID_strada, ID_stazione, ID_corsia)
         :return:
         """
-        splits = self.code.split(":")
+        splits = code.split(":")
         if len(splits) != 3:
-            raise ValueError(f"Unable to split [{self.code}] in ID_strada:ID_stazione:ID_corsia")
+            raise ValueError(f"Unable to split [{code}] in ID_strada:ID_stazione:ID_corsia")
         return splits[0], int(splits[1]), int(splits[2])
 
     @property
     def id_strada(self) -> str:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
+        id_strada, id_stazione, id_corsia = self.split_station_code(self.code)
         return id_strada
 
     @property
     def id_stazione(self) -> int:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
+        id_strada, id_stazione, id_corsia = self.split_station_code(self.code)
         return id_stazione
 
     @property
     def id_corsia(self) -> int:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
+        id_strada, id_stazione, id_corsia = self.split_station_code(self.code)
         return id_corsia
 
     @classmethod

@@ -164,7 +164,7 @@ class ModelHelper:
         for entry in weather_entries:
             temp.append({
                 "timestamp": entry.valid_time.isoformat(),
-                "station-type": entry.station.station_type,
+                "station-type": 'Weather',
                 "station-id": entry.station.code,
                 "air-temperature": entry.air_temperature,
                 "air-humidity": entry.air_humidity,
@@ -173,6 +173,27 @@ class ModelHelper:
                 "global-radiation": entry.global_radiation,
                 "precipitation": entry.precipitation
             })
+
+        # precipitation data is every 5 minutes, while the others are all every 10 minutes
+        # we need to aggregate the precipitation data to match the other data
+
+        temp = pd.DataFrame(temp)
+
+        # Set timestamp as datetime index
+        temp["timestamp"] = pd.to_datetime(temp["timestamp"])
+        temp = temp.set_index("timestamp")
+
+        # Resample and sum only the precipitation column
+        precipitation_resampled = temp["precipitation"].resample("10min").sum()
+
+        # Resample other columns (e.g., taking the first valid value in each interval)
+        other_columns_resampled = temp.resample("10min").first()
+
+        # Combine the results
+        other_columns_resampled["precipitation"] = precipitation_resampled
+
+        # Reset the index to make 'timestamp' a column again
+        temp = other_columns_resampled.reset_index()
 
         return pd.DataFrame(temp)
 
@@ -186,25 +207,9 @@ class ModelHelper:
         :return: the pollution dataframe
         """
 
-        # TODO: remove example station and entries
-
-        # example_station = TrafficSensorStation(code="asdf", wrf_code="", meteo_station_code="", active=False, available=False, coordinates={}, metadata={}, name="", station_type="", origin="")
-        #
-        # example_pollution_entries = [
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 5.0, 600),
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 10.0, 600),
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 0), VehicleClass.BUSES, PollutantClass.NOx, 7.0, 600),
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 11.0, 600),
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 4.0, 600),
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 10), VehicleClass.BUSES, PollutantClass.NOx, 9.0, 600),
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.LIGHT_VEHICLES, PollutantClass.NOx, 11.0, 600),
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.HEAVY_VEHICLES, PollutantClass.NOx, 4.0, 600),
-        #     PollutionEntry(example_station, datetime(2018, 1, 1, 0, 20), VehicleClass.BUSES, PollutantClass.NOx, 9.0, 600)
-        # ]
-
         pollution_df = pd.DataFrame([{
             "timestamp": entry.valid_time.isoformat(),
-            "station-id": entry.station.code,
+            "station-id": TrafficSensorStation.split_station_code(entry.station.code)[1],
             "pollutant": entry.entry_class.value,
             "vehicle_class": entry.vehicle_class.value.lower(),
             "pollution_value": entry.entry_value
@@ -215,7 +220,10 @@ class ModelHelper:
             columns="vehicle_class",
             values="pollution_value",
             aggfunc="sum"
-        ).reset_index().fillna(0)
+        ).reset_index().fillna(0)  # TODO: check if fillna(0) is correct
+
+        # aggregate the pollution values by station.stazione_id
+        pollution_df = pollution_df.groupby(["timestamp", "station-id"]).sum().reset_index()
 
         # if column 'buses', 'light_vehicles' or 'heavy_vehicles' is missing, add it with value 0
         for vehicle_class in ['buses', 'light_vehicles', 'heavy_vehicles']:
