@@ -10,6 +10,7 @@ import os
 import time
 import urllib.request
 import zipfile
+from datetime import datetime
 from typing import List, Dict
 
 import pandas as pd
@@ -89,8 +90,12 @@ class PollutionDispersalModel:
         return weather_filename
 
     @staticmethod
-    def _ws_prediction(pollution_filename: str, weather_filename: str):
-        url = POLLUTION_DISPERSAL_PREDICTION_ENDPOINT
+    def _ws_prediction(pollution_filename: str, weather_filename: str, start_date: datetime) -> List[PollutionDispersalEntry]:
+        formatted_dt = start_date.strftime("%Y-%m-%d-%H")
+        url = f"{POLLUTION_DISPERSAL_PREDICTION_ENDPOINT}{formatted_dt}"
+        logger.info(f"Sending prediction request to {url}")
+        logger.info(f"Pollution file: {pollution_filename}")
+        logger.info(f"Weather file: {weather_filename}")
 
         # List of files to upload
         files_to_upload = [pollution_filename, weather_filename]
@@ -123,8 +128,8 @@ class PollutionDispersalModel:
             logger.error(f"error while processing request: {e}")
             return []
 
-    def compute_data(self, pollution: PollutionMeasureCollection,
-                     weather: WeatherMeasureCollection, stations: List[TrafficSensorStation]) -> List[PollutionEntry]:
+    def compute_data(self, pollution: PollutionMeasureCollection, weather: WeatherMeasureCollection,
+                     start_date: datetime, stations: List[TrafficSensorStation]) -> List[PollutionEntry]:
 
         # TODO: check if stations parameter is needed
 
@@ -146,7 +151,7 @@ class PollutionDispersalModel:
             pollution_filename = self._create_temp_pollution_csv(pollution_df)
             weather_filename = self._create_temp_weather_csv(weather_df)
 
-            self._ws_prediction(pollution_filename, weather_filename)
+            self._ws_prediction(pollution_filename, weather_filename, start_date)
 
             return []
 

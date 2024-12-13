@@ -177,25 +177,27 @@ class ModelHelper:
         # precipitation data is every 5 minutes, while the others are all every 10 minutes
         # we need to aggregate the precipitation data to match the other data
 
+        # Convert to DataFrame
         temp = pd.DataFrame(temp)
 
         # Set timestamp as datetime index
         temp["timestamp"] = pd.to_datetime(temp["timestamp"])
         temp = temp.set_index("timestamp")
 
-        # Resample and sum only the precipitation column
-        precipitation_resampled = temp["precipitation"].resample("10min").sum()
+        # Resample and aggregate data by station-id
+        # Assuming only the precipitation data needs to be summed (if also the other variables need to be aggregated,
+        # the aggregation function should be changed accordingly)
+        resampled = temp.groupby("station-id").resample("10min").agg({
+            "station-type": "first",
+            "air-temperature": "first",
+            "air-humidity": "first",
+            "wind-speed": "first",
+            "wind-direction": "first",
+            "global-radiation": "first",
+            "precipitation": "sum"
+        }).reset_index()
 
-        # Resample other columns (e.g., taking the first valid value in each interval)
-        other_columns_resampled = temp.resample("10min").first()
-
-        # Combine the results
-        other_columns_resampled["precipitation"] = precipitation_resampled
-
-        # Reset the index to make 'timestamp' a column again
-        temp = other_columns_resampled.reset_index()
-
-        return pd.DataFrame(temp)
+        return pd.DataFrame(resampled)
 
     @staticmethod
     def get_pollution_dataframe(pollution_entries: Iterable[PollutionEntry]) -> pd.DataFrame:

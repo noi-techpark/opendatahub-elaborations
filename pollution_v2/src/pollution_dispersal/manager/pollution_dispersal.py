@@ -125,7 +125,7 @@ class PollutionDispersalManager(StationManager):
             logger.info(f"Length of weather data after filtering: {len(weather_data.measures)}")
 
             model = PollutionDispersalModel()
-            return model.compute_data(pollution_data, weather_data, stations)
+            return model.compute_data(pollution_data, weather_data, start_date, stations)
 
         return []
 

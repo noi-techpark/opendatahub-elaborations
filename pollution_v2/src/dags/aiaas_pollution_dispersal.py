@@ -107,31 +107,29 @@ with StationsDAG(
         # Use built-in functions like dict as much as you can and stay away
         # from using classes and other complex structures.
         station_dicts = []
+        unique_station_codes = set()
         for station in stations_list:
             try:
                 station_id = str(station.id_stazione)
             except ValueError:
                 # some stations have different codes (such as "16:verso Bolzano"), so we skip them
-                # TODO: or should we split the station in a different way and keep them?
                 continue
 
-            if station_id != "684":
-                continue
-            print("Found station 684", station)
             if station_id not in station_mapping:
-                logger.error(f"Station code [{station_id}] not found in the mapping [{station_mapping}]")
-                # TODO: decide if we want to raise an error or just skip the station
-                # raise ValueError(f"Station code [{station.code}] not found in the mapping")
                 continue
+            unique_station_codes.add(station_id)
 
-            logger.info("Found mapping for ODH traffic station code [" + station_id + "]" +
-                        " -> ODH meteo station code [" + str(station_mapping[station_id]) + "]")
             meteo_station_code = station_mapping[station_id]
             station.meteo_station_code = meteo_station_code
 
             station_dicts.append(station.to_json())
 
         logger.info(f"Retrieved {len(station_dicts)} stations")
+        if len(unique_station_codes) == len(station_mapping):
+            logger.info("All stations mapped in enabled domains have been retrieved: " + str(unique_station_codes))
+        else:
+            difference_str = str(unique_station_codes - set(station_mapping.keys()))
+            logger.warning("Some stations mapped in enabled domains have not been retrieved: " + difference_str)
 
         return station_dicts
 
