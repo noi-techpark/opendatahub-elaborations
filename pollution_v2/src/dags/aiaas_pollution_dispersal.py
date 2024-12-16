@@ -101,7 +101,7 @@ with StationsDAG(
             logger.error(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
             raise ValueError(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
         logger.info(f"Retrieved station mapping: {response.text}")
-        station_mapping = response.json()
+        station_mapping = {x["traffic_station_id"]: x["weather_station_id"] for x in response.json().values()}
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
