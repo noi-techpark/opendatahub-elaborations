@@ -17,10 +17,10 @@ import pandas as pd
 
 from common.data_model.pollution import PollutionEntry, PollutionMeasureCollection
 from common.data_model import TrafficSensorStation
-from common.data_model.pollution_dispersal import PollutionDispersalEntry
+from common.data_model.pollution_dispersal import PollutionDispersalEntry, PollutionDispersalMeasureType
 from common.data_model.weather import WeatherMeasureCollection
 from common.model.helper import ModelHelper
-from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT
+from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT, PERIOD_1HOUR
 
 logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_dispersal_model")
 
@@ -49,10 +49,31 @@ class PollutionDispersalModel:
         return body, boundary
 
     @staticmethod
-    def _get_pollution_dispersal_entries_from_df(dispersal_df: pd.DataFrame, stations_dict: Dict[str, TrafficSensorStation]) -> \
-        List[PollutionDispersalEntry]:
-        # TODO: implement
-        pass
+    def _get_pollution_dispersal_entries_from_folder(folder_name: str, stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
+
+        station_mapping = {str(station.id_stazione): station for station in stations}
+
+        # Iterate through each folder (station) and read the CSV files
+        entries = []
+        print("Iterating through each folder: ", os.listdir(folder_name))  # TODO: remove
+        for file_name in os.listdir(folder_name):
+            file_path = os.path.join(folder_name, file_name)
+            if os.path.isdir(file_path) and file_name in station_mapping:
+                station_id = file_name
+                csv_file = os.path.join(file_path, f"{station_id}_output.csv")
+                if os.path.isfile(csv_file):
+                    df = pd.read_csv(csv_file)
+                    for _, row in df.iterrows():
+                        entries.append(PollutionDispersalEntry(
+                            station=station_mapping[station_id],
+                            valid_time=datetime.now(),
+                            x_coordinate=row[PollutionDispersalMeasureType.X_COORDINATE.value],
+                            y_coordinate=row[PollutionDispersalMeasureType.Y_COORDINATE.value],
+                            z_coordinate=row[PollutionDispersalMeasureType.Z_COORDINATE.value],
+                            c_a22=row[PollutionDispersalMeasureType.C_A22.value],
+                            period=PERIOD_1HOUR
+                        ))
+        return entries
 
     @staticmethod
     def _create_temp_pollution_csv(pollution_df: pd.DataFrame) -> str:
@@ -90,7 +111,8 @@ class PollutionDispersalModel:
         return weather_filename
 
     @staticmethod
-    def _ws_prediction(pollution_filename: str, weather_filename: str, start_date: datetime) -> List[PollutionDispersalEntry]:
+    def _ws_prediction(pollution_filename: str, weather_filename: str, start_date: datetime,
+                       stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
         formatted_dt = start_date.strftime("%Y-%m-%d-%H")
         url = f"{POLLUTION_DISPERSAL_PREDICTION_ENDPOINT}{formatted_dt}"
         logger.info(f"Sending prediction request to {url}")
@@ -128,10 +150,10 @@ class PollutionDispersalModel:
             logger.error(f"error while processing request: {e}")
             return []
 
-    def compute_data(self, pollution: PollutionMeasureCollection, weather: WeatherMeasureCollection,
-                     start_date: datetime, stations: List[TrafficSensorStation]) -> List[PollutionEntry]:
+        return PollutionDispersalModel._get_pollution_dispersal_entries_from_folder(folder_name, stations)
 
-        # TODO: check if stations parameter is needed
+    def compute_data(self, pollution: PollutionMeasureCollection, weather: WeatherMeasureCollection,
+                     start_date: datetime, stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
 
         pollution_data_types = {str(measure.data_type) for measure in pollution.measures}
         weather_data_types = {str(measure.data_type) for measure in weather.measures}
@@ -151,11 +173,8 @@ class PollutionDispersalModel:
             pollution_filename = self._create_temp_pollution_csv(pollution_df)
             weather_filename = self._create_temp_weather_csv(weather_df)
 
-            self._ws_prediction(pollution_filename, weather_filename, start_date)
+            return self._ws_prediction(pollution_filename, weather_filename, start_date, stations)
 
-            return []  # TODO: remove
-
-            return self._get_pollution_entries_from_df(pollution_df, weather.get_stations())
         else:
             logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}), skipping computation")
             return []

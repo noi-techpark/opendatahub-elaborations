@@ -8,9 +8,10 @@ from enum import Enum
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional, List, Iterator, Dict
+import dateutil.parser
+from typing import Optional, List
 
-from common.data_model.common import MeasureCollection, Measure, DataType
+from common.data_model.common import MeasureCollection, Measure, DataType, Provenance
 from common.data_model.entry import GenericEntry
 from common.data_model.station import Station
 
@@ -29,7 +30,6 @@ class PollutionDispersalEntry(GenericEntry):
     def __init__(self, station: Station, valid_time: datetime, x_coordinate: float, y_coordinate: float,
                  z_coordinate: float, c_a22: float, period: Optional[int]):
         super().__init__(station, valid_time, period)
-        # TODO: are the coordinates needed?
         self.x_coordinate = x_coordinate
         self.y_coordinate = y_coordinate
         self.z_coordinate = z_coordinate
@@ -41,10 +41,41 @@ class PollutionDispersalMeasure(Measure):
     Measure representing pollution dispersal measure.
     """
 
+    def __init__(self, x_coordinate: float, y_coordinate: float, z_coordinate: float, **kwargs):
+        super().__init__(**kwargs)
+        self.x_coordinate = x_coordinate
+        self.y_coordinate = y_coordinate
+        self.z_coordinate = z_coordinate
+
     # TODO: implement get_data_types method
     @staticmethod
     def get_data_types() -> List[DataType]:
+        # TODO: or implement the coordinates as a datatype?
         pass
+
+    @classmethod
+    def from_odh_repr(cls, raw_data: dict):
+        return cls(
+            station=Station.from_odh_repr(raw_data),
+            data_type=DataType.from_odh_repr(raw_data),
+            provenance=Provenance.from_odh_repr(raw_data),
+            period=raw_data.get("mperiod"),
+            transaction_time=dateutil.parser.parse(raw_data["mtransactiontime"]) if raw_data.get("mtransactiontime") else None,
+            valid_time=dateutil.parser.parse(raw_data["mvalidtime"]),
+            value=raw_data["mvalue"],
+            x_coordinate=raw_data["x_coordinate"],
+            y_coordinate=raw_data["y_coordinate"],
+            z_coordinate=raw_data["z_coordinate"],
+        )
+
+    def to_odh_repr(self) -> dict:
+        repr = super().to_odh_repr()
+        repr.update({
+            "x_coordinate": self.x_coordinate,
+            "y_coordinate": self.y_coordinate,
+            "z_coordinate": self.z_coordinate,
+        })
+        return repr
 
 
 @dataclass

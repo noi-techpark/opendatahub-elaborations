@@ -136,4 +136,5 @@ class PollutionDispersalManager(StationManager):
         :param stations: The list of stations to compute.
         """
         entries = self._download_data_and_compute(stations)
+        logger.info(f"Computed {len(entries)} pollution dispersal entries")
         # self._upload_data(entries)  # TODO: restore
