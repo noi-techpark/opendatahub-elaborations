@@ -153,7 +153,7 @@ class PollutionDispersalModel:
 
             self._ws_prediction(pollution_filename, weather_filename, start_date)
 
-            return []
+            return []  # TODO: remove
 
             return self._get_pollution_entries_from_df(pollution_df, weather.get_stations())
         else:

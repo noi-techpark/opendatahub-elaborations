@@ -12,6 +12,7 @@ from typing import List, Dict, Iterator, Optional
 from common.data_model import Station, TrafficSensorStation
 from common.data_model.common import MeasureCollection, Measure, DataType
 from common.data_model.entry import GenericEntry
+from common.settings import PERIOD_10MIN
 
 
 class WeatherMeasureType(Enum):
@@ -84,7 +85,7 @@ class WeatherMeasureCollection(MeasureCollection[WeatherMeasure, Station]):
                 result[group_by_station][group_by_time] = WeatherEntry(
                     station=stations[group_by_station],
                     valid_time=group_by_time,
-                    period=1,
+                    period=PERIOD_10MIN,
                     air_temperature=entry[WeatherMeasureType.AIR_TEMPERATURE.value] if WeatherMeasureType.AIR_TEMPERATURE.value in entry else "",
                     air_humidity=entry[WeatherMeasureType.AIR_HUMIDITY.value] if WeatherMeasureType.AIR_HUMIDITY.value in entry else "",
                     wind_speed=entry[WeatherMeasureType.WIND_SPEED.value] if WeatherMeasureType.WIND_SPEED.value in entry else "",
@@ -104,8 +105,6 @@ class WeatherMeasureCollection(MeasureCollection[WeatherMeasure, Station]):
         for station_dict in self._build_entries_dictionary().values():
             for date_dict in station_dict.values():
                 yield date_dict
-                # for weather_entry in date_dict.values():
-                #     yield weather_entry
 
     def get_entries(self) -> List[WeatherEntry]:
         """
