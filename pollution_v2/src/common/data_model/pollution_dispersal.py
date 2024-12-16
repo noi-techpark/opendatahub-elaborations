@@ -29,6 +29,7 @@ class PollutionDispersalEntry(GenericEntry):
     def __init__(self, station: Station, valid_time: datetime, x_coordinate: float, y_coordinate: float,
                  z_coordinate: float, c_a22: float, period: Optional[int]):
         super().__init__(station, valid_time, period)
+        # TODO: are the coordinates needed?
         self.x_coordinate = x_coordinate
         self.y_coordinate = y_coordinate
         self.z_coordinate = z_coordinate
