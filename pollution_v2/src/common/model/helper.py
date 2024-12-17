@@ -7,6 +7,7 @@ from typing import Iterable, Set, List
 
 import pandas as pd
 import json
+import mimetypes
 import logging
 
 from common.data_model import TrafficSensorStation, RoadWeatherObservationEntry, PollutionEntry, VehicleClass, \
@@ -22,6 +23,24 @@ class ModelHelper:
     """
     Created Pandas dataframes starting useful to feed computation algorithms
     """
+
+    @classmethod
+    def create_multipart_formdata(cls, files):
+
+        boundary = '----------Boundary'
+        lines = []
+        for filename in files:
+            content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+            lines.append(f'--{boundary}'.encode())
+            lines.append(f'Content-Disposition: form-data; name="files"; filename="{filename}"'.encode())
+            lines.append(f'Content-Type: {content_type}'.encode())
+            lines.append(''.encode())
+            with open(filename, 'rb') as f:
+                lines.append(f.read())
+        lines.append(f'--{boundary}--'.encode())
+        lines.append(''.encode())
+        body = b'\r\n'.join(lines)
+        return body, boundary
 
     @staticmethod
     def get_stations_dataframe(stations: List[TrafficSensorStation]) -> pd.DataFrame:
