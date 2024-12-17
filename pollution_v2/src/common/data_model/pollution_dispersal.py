@@ -9,11 +9,12 @@ from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 import dateutil.parser
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 from common.data_model.common import MeasureCollection, Measure, DataType, Provenance
 from common.data_model.entry import GenericEntry
 from common.data_model.station import Station
+from common.settings import DATATYPE_PREFIX
 
 
 class PollutionDispersalMeasureType(Enum):
@@ -35,6 +36,11 @@ class PollutionDispersalEntry(GenericEntry):
         self.z_coordinate = z_coordinate
         self.c_a22 = c_a22
 
+    def __repr__(self):
+        return (f"PollutionDispersalEntry(station={self.station}, valid_time={self.valid_time}, "
+                f"x_coordinate={self.x_coordinate}, y_coordinate={self.y_coordinate}, "
+                f"z_coordinate={self.z_coordinate}, c_a22={self.c_a22}, period={self.period})")
+
 
 class PollutionDispersalMeasure(Measure):
     """
@@ -47,11 +53,16 @@ class PollutionDispersalMeasure(Measure):
         self.y_coordinate = y_coordinate
         self.z_coordinate = z_coordinate
 
-    # TODO: implement get_data_types method
     @staticmethod
     def get_data_types() -> List[DataType]:
         # TODO: or implement the coordinates as a datatype?
-        pass
+        return [DataType(
+            name=f"{DATATYPE_PREFIX}NOx-pollution-dispersal",
+            description="NOx pollution dispersal",
+            data_type="Dispersal",
+            unit="-",
+            metadata={}
+        )]
 
     @classmethod
     def from_odh_repr(cls, raw_data: dict):
@@ -81,56 +92,36 @@ class PollutionDispersalMeasure(Measure):
 @dataclass
 class PollutionDispersalMeasureCollection(MeasureCollection[PollutionDispersalMeasure, Station]):
     """
-    Collection of pollution dispersal measure measures.
+    Collection of pollution dispersal measures.
     """
-    pass
-    # def get_entries(self) -> List[PollutionDispersalEntry]:
-    #     """
-    #     Build and retrieve the list of traffic entry from the available measures
-    #
-    #     :return: a list of traffic entries
-    #     """
-    #     return list(self._get_entries_iterator())
-    #
-    # def _get_entries_iterator(self) -> Iterator[PollutionDispersalEntry]:
-    #     """
-    #     Build and retrieve the iterator for list of observation entries from the available measures
-    #
-    #     :return: an iterator of traffic entries
-    #     """
-    #     for station_dict in self._build_entries_dictionary().values():
-    #         for entry in station_dict.values():
-    #             yield entry
-    #
-    # def _build_entries_dictionary(self) -> Dict[str, Dict[datetime, PollutionDispersalEntry]]:
-    #     # A temporary dictionary used for faster aggregation of the results
-    #     # The dictionary will have the following structure
-    #     # StationCode -> (measure valid time -> (PollutionDispersalEntry))
-    #     tmp: Dict[str, Dict[datetime, dict]] = {}
-    #     stations: Dict[str, Station] = {}
-    #     for measure in self.measures:
-    #         if measure.station.code not in stations:
-    #             stations[measure.station.code] = measure.station
-    #         if measure.station.code not in tmp:
-    #             tmp[measure.station.code] = {}
-    #         if measure.valid_time not in tmp[measure.station.code]:
-    #             tmp[measure.station.code][measure.valid_time] = {}
-    #         tmp[measure.station.code][measure.valid_time][measure.data_type.name] = measure.value
-    #
-    #     result: Dict[str, Dict[datetime, PollutionDispersalEntry]] = {}
-    #     for group_by_station in tmp:
-    #         if group_by_station not in result:
-    #             result[group_by_station] = {}
-    #         for group_by_time in tmp[group_by_station]:
-    #             entry = tmp[group_by_station][group_by_time]
-    #             result[group_by_station][group_by_time] = PollutionDispersalEntry(
-    #                 station=stations[group_by_station],
-    #                 valid_time=group_by_time,
-    #                 period=1,
-    #                 x_coordinate=entry[PollutionDispersalMeasureType.X_COORDINATE],
-    #                 y_coordinate=entry[PollutionDispersalMeasureType.Y_COORDINATE],
-    #                 z_coordinate=entry[PollutionDispersalMeasureType.Z_COORDINATE],
-    #                 c_a22=entry[PollutionDispersalMeasureType.C_A22],
-    #             )
-    #
-    #     return result
+
+    @staticmethod
+    def build_from_entries(entries: List[PollutionDispersalEntry],
+                           provenance: Provenance) -> PollutionDispersalMeasureCollection:
+        """
+        Build a PollutionDispersalMeasureCollection from the list of pollution dispersal entries.
+
+        :param entries: the pollution dispersal entries from which generate the PollutionDispersalMeasureCollection
+        :param provenance: the provenance of the pollution dispersal measures
+        :return: a PollutionDispersalMeasureCollection object containing the pollution dispersal measures generated from the respective entries
+        """
+        pollution_measures: List[PollutionDispersalMeasure] = []
+        data_type = PollutionDispersalMeasure.get_data_types()[0]
+        for entry in entries:
+            pollution_measures.append(PollutionDispersalMeasure(
+                station=entry.station,
+                data_type=data_type,
+                provenance=provenance,
+                period=entry.period,
+                transaction_time=None,
+                valid_time=entry.valid_time,
+                # TODO: is this the correct implementation to push the coordinates?
+                #       alternatively, should the coordinates be set in the data_types?
+                #       (Although they can't be known beforehand and can only be retrieved for a station using '*')
+                value=entry.c_a22,
+                x_coordinate=entry.x_coordinate,
+                y_coordinate=entry.y_coordinate,
+                z_coordinate=entry.z_coordinate,
+            ))
+
+        return PollutionDispersalMeasureCollection(pollution_measures)

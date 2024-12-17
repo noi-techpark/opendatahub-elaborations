@@ -15,7 +15,7 @@ from common.connector.common import ODHBaseConnector
 from common.data_model import Provenance, DataType, MeasureCollection, PollutionMeasureCollection, \
     PollutionDispersalMeasure, TrafficSensorStation, PollutionMeasure, PollutantClass
 from common.data_model.entry import GenericEntry
-from common.data_model.pollution_dispersal import PollutionDispersalEntry
+from common.data_model.pollution_dispersal import PollutionDispersalEntry, PollutionDispersalMeasureCollection
 from common.data_model.weather import WeatherMeasureCollection
 from common.manager.station import StationManager
 from common.manager.traffic_station import TrafficStationManager
@@ -51,8 +51,7 @@ class PollutionDispersalManager(StationManager):
         return PollutionDispersalMeasure.get_data_types()
 
     def _build_from_entries(self, input_entries: List[PollutionDispersalEntry]) -> MeasureCollection:
-        # TODO: implement when needed
-        pass
+        return PollutionDispersalMeasureCollection.build_from_entries(input_entries, self._provenance)
 
     def _download_pollution_data(self,
                                    from_date: datetime,
@@ -69,6 +68,8 @@ class PollutionDispersalManager(StationManager):
         connector = self.get_input_connector()
         logger.info(f"Downloading pollution data from [{from_date}] to [{to_date}]")
         nox_pollutants = PollutionMeasure.get_data_types([PollutantClass.NOx])
+        # TODO: instead of downloading data for all stations (and then filter out by station id),
+        #       download data for each station independently?
         return PollutionMeasureCollection(
             measures=connector.get_measures(from_date=from_date, to_date=to_date, measure_types=list(map(lambda x: x.name, nox_pollutants)))
         )
@@ -87,6 +88,8 @@ class PollutionDispersalManager(StationManager):
 
         connector = self.get_input_additional_connector()
         logger.info(f"Downloading weather data from [{from_date}] to [{to_date}]")
+        # TODO: instead of downloading data for all stations (and then filter out by station id),
+        #       download data for each station independently?
         return WeatherMeasureCollection(
             measures=connector.get_measures(from_date=from_date, to_date=to_date)
         )
@@ -116,13 +119,27 @@ class PollutionDispersalManager(StationManager):
             logger.info(f"Length of pollution data: {len(pollution_data.measures)}")
             logger.info(f"Length of weather data: {len(weather_data.measures)}")
 
-            logger.info("Filtering pollution data by station ids")
+            # Filtering pollution and weather data for only the stations present in the mapping
             pollution_data = PollutionMeasureCollection(list(filter(lambda x: x.station.code in [station.code for station in stations], pollution_data.measures)))
             logger.info(f"Length of pollution data after filtering: {len(pollution_data.measures)}")
-
-            logger.info("Filtering weather data by station ids")
             weather_data = WeatherMeasureCollection(list(filter(lambda x: x.station.code in [station.meteo_station_code for station in stations], weather_data.measures)))
             logger.info(f"Length of weather data after filtering: {len(weather_data.measures)}")
+            total_weather_records_for_station = {station.meteo_station_code: len(list(filter(lambda x: x.station.code == station.meteo_station_code, weather_data.measures))) for station in stations}
+
+            # Check if there are stations for which no pollution or weather data is not available
+            total_pollution_records_for_station = {}
+            for station in stations:
+                id_stazione = station.id_stazione
+                if id_stazione not in total_pollution_records_for_station:
+                    total_pollution_records_for_station[id_stazione] = 0
+                total_pollution_records_for_station[id_stazione] += len(list(filter(lambda x: x.station.code == station.code, pollution_data.measures)))
+            skipped_stations_for_pollutions = {station.id_stazione: station.meteo_station_code for station in stations if total_pollution_records_for_station[station.id_stazione] == 0}
+            logger.info("No pollution data found for traffic stations: " + str(list(set(skipped_stations_for_pollutions.keys()))))
+            skipped_stations_for_weathers = {station.id_stazione: station.meteo_station_code for station in stations if total_weather_records_for_station[station.meteo_station_code] == 0}
+            logger.info("No weather data found for weather stations: " + str(list(set(skipped_stations_for_weathers.values()))))
+
+            skipped_stations_for_pollutions.update(skipped_stations_for_weathers)
+            logger.info("Skipped stations for absence of data: " + str(skipped_stations_for_pollutions))
 
             model = PollutionDispersalModel()
             return model.compute_data(pollution_data, weather_data, start_date, stations)

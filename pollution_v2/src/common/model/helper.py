@@ -92,6 +92,9 @@ class ModelHelper:
         :param observation_entries: the observation entries
         :return: the observation dataframe
         """
+
+        # !! This function is not used !!
+        # TODO: remove?
         temp = []
         for entry in observation_entries:
             temp.append({

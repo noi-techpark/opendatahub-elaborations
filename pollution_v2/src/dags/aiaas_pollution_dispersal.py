@@ -101,7 +101,16 @@ with StationsDAG(
             logger.error(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
             raise ValueError(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
         logger.info(f"Retrieved station mapping: {response.text}")
-        station_mapping = {x["traffic_station_id"]: x["weather_station_id"] for x in response.json().values()}
+
+        station_mapping = {}
+        for x in response.json().values():
+            if x["traffic_station_id"] in station_mapping:
+                station_id = x["traffic_station_id"]
+                previous = station_mapping[station_id]
+                current = x["weather_station_id"]
+                logger.warning(f"Duplicate station mapping entries for traffic_station_id [{station_id}]: "
+                               f"First weather_station_id [{previous}], Second weather_station_id [{current}]")
+            station_mapping[x["traffic_station_id"]] = x["weather_station_id"]
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away

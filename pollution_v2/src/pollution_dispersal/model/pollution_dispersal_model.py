@@ -11,16 +11,18 @@ import time
 import urllib.request
 import zipfile
 from datetime import datetime
-from typing import List, Dict
+from typing import List
 
 import pandas as pd
+import requests
 
-from common.data_model.pollution import PollutionEntry, PollutionMeasureCollection
+from common.data_model.pollution import PollutionMeasureCollection
 from common.data_model import TrafficSensorStation
 from common.data_model.pollution_dispersal import PollutionDispersalEntry, PollutionDispersalMeasureType
 from common.data_model.weather import WeatherMeasureCollection
 from common.model.helper import ModelHelper
-from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT, PERIOD_1HOUR
+from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT, PERIOD_1HOUR, \
+    POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT
 
 logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_dispersal_model")
 
@@ -51,21 +53,30 @@ class PollutionDispersalModel:
     @staticmethod
     def _get_pollution_dispersal_entries_from_folder(folder_name: str, stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
 
-        station_mapping = {str(station.id_stazione): station for station in stations}
+        traffic_stations_by_id = {str(station.id_stazione): station for station in stations}
+
+        # Retrieve again the list of station mappings from the ws to get the station ids
+        response = requests.get(POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT)
+        if (response.status_code != 200):
+            logger.error(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
+            raise ValueError(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
+        logger.info(f"Retrieved station mapping: {response.text}")
+        station_mapping = {key: ids["traffic_station_id"] for key, ids in response.json().items()}
 
         # Iterate through each folder (station) and read the CSV files
         entries = []
-        print("Iterating through each folder: ", os.listdir(folder_name))  # TODO: remove
         for file_name in os.listdir(folder_name):
             file_path = os.path.join(folder_name, file_name)
             if os.path.isdir(file_path) and file_name in station_mapping:
                 station_id = file_name
-                csv_file = os.path.join(file_path, f"{station_id}_output.csv")
+                traffic_station_id = station_mapping[station_id]
+                print(f"Processing entries for station [Domain Id: [{station_id}], Traffic Station Id: {traffic_station_id}]")
+                csv_file = os.path.join(file_path, f"output_{station_id}.csv")
                 if os.path.isfile(csv_file):
                     df = pd.read_csv(csv_file)
                     for _, row in df.iterrows():
                         entries.append(PollutionDispersalEntry(
-                            station=station_mapping[station_id],
+                            station=traffic_stations_by_id[traffic_station_id],
                             valid_time=datetime.now(),
                             x_coordinate=row[PollutionDispersalMeasureType.X_COORDINATE.value],
                             y_coordinate=row[PollutionDispersalMeasureType.Y_COORDINATE.value],
@@ -129,7 +140,6 @@ class PollutionDispersalModel:
         req = urllib.request.Request(url, data=body)
         req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
 
-        response_data = None
         try:
             with urllib.request.urlopen(req) as response:
                 response_data = response.read()
@@ -154,14 +164,6 @@ class PollutionDispersalModel:
 
     def compute_data(self, pollution: PollutionMeasureCollection, weather: WeatherMeasureCollection,
                      start_date: datetime, stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
-
-        pollution_data_types = {str(measure.data_type) for measure in pollution.measures}
-        weather_data_types = {str(measure.data_type) for measure in weather.measures}
-
-        logger.info(f"{len(pollution.measures)} pollution measures available "
-                    f"on {len(pollution_data_types)} data types")
-        logger.info(f"{len(weather.measures)} weather measures available "
-                    f"on {len(weather_data_types)} data types")
 
         weather_entries = weather.get_entries()
         pollution_entries = pollution.get_entries()
