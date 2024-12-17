@@ -107,6 +107,8 @@ class PollutionDispersalManager(StationManager):
         try:
             pollution_data = self._download_pollution_data(start_date, to_date)
             weather_data = self._download_weather_data(start_date, to_date)
+            # TODO: add the possibility to retrieve also the `RoadWeather` stations
+
         except Exception as e:
             logger.exception(
                 f"Unable to download pollution and weather data for stations {stations}",

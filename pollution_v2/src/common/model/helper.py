@@ -164,6 +164,7 @@ class ModelHelper:
         for entry in weather_entries:
             temp.append({
                 "timestamp": entry.valid_time.isoformat(),
+                # TODO: add the possibility to retrieve also the `RoadWeather` stations
                 "station-type": 'Weather',
                 "station-id": entry.station.code,
                 "air-temperature": entry.air_temperature,

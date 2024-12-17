@@ -10,6 +10,11 @@ SPDX-License-Identifier: CC0-1.0
 
 ## Version 2024.*
 
+### 2024.12.20
+
+:rocket: New features
+* Added pollution dispersal computation.
+
 ### 2024.10.29
 
 :rocket: New features
