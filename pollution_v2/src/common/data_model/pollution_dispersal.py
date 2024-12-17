@@ -53,6 +53,7 @@ class PollutionDispersalMeasureCollection(MeasureCollection[PollutionDispersalMe
     Collection of pollution dispersal measure measures.
     """
     pass
+    # TODO
     # def get_entries(self) -> List[PollutionDispersalEntry]:
     #     """
     #     Build and retrieve the list of traffic entry from the available measures
