@@ -9,7 +9,7 @@ from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 import dateutil.parser
-from typing import Optional, List, Dict
+from typing import Optional, List
 
 from common.data_model.common import MeasureCollection, Measure, DataType, Provenance
 from common.data_model.entry import GenericEntry
@@ -55,7 +55,7 @@ class PollutionDispersalMeasure(Measure):
 
     @staticmethod
     def get_data_types() -> List[DataType]:
-        # TODO: or implement the coordinates as a datatype?
+        # TODO: is it correct?
         return [DataType(
             name=f"{DATATYPE_PREFIX}NOx-pollution-dispersal",
             description="NOx pollution dispersal",
@@ -74,19 +74,22 @@ class PollutionDispersalMeasure(Measure):
             transaction_time=dateutil.parser.parse(raw_data["mtransactiontime"]) if raw_data.get("mtransactiontime") else None,
             valid_time=dateutil.parser.parse(raw_data["mvalidtime"]),
             value=raw_data["mvalue"],
-            x_coordinate=raw_data["x_coordinate"],
-            y_coordinate=raw_data["y_coordinate"],
-            z_coordinate=raw_data["z_coordinate"],
+            # TODO: check
+            x_coordinate=raw_data["metadata"]["coordinates"]["x"],
+            y_coordinate=raw_data["metadata"]["coordinates"]["y"],
+            z_coordinate=raw_data["metadata"]["coordinates"]["z"],
         )
 
     def to_odh_repr(self) -> dict:
-        repr = super().to_odh_repr()
-        repr.update({
-            "x_coordinate": self.x_coordinate,
-            "y_coordinate": self.y_coordinate,
-            "z_coordinate": self.z_coordinate,
-        })
-        return repr
+        odh_repr = super().to_odh_repr()
+        odh_repr["metadata"] = {
+            "coordinates": {
+                "x": self.x_coordinate,
+                "y": self.y_coordinate,
+                "z": self.z_coordinate,
+            }
+        }
+        return odh_repr
 
 
 @dataclass
@@ -115,9 +118,6 @@ class PollutionDispersalMeasureCollection(MeasureCollection[PollutionDispersalMe
                 period=entry.period,
                 transaction_time=None,
                 valid_time=entry.valid_time,
-                # TODO: is this the correct implementation to push the coordinates?
-                #       alternatively, should the coordinates be set in the data_types?
-                #       (Although they can't be known beforehand and can only be retrieved for a station using '*')
                 value=entry.c_a22,
                 x_coordinate=entry.x_coordinate,
                 y_coordinate=entry.y_coordinate,

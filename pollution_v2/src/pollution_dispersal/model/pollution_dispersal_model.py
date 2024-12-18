@@ -53,7 +53,11 @@ class PollutionDispersalModel:
     @staticmethod
     def _get_pollution_dispersal_entries_from_folder(folder_name: str, stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
 
-        traffic_stations_by_id = {str(station.id_stazione): station for station in stations}
+        # Map the domain traffic station id(e.g. '684') to the first traffic station matching found on ODH (e.g. 'A22:684:1')
+        traffic_stations_by_id = {}
+        for station in stations:
+            if station.id_stazione not in traffic_stations_by_id:
+                traffic_stations_by_id[str(station.id_stazione)] = station
 
         # Retrieve again the list of station mappings from the ws to get the station ids
         response = requests.get(POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT)
