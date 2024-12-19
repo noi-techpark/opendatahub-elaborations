@@ -16,9 +16,9 @@ from zoneinfo import ZoneInfo
 from common.data_model import TrafficSensorStation, RoadWeatherObservationMeasureCollection, Station
 
 import urllib.request
-import mimetypes
 
 from common.data_model.roadcast import RoadCastEntry, RoadCastTypeClass, RoadCastClass, ExtendedRoadCastEntry
+from common.model.helper import ModelHelper
 from common.settings import TMP_DIR, METRO_WS_PREDICTION_ENDPOINT, ROAD_WEATHER_NUM_FORECASTS, \
     ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
 
@@ -47,24 +47,6 @@ class RoadWeatherModel:
     """
     The model for computing road condition.
     """
-
-    @classmethod
-    def create_multipart_formdata(cls, files):
-
-        boundary = '----------Boundary'
-        lines = []
-        for filename in files:
-            content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-            lines.append(f'--{boundary}'.encode())
-            lines.append(f'Content-Disposition: form-data; name="files"; filename="{filename}"'.encode())
-            lines.append(f'Content-Type: {content_type}'.encode())
-            lines.append(''.encode())
-            with open(filename, 'rb') as f:
-                lines.append(f.read())
-        lines.append(f'--{boundary}--'.encode())
-        lines.append(''.encode())
-        body = b'\r\n'.join(lines)
-        return body, boundary
 
     def compute_data(self, observation: RoadWeatherObservationMeasureCollection,
                      forecast_filename: str,  # TODO: change with RoadWeatherForecastMeasureCollection
@@ -101,7 +83,7 @@ class RoadWeatherModel:
         files_to_upload = [forecast_filename, observation_filename]
 
         # Create multipart form data
-        body, boundary = RoadWeatherModel.create_multipart_formdata(files_to_upload)
+        body, boundary = ModelHelper.create_multipart_formdata(files_to_upload)
 
         # Create a request object
         req = urllib.request.Request(url, data=body)

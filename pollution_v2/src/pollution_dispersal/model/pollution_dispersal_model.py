@@ -32,24 +32,6 @@ class PollutionDispersalModel:
     The model for computing pollution data.
     """
 
-    @classmethod
-    def create_multipart_formdata(cls, files):
-
-        boundary = '----------Boundary'
-        lines = []
-        for filename in files:
-            content_type = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-            lines.append(f'--{boundary}'.encode())
-            lines.append(f'Content-Disposition: form-data; name="files"; filename="{filename}"'.encode())
-            lines.append(f'Content-Type: {content_type}'.encode())
-            lines.append(''.encode())
-            with open(filename, 'rb') as f:
-                lines.append(f.read())
-        lines.append(f'--{boundary}--'.encode())
-        lines.append(''.encode())
-        body = b'\r\n'.join(lines)
-        return body, boundary
-
     @staticmethod
     def _get_pollution_dispersal_entries_from_folder(folder_name: str, stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
 
@@ -138,7 +120,7 @@ class PollutionDispersalModel:
         files_to_upload = [pollution_filename, weather_filename]
 
         # Create multipart form data
-        body, boundary = PollutionDispersalModel.create_multipart_formdata(files_to_upload)
+        body, boundary = ModelHelper.create_multipart_formdata(files_to_upload)
 
         # Create a request object
         req = urllib.request.Request(url, data=body)
