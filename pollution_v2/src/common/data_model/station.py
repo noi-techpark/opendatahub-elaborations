@@ -18,6 +18,7 @@ class Station:
 
     code: str
     wrf_code: Optional[str]
+    meteo_station_code: Optional[str]
     active: bool
     available: bool
     coordinates: dict
@@ -51,7 +52,8 @@ class Station:
     def from_odh_repr(cls, raw_data: dict):
         return cls(
             code=raw_data["scode"],
-            wrf_code=raw_data.get("wrf_code"),
+            wrf_code=raw_data.get("wrf_code", None),
+            meteo_station_code=raw_data.get("meteo_station_code", None),
             active=raw_data["sactive"],
             available=raw_data["savailable"],
             coordinates=raw_data["scoordinate"],
@@ -65,6 +67,7 @@ class Station:
         return {
             "code": self.code,
             "wrf_code": self.wrf_code,
+            "meteo_station_code": self.meteo_station_code,
             "active": self.active,
             "available": self.available,
             "coordinates": self.coordinates,
@@ -78,7 +81,8 @@ class Station:
     def from_json(cls, dict_data) -> Station:
         res = Station(
             code=dict_data["code"],
-            wrf_code=dict_data.get("wrf_code"),
+            wrf_code=dict_data.get("wrf_code", None),
+            meteo_station_code=dict_data.get("meteo_station_code", None),
             active=dict_data["active"],
             available=dict_data["available"],
             coordinates=dict_data["coordinates"],
@@ -99,35 +103,37 @@ class TrafficSensorStation(Station):
     Class representing a traffic station.
     """
 
-    def split_station_code(self) -> (str, int, int):
+    @staticmethod
+    def split_station_code(code: str) -> (str, int, int):
         """
         splits the station code using the pattern ID_strada:ID_stazione:ID_corsia and returns a tuple
         with the following structure (ID_strada, ID_stazione, ID_corsia)
         :return:
         """
-        splits = self.code.split(":")
+        splits = code.split(":")
         if len(splits) != 3:
-            raise ValueError(f"Unable to split [{self.code}] in ID_strada:ID_stazione:ID_corsia")
+            raise ValueError(f"Unable to split [{code}] in ID_strada:ID_stazione:ID_corsia")
         return splits[0], int(splits[1]), int(splits[2])
 
     @property
     def id_strada(self) -> str:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
+        id_strada, id_stazione, id_corsia = self.split_station_code(self.code)
         return id_strada
 
     @property
     def id_stazione(self) -> int:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
+        id_strada, id_stazione, id_corsia = self.split_station_code(self.code)
         return id_stazione
 
     @property
     def id_corsia(self) -> int:
-        id_strada, id_stazione, id_corsia = self.split_station_code()
+        id_strada, id_stazione, id_corsia = self.split_station_code(self.code)
         return id_corsia
 
     @classmethod
     def from_json(cls, dict_data) -> TrafficSensorStation:
         wrf_code = dict_data.get("wrf_code") if dict_data.get("wrf_code") is not None else None
+        meteo_station_code = dict_data.get("meteo_station_code") if dict_data.get("meteo_station_code") is not None else None
         return TrafficSensorStation(
             code=dict_data["code"],
             active=dict_data["active"],
@@ -137,5 +143,6 @@ class TrafficSensorStation(Station):
             name=dict_data["name"],
             station_type=dict_data["station_type"],
             origin=dict_data["origin"],
-            wrf_code=wrf_code
+            wrf_code=wrf_code,
+            meteo_station_code=meteo_station_code
         )

@@ -8,3 +8,4 @@ from .road_weather import RoadWeatherObservationMeasureType, RoadWeatherForecast
     RoadWeatherObservationMeasure, RoadWeatherObservationMeasureCollection, RoadWeatherForecastEntry, \
     RoadWeatherForecastMeasure, RoadWeatherForecastMeasureCollection
 from .station import Station, StationType, TrafficSensorStation
+from .pollution_dispersal import PollutionDispersalMeasure, PollutionDispersalMeasureCollection

@@ -20,6 +20,7 @@ class TrafficManagerClass(Enum):
 
     POLLUTION = "POLLUTION"
     VALIDATION = "VALIDATION"
+    DISPERSAL = "DISPERSAL"
 
 
 class CacheData(ABC):
