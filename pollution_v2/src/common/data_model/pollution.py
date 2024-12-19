@@ -96,7 +96,10 @@ class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSens
             vehicle_class = measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]
             if vehicle_class not in result[station_code][measure.valid_time]:
                 entry = PollutionEntry(
-                    station=measure.station,  # TODO: pollution measure collection is of type station even if it receives a TrafficSensorStation. Change it?
+                    # Pollution measure collection is of type station even though both PollutionMeasureConnector and
+                    # PollutionMeasureCollection are of type TrafficSensorStation.
+                    # Add cast `station: TrafficSensorStation` to PollutionMeasure to remove the warning.
+                    station=measure.station,
                     valid_time=measure.valid_time,
                     vehicle_class=VehicleClass(measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]),
                     entry_class=PollutantClass(measure.data_type.name.split("-")[1]),
