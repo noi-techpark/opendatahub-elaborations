@@ -5,20 +5,20 @@
 from __future__ import absolute_import, annotations
 
 import logging
-import mimetypes
+import json
 import os
 import time
 import urllib.request
 import zipfile
 from datetime import datetime
-from typing import List
+from typing import List, Tuple
 
 import pandas as pd
 import requests
 
 from common.data_model.pollution import PollutionMeasureCollection
-from common.data_model import TrafficSensorStation
-from common.data_model.pollution_dispersal import PollutionDispersalEntry, PollutionDispersalMeasureType
+from common.data_model import Station
+from common.data_model.pollution_dispersal import PollutionDispersalEntry
 from common.data_model.weather import WeatherMeasureCollection
 from common.model.helper import ModelHelper
 from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT, PERIOD_1HOUR, \
@@ -33,44 +33,57 @@ class PollutionDispersalModel:
     """
 
     @staticmethod
-    def _get_pollution_dispersal_entries_from_folder(folder_name: str, stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
+    def _get_pollution_dispersal_entries_from_folder(folder_name: str) -> Tuple[List[PollutionDispersalEntry], List[Station]]:
+        poi_file = os.path.join(folder_name, "poi.json")
+        if not os.path.isfile(poi_file):
+            logger.error(f"POI file not found: {poi_file}")
+            return [], []
 
-        # Map the domain traffic station id(e.g. '684') to the first traffic station matching found on ODH (e.g. 'A22:684:1')
-        traffic_stations_by_id = {}
-        for station in stations:
-            if station.id_stazione not in traffic_stations_by_id:
-                traffic_stations_by_id[str(station.id_stazione)] = station
+        # the poi file contains a list of dictionaries, decode it:
+        with open(poi_file, "r") as f:
+            pois = json.load(f)
 
-        # Retrieve again the list of station mappings from the ws to get the station ids
+        # Retrieve the list of domain mappings from the ws to get the domain descriptions
         response = requests.get(POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT)
-        if (response.status_code != 200):
-            logger.error(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
-            raise ValueError(f"Failed to retrieve station mapping: {response.status_code} {response.text}")
-        logger.info(f"Retrieved station mapping: {response.text}")
-        station_mapping = {key: ids["traffic_station_id"] for key, ids in response.json().items()}
+        if response.status_code != 200:
+            logger.error(f"Failed to retrieve domain mapping: {response.status_code} {response.text}")
+            raise ValueError(f"Failed to retrieve domain mapping: {response.status_code} {response.text}")
+        logger.info(f"Retrieved domain mapping: {response.text}")
+        domain_mapping = response.json()
 
-        # Iterate through each folder (station) and read the CSV files
         entries = []
-        for file_name in os.listdir(folder_name):
-            file_path = os.path.join(folder_name, file_name)
-            if os.path.isdir(file_path) and file_name in station_mapping:
-                station_id = file_name
-                traffic_station_id = station_mapping[station_id]
-                print(f"Processing entries for station [Domain Id: [{station_id}], Traffic Station Id: {traffic_station_id}]")
-                csv_file = os.path.join(file_path, f"output_{station_id}.csv")
-                if os.path.isfile(csv_file):
-                    df = pd.read_csv(csv_file)
-                    for _, row in df.iterrows():
-                        entries.append(PollutionDispersalEntry(
-                            station=traffic_stations_by_id[traffic_station_id],
-                            valid_time=datetime.now(),
-                            x_coordinate=row[PollutionDispersalMeasureType.X_COORDINATE.value],
-                            y_coordinate=row[PollutionDispersalMeasureType.Y_COORDINATE.value],
-                            z_coordinate=row[PollutionDispersalMeasureType.Z_COORDINATE.value],
-                            c_a22=row[PollutionDispersalMeasureType.C_A22.value],
-                            period=PERIOD_1HOUR
-                        ))
-        return entries
+        stations = []
+        for poi in pois:
+            domain_id = poi.get("domain_id")
+            point_id = poi.get("point_id")
+            # TODO: check
+            station = Station(
+                code=f"{domain_id}_{point_id}",
+                name=domain_mapping.get(domain_id, {}).get("description", str(domain_id)) + f" - {point_id}",
+                active=True,
+                available=True,
+                coordinates={
+                    "x": poi.get("x"),
+                    "y": poi.get("y"),
+                    "srid": poi.get("epsg", "")
+                },
+                metadata={
+                    "dist_from_source_[m]": poi.get("dist_from_source_[m]")
+                },
+                station_type="PollutionDispersal",
+                origin=None,
+                wrf_code=None,
+                meteo_station_code=None,
+            )
+            stations.append(station)
+            entries.append(PollutionDispersalEntry(
+                valid_time=datetime.now(),
+                station=station,
+                concentration_value=poi.get("conc_value_[ug/m3]"),
+                period=PERIOD_1HOUR,
+            ))
+
+        return entries, stations
 
     @staticmethod
     def _create_temp_pollution_csv(pollution_df: pd.DataFrame) -> str:
@@ -108,8 +121,7 @@ class PollutionDispersalModel:
         return weather_filename
 
     @staticmethod
-    def _ws_prediction(pollution_filename: str, weather_filename: str, start_date: datetime,
-                       stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
+    def _ws_prediction(pollution_filename: str, weather_filename: str, start_date: datetime) -> Tuple[List[PollutionDispersalEntry], List[Station]]:
         formatted_dt = start_date.strftime("%Y-%m-%d-%H")
         url = f"{POLLUTION_DISPERSAL_PREDICTION_ENDPOINT}{formatted_dt}"
         logger.info(f"Sending prediction request to {url}")
@@ -144,12 +156,12 @@ class PollutionDispersalModel:
 
         except Exception as e:
             logger.error(f"error while processing request: {e}")
-            return []
+            return [], []
 
-        return PollutionDispersalModel._get_pollution_dispersal_entries_from_folder(folder_name, stations)
+        return PollutionDispersalModel._get_pollution_dispersal_entries_from_folder(folder_name)
 
     def compute_data(self, pollution: PollutionMeasureCollection, weather: WeatherMeasureCollection,
-                     start_date: datetime, stations: List[TrafficSensorStation]) -> List[PollutionDispersalEntry]:
+                     start_date: datetime) -> Tuple[List[PollutionDispersalEntry], List[Station]]:
 
         weather_entries = weather.get_entries()
         pollution_entries = pollution.get_entries()
@@ -161,8 +173,8 @@ class PollutionDispersalModel:
             pollution_filename = self._create_temp_pollution_csv(pollution_df)
             weather_filename = self._create_temp_weather_csv(weather_df)
 
-            return self._ws_prediction(pollution_filename, weather_filename, start_date, stations)
+            return self._ws_prediction(pollution_filename, weather_filename, start_date)
 
         else:
             logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}), skipping computation")
-            return []
+            return [], []

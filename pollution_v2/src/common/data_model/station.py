@@ -48,12 +48,25 @@ class Station:
 
     __version__: ClassVar[int] = 1
 
+    def to_odh_repr(self) -> dict:
+        return {
+            "scode": self.code,
+            # TODO: check if need to add `wrf_code` and `meteo_station_code` to the ODH representation
+            "sactive": self.active,
+            "savailable": self.available,
+            "scoordinate": self.coordinates,
+            "smetadata": self.metadata,
+            "sname": self.name,
+            "stype": self.station_type,
+            "sorigin": self.origin
+        }
+
     @classmethod
     def from_odh_repr(cls, raw_data: dict):
         return cls(
             code=raw_data["scode"],
-            wrf_code=raw_data.get("wrf_code", None),
-            meteo_station_code=raw_data.get("meteo_station_code", None),
+            wrf_code=raw_data.get("wrf_code", None),  # TODO: is this field ever saved in ODH?
+            meteo_station_code=raw_data.get("meteo_station_code", None),  # TODO: is this field ever saved in ODH?
             active=raw_data["sactive"],
             available=raw_data["savailable"],
             coordinates=raw_data["scoordinate"],
