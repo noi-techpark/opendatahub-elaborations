@@ -428,15 +428,15 @@ class TrafficStationManager(ABC):
         stations_with_km = [station for station in stations_no_famas_traffic if station.km > 0]
         logger.info(f"Stations filtered on having km defined, resulting {len(stations_with_km)} "
                     f"elements (starting from {len(stations_no_famas_traffic)})")
-        stations_with_km_indloop = [station for station in stations_with_km
-                                    if station.sensor_type is not None and station.sensor_type == 'induction_loop']
-        logger.info(f"Stations filtered on sensor_type being induction_loop, resulting {len(stations_with_km_indloop)} "
+        stations_with_km_sensortype = [station for station in stations_with_km
+                                    if station.sensor_type is not None and (station.sensor_type == 'induction_loop' or station.sensor_type == 'camera')]
+        logger.info(f"Stations filtered on sensor_type being induction_loop, resulting {len(stations_with_km_sensortype)} "
                     f"elements (starting from {len(stations_with_km)})")
 
         if run_on_all_stations:
-            self._run_computation_on_all_stations(stations_with_km_indloop, min_from_date, max_to_date, batch_size)
+            self._run_computation_on_all_stations(stations_with_km_sensortype, min_from_date, max_to_date, batch_size)
         else:
-            self._run_computation_on_single_station(stations_with_km_indloop, min_from_date, max_to_date, batch_size)
+            self._run_computation_on_single_station(stations_with_km_sensortype, min_from_date, max_to_date, batch_size)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")

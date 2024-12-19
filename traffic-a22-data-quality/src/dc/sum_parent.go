@@ -105,7 +105,7 @@ func sumParentJob() {
 			sums[m.DType][m.Tstamp.Time] = sums[m.DType][m.Tstamp.Time] + m.Value
 		}
 
-		recs := bdplib.DataMap{}
+		recs := bdp.CreateDataMap()
 		for dType, times := range sums {
 			for timestamp, value := range times {
 				recs.AddRecord(parId, dType, bdplib.CreateRecord(timestamp.UnixMilli(), value, periodAgg))
