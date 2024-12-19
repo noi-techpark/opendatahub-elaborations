@@ -80,7 +80,7 @@ func sumParentJob() {
 		req.Select = "tname,mvalue"
 		req.From = from
 		req.To = to.Add(time.Minute) // Ninja is open interval, need to get the exact timestamp, too
-		req.Where = fmt.Sprintf("sorigin.eq.%s,sactive.eq.true,mperiod.eq.86400,pcode.eq.%s", origin, parId)
+		req.Where = fmt.Sprintf("sorigin.eq.%s,sactive.eq.true,mperiod.eq.86400,pcode.eq.\"%s\"", origin, parId)
 		req.Limit = -1
 
 		res := &ninja.NinjaResponse[[]struct {
