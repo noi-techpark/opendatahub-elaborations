@@ -208,4 +208,4 @@ class PollutionDispersalManager(StationManager):
         entries, dispersal_stations = self._download_data_and_compute(stations)
         logger.info(f"Computed {len(entries)} pollution dispersal entries")
         # TODO: upload pollution dispersal stations?
-        # self._upload_data(entries)
+        # self._upload_data(entries)  # TODO: uncomment
