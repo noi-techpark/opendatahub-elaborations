@@ -177,5 +177,6 @@ class PollutionDispersalModel:
             return self._ws_prediction(pollution_filename, weather_filename, start_date)
 
         else:
-            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}), skipping computation")
+            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}),"
+                        f"road_weather: {len(road_weather_entries)}, skipping computation")
             return [], []

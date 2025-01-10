@@ -185,17 +185,19 @@ class PollutionDispersalManager(StationManager):
                 skipped_pollution_stations.add(str(station.id_stazione))
             if len(weather_data_for_station) == 0 and len(road_weather_data_for_station) == 0:
                 skipped_weather_stations.add(str(station.meteo_station_code))
-        logger.info([measure.station.station_type for measure in pollution_data.measures])
-        logger.info([measure.station.station_type for measure in weather_data.measures])
         logger.info(f"Pollution stations with no data found: {skipped_pollution_stations}")
         logger.info(f"Weather and road weather stations with no data found: {skipped_weather_stations}")
 
         skipped_domains = set()
         for domain_id, domain in domain_mapping.items():
+            try:
+                domain_id = int(domain_id)
+            except ValueError:
+                domain_id = str(domain_id)
             if domain.get('traffic_station_id') in skipped_pollution_stations:
-                skipped_domains.add(str(domain_id))
+                skipped_domains.add(domain_id)
             elif domain.get('weather_station_id') in skipped_weather_stations:
-                skipped_domains.add(str(domain_id))
+                skipped_domains.add(domain_id)
         logger.info(f"Skipped domains: {skipped_domains}")
         return skipped_domains
 
