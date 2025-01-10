@@ -113,9 +113,8 @@ class RoadWeatherModel:
         except Exception as e:
             logger.error(f"error while processing request: {e}")
 
-        # Remove temporary files
-        for file in files_to_upload:
-            os.remove(file)
+        # Remove observation temporary file (forecast file is removed later)
+        os.remove(observation_filename)
 
         return response
 

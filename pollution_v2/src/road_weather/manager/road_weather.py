@@ -5,6 +5,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import List, Tuple, Optional
 
@@ -150,6 +151,8 @@ class RoadWeatherManager(StationManager):
             res = [item for item in res if item.valid_time > max_observation_data]
             logger.info(f"Remaining with {len(res)} records from road weahter WS once filter on date {max_observation_data} is applied")
             return res
+
+        os.remove(forecast_data_xml_path)
 
         return []
 
