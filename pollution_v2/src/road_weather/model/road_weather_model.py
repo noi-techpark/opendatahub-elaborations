@@ -5,6 +5,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
+import os
 import time
 import urllib
 from datetime import datetime, timedelta
@@ -89,7 +90,7 @@ class RoadWeatherModel:
         req = urllib.request.Request(url, data=body)
         req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
 
-        response_data = None
+        response = []
         try:
             with urllib.request.urlopen(req) as response:
                 response_data = response.read()
@@ -104,17 +105,19 @@ class RoadWeatherModel:
                         logger.info(f"conf level found: {conf_level}")
                         break
 
-                res = []
                 for entry in self._get_entries_from_xml(response_data, conf_level, station):
                     extended_entry = ExtendedRoadCastEntry(entry.station, entry.valid_time, entry.roadcast_class,
                                                            entry.entry_class, entry.entry_value, entry.period)
                     extended_entry.set_conf_level(conf_level)
-                    res.append(extended_entry)
-
-                return res
+                    response.append(extended_entry)
         except Exception as e:
             logger.error(f"error while processing request: {e}")
-            return []
+
+        # Remove temporary files
+        for file in files_to_upload:
+            os.remove(file)
+
+        return response
 
     @staticmethod
     def _get_entries_from_xml(response_data, conf_level: str, station: Station) -> List[RoadCastEntry]:
