@@ -150,7 +150,7 @@ func getHistoryPaged(todo window, stationCode string, typeName string) ([]NinjaF
 			windowEnd = end
 		}
 		for page := 0; ; page += 1 {
-			res, err := getNinjaData(stationCode, typeName, start, end, page)
+			res, err := getNinjaData(stationCode, typeName, start, windowEnd, page)
 			if err != nil {
 				return nil, err
 			}
