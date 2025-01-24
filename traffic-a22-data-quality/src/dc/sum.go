@@ -142,21 +142,27 @@ func sumHistory(win window, scode string, tname string, total chan tv, recs chan
 
 func getHistoryPaged(todo window, stationCode string, typeName string) ([]NinjaFlatData, error) {
 	var ret []NinjaFlatData
-	for page := 0; ; page += 1 {
-		start, end := getRequestDates(todo)
-
-		res, err := getNinjaData(stationCode, typeName, start, end, page)
-		if err != nil {
-			return nil, err
+	start, end := getRequestDates(todo)
+	// Ninja cannot handle too large time period requests, so we do it one month at a time
+	for windowEnd := start; windowEnd.Before(end); {
+		windowEnd = windowEnd.AddDate(0, 1, 0)
+		if windowEnd.After(end) {
+			windowEnd = end
 		}
+		for page := 0; ; page += 1 {
+			res, err := getNinjaData(stationCode, typeName, start, end, page)
+			if err != nil {
+				return nil, err
+			}
 
-		ret = append(ret, res.Data...)
+			ret = append(ret, res.Data...)
 
-		// only if limit = length, there might be more data
-		if res.Limit != int64(len(res.Data)) {
-			break
-		} else {
-			slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", page, "firstDate", res.Data[0].Timestamp.Time)
+			// only if limit = length, there might be more data
+			if res.Limit != int64(len(res.Data)) {
+				break
+			} else {
+				slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", page, "firstDate", res.Data[0].Timestamp.Time)
+			}
 		}
 	}
 	return ret, nil
