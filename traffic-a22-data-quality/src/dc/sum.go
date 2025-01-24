@@ -142,10 +142,10 @@ func sumHistory(win window, scode string, tname string, total chan tv, recs chan
 
 func getHistoryPaged(todo window, stationCode string, typeName string) ([]NinjaFlatData, error) {
 	var ret []NinjaFlatData
-	start, end := getRequestDates(todo)
+
 	// Ninja cannot handle too large time period requests, so we do it one month at a time
-	for windowEnd := start; windowEnd.Before(end); {
-		windowEnd = windowEnd.AddDate(0, 1, 0)
+	for start, end := getRequestDates(todo); start.Before(end); start = start.AddDate(0, 1, 0) {
+		windowEnd := start.AddDate(0, 1, 0)
 		if windowEnd.After(end) {
 			windowEnd = end
 		}
