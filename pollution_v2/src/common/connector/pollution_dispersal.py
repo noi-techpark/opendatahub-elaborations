@@ -29,14 +29,14 @@ class PollutionDispersalODHConnector(ODHBaseConnector[PollutionDispersalMeasure,
                  requests_sleep_time: float,
                  requests_retry_sleep_time: float) -> None:
 
-        station_type = "EnvironmentStation"
+        self.station_type = "EnvironmentStation"
         measure_types = list(map(str, PollutionDispersalMeasure.get_data_types()))
         period = PERIOD_1HOUR
 
 
         super().__init__(base_reader_url,
                          base_writer_url,
-                         station_type,
+                         self.station_type,
                          measure_types,
                          authentication_url,
                          username,

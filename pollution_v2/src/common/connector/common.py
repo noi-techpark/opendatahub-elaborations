@@ -565,6 +565,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         Synchronizes a batch of stations (if a station with the same name is already present it will be updated,
         otherwise it will be created).
 
+        Link to the Open Data Hub API documentation:
+        https://swagger.opendatahub.com/?url=https://raw.githubusercontent.com/noi-techpark/bdp-core/main/openapi3.yml#/Stations/post_syncStations__stationType_
+
         :param stations: The stations to sync.
         :param provenance: The provenance related to the stations to be synced.
         """
@@ -573,14 +576,6 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
             if len(list(filter(lambda x: x.station_type != station_type, stations))) > 0:
                 raise ValueError("Failed to push stations as they have different station types")
             logger.debug(f"Creating a batch of stations of type [{station_type}]")
-
-            """
-            Se syncState è attivo (default), tutte le stazioni della stessa origin+station_type che NON sono incluse
-            nella lista passata, vengono disattivate. Cioè saranno attive esclusivamente le stazioni dell'ultimo sync,
-            quindi bisogna passare tutte le stazioni alla volta, e non fare il sync sulle singole stazioni in un loop.
-
-            Settando onlyActivation=true, non disattiva piu, e settando syncState=false non tocca mai il flag attivo.
-            """
             self._post_request(f"/json/syncStations/{station_type}",
                                [station.to_odh_repr() for station in stations],
                                query_params={
@@ -590,6 +585,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                                    "syncState": True,
                                    "onlyActivation": False
                                })
+            logger.info([station.to_odh_repr() for station in stations])
 
     def post_stations(self, stations: List[Station], provenance: Provenance) -> None:
         """

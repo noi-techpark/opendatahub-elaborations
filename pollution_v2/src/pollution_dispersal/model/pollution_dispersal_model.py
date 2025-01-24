@@ -15,12 +15,14 @@ from typing import List, Tuple
 
 import pandas as pd
 
+from common.connector.pollution_dispersal import PollutionDispersalODHConnector
 from common.data_model.pollution import PollutionMeasureCollection
 from common.data_model import Station, RoadWeatherObservationMeasureCollection
 from common.data_model.pollution_dispersal import PollutionDispersalEntry
 from common.data_model.weather import WeatherMeasureCollection
 from common.model.helper import ModelHelper
-from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT, PERIOD_1HOUR
+from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT, PERIOD_1HOUR, \
+    POLLUTION_DISPERSAL_DOMAINS_COORDINATES_REFERENCE_SYSTEM
 
 logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_dispersal_model")
 
@@ -30,9 +32,10 @@ class PollutionDispersalModel:
     The model for computing pollution data.
     """
 
-    def __init__(self, domain_mapping: dict, expected_computed_domains: set):
+    def __init__(self, domain_mapping: dict, expected_computed_domains: set, connector: PollutionDispersalODHConnector):
         self.domain_mapping = domain_mapping
         self.expected_computed_domains = expected_computed_domains
+        self.pollution_dispersal_connector = connector
 
     def _get_pollution_dispersal_entries_from_folder(self, folder_name: str) -> Tuple[List[PollutionDispersalEntry], List[Station]]:
         poi_file = os.path.join(folder_name, "poi.json")
@@ -54,18 +57,18 @@ class PollutionDispersalModel:
             # TODO: check
             station = Station(
                 code=f"{domain_id}_{point_id}",
-                name=self.domain_mapping.get(domain_id, {}).get("description", str(domain_id)) + f" - {point_id}",  # TODO: add description in capabilities endpoint
+                name=self.domain_mapping.get(str(domain_id), {}).get("description", str(domain_id)) + f" - {point_id}",  # TODO: add description in capabilities endpoint
                 active=True,
                 available=True,
                 coordinates={
                     "x": poi.get("x"),
                     "y": poi.get("y"),
-                    "srid": poi.get("epsg", "")  # TODO: add `epsg` to the returned POIs
+                    "srid": poi.get("epsg", POLLUTION_DISPERSAL_DOMAINS_COORDINATES_REFERENCE_SYSTEM)
                 },
                 metadata={
                     "dist_from_source_[m]": poi.get("dist_from_source_[m]")
                 },
-                station_type="EnvironmentStation",
+                station_type=self.pollution_dispersal_connector.station_type,
                 origin="CISMA-dispersion-model",
                 wrf_code=None,
                 meteo_station_code=None,

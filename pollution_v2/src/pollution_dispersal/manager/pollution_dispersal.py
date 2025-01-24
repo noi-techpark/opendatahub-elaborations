@@ -147,7 +147,7 @@ class PollutionDispersalManager(StationManager):
             skipped_domains = self._log_skipped_domains(pollution_data, weather_data, road_weather_data, stations, domain_mapping)
 
             expected_domains = set(domain_mapping.keys()) - skipped_domains
-            model = PollutionDispersalModel(domain_mapping, expected_domains)
+            model = PollutionDispersalModel(domain_mapping, expected_domains, self._connector_collector.pollution_dispersal)
             return model.compute_data(pollution_data, weather_data, road_weather_data, start_date)
 
         return [], []
@@ -190,14 +190,10 @@ class PollutionDispersalManager(StationManager):
 
         skipped_domains = set()
         for domain_id, domain in domain_mapping.items():
-            try:
-                domain_id = int(domain_id)
-            except ValueError:
-                domain_id = str(domain_id)
             if domain.get('traffic_station_id') in skipped_pollution_stations:
-                skipped_domains.add(domain_id)
+                skipped_domains.add(str(domain_id))
             elif domain.get('weather_station_id') in skipped_weather_stations:
-                skipped_domains.add(domain_id)
+                skipped_domains.add(str(domain_id))
         logger.info(f"Skipped domains: {skipped_domains}")
         return skipped_domains
 
@@ -211,6 +207,6 @@ class PollutionDispersalManager(StationManager):
         logger.info(f"Computed {len(entries)} pollution dispersal entries")
 
         # TODO: uncomment
-        # self.get_output_connector().post_stations(dispersal_stations, self._provenance)
+        self.get_output_connector().post_stations(dispersal_stations, self._provenance)
 
         # self._upload_data(entries)  # TODO: uncomment
