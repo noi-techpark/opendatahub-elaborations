@@ -206,6 +206,6 @@ class PollutionDispersalManager(StationManager):
         logger.info(f"Computed {len(entries)} pollution dispersal entries")
         logger.info(f"Computed {len(dispersal_stations)} stations")
 
-        #self.get_output_connector().post_stations(dispersal_stations, self._provenance)
+        self.get_output_connector().post_stations(dispersal_stations, self._provenance)
 
-        #self._upload_data(entries)
+        self._upload_data(entries)
