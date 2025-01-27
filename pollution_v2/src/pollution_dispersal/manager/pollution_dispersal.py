@@ -14,15 +14,15 @@ from common.cache.common import TrafficManagerClass
 from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
-from common.connector.road_weather import RoadWeatherObservationODHConnector
 from common.data_model import Provenance, DataType, MeasureCollection, PollutionMeasureCollection, \
     PollutionDispersalMeasure, TrafficSensorStation, PollutionMeasure, PollutantClass, Station, \
-    RoadWeatherObservationMeasure, RoadWeatherObservationMeasureCollection, RoadWeatherObservationMeasureType
+    RoadWeatherObservationMeasureCollection, RoadWeatherObservationMeasureType
 from common.data_model.entry import GenericEntry
 from common.data_model.pollution_dispersal import PollutionDispersalEntry, PollutionDispersalMeasureCollection
 from common.data_model.weather import WeatherMeasureCollection, WeatherMeasure, WeatherMeasureType
 from common.manager.station import StationManager
-from common.settings import DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN, POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT
+from common.settings import DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN, \
+    POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT, POLLUTION_DISPERSAL_STARTING_DATE
 from pollution_dispersal.model.pollution_dispersal_model import PollutionDispersalModel
 
 logger = logging.getLogger("pollution_v2.pollution_dispersal.manager.pollution_dispersal")
@@ -122,8 +122,7 @@ class PollutionDispersalManager(StationManager):
             logger.error(f"Cannot compute pollution dispersal on empty station list ({len(stations)} passed)")
             return [], []
 
-        start_date = datetime.now()  # TODO: localize?
-        start_date = datetime(2020, 1, 1, 0)  # TODO: remove
+        start_date = POLLUTION_DISPERSAL_STARTING_DATE
         to_date = start_date + timedelta(hours=DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN)
         logger.info(f"Computing pollution dispersal from {start_date} to {to_date} for stations {stations}")
 
@@ -205,8 +204,8 @@ class PollutionDispersalManager(StationManager):
         """
         entries, dispersal_stations = self._download_data_and_compute(stations)
         logger.info(f"Computed {len(entries)} pollution dispersal entries")
+        logger.info(f"Computed {len(dispersal_stations)} stations")
 
-        # TODO: uncomment
-        self.get_output_connector().post_stations(dispersal_stations, self._provenance)
+        #self.get_output_connector().post_stations(dispersal_stations, self._provenance)
 
-        # self._upload_data(entries)  # TODO: uncomment
+        #self._upload_data(entries)

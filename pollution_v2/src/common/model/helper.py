@@ -213,7 +213,7 @@ class ModelHelper:
             columns="vehicle_class",
             values="pollution_value",
             aggfunc="sum"
-        ).reset_index().fillna(0)  # TODO: check if fillna(0) is correct
+        ).reset_index().fillna(0)
 
         # aggregate the pollution values by station.stazione_id
         pollution_df = pollution_df.groupby(["timestamp", "station-id"]).sum().reset_index()

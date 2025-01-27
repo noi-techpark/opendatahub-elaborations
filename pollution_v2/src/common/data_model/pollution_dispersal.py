@@ -33,7 +33,6 @@ class PollutionDispersalMeasure(Measure):
 
     @staticmethod
     def get_data_types() -> List[DataType]:
-        # TODO: is it correct?
         return [DataType(
             name=f"{DATATYPE_PREFIX}concentration",
             description="Pollution dispersal concentration",
@@ -67,7 +66,7 @@ class PollutionDispersalMeasureCollection(MeasureCollection[PollutionDispersalMe
                 data_type=data_type,
                 provenance=provenance,
                 period=entry.period,
-                transaction_time=None,  # TODO: check
+                transaction_time=None,  # TODO: or datime.now()?
                 valid_time=entry.valid_time,
                 value=entry.concentration_value,
             ))

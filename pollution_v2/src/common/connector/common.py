@@ -539,6 +539,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                                  measures_dict[provenance_id][station_code][data_type_name]]
                     }
 
+            logger.info(data_map)
             self._post_request(f"/json/pushRecords/{self._station_type}", data_map)
 
     def post_measures(self, measures: List[MeasureType]) -> None:

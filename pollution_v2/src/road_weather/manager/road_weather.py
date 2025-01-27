@@ -31,7 +31,6 @@ class RoadWeatherManager(StationManager):
     def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance,
                  checkpoint_cache: Optional[ComputationCheckpointCache] = None) -> None:
         super().__init__(connector_collector, provenance, checkpoint_cache)
-        # TODO a che serve?
         self.station_list_connector = self.get_input_connector()
 
     def get_input_connector(self) -> ODHBaseConnector:

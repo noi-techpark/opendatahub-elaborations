@@ -54,7 +54,6 @@ class PollutionDispersalModel:
             domain_id = poi.get("domain_id")
             point_id = poi.get("point_id")
             computed_domains.add(str(domain_id))
-            # TODO: check
             station = Station(
                 code=f"{domain_id}_{point_id}",
                 name=self.domain_mapping.get(str(domain_id), {}).get("description", str(domain_id)) + f" - {point_id}",  # TODO: add description in capabilities endpoint
