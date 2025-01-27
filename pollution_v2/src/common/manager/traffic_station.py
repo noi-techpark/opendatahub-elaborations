@@ -199,7 +199,7 @@ class TrafficStationManager(StationManager, ABC):
                            f"using [{min_from_date.isoformat()}] as starting date for [{station_code}]")
             from_date = min_from_date
         elif from_date > min_from_date:
-            logger.info(f"Using latest measure date [{from_date.isoformat()}] as starting date for [{station_code}]")
+            logger.info(f"[{station_code}]Using latest measure date [{from_date.isoformat()}] as starting date")
 
         # final date, no more iteration then False as second element of tuple returned
         return from_date, False
