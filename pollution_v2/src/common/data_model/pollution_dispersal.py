@@ -66,7 +66,7 @@ class PollutionDispersalMeasureCollection(MeasureCollection[PollutionDispersalMe
                 data_type=data_type,
                 provenance=provenance,
                 period=entry.period,
-                transaction_time=None,  # TODO: or datime.now()?
+                transaction_time=None,
                 valid_time=entry.valid_time,
                 value=entry.concentration_value,
             ))
