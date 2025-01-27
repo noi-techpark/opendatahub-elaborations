@@ -50,7 +50,8 @@ class TestDAGCommon(TestCase):
             "name": "station",
             "station_type": "type",
             "origin": "origin",
-            "wrf_code": None
+            "wrf_code": None,
+            "meteo_station_code": None,
         }
 
         self.station2_dict = self.station_dict.copy()
