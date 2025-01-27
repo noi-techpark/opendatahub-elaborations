@@ -199,7 +199,7 @@ class TrafficStationManager(StationManager, ABC):
                            f"using [{min_from_date.isoformat()}] as starting date for [{station_code}]")
             from_date = min_from_date
         elif from_date > min_from_date:
-            logger.info(f"[{station_code}]Using latest measure date [{from_date.isoformat()}] as starting date")
+            logger.info(f"[{station_code}] Using latest measure date [{from_date.isoformat()}] as starting date")
 
         # final date, no more iteration then False as second element of tuple returned
         return from_date, False
@@ -332,11 +332,11 @@ class TrafficStationManager(StationManager, ABC):
                     checkpoint = self._checkpoint_cache.get(
                         ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
                     if checkpoint and checkpoint.checkpoint_dt:
-                        logger.info(f"Cache found for station [{station.code}] on manager [{self._get_manager_code()}]: "
+                        logger.info(f"[{station.code}] Cache found on manager [{self._get_manager_code()}]: "
                                     f"[{checkpoint.checkpoint_dt}]; comparing with {to_date}")
                     if checkpoint is None or checkpoint.checkpoint_dt is None or checkpoint.checkpoint_dt < to_date:
                         logger.info(
-                            f"Caching [{to_date}] for station [{station.code}] on manager [{self._get_manager_code()}]")
+                            f"[{station.code}] Caching [{to_date}] on manager [{self._get_manager_code()}]")
                         self._checkpoint_cache.set(
                             ComputationCheckpoint(
                                 station_code=station.code,
