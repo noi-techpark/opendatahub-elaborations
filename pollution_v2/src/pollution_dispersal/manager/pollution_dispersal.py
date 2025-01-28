@@ -5,6 +5,8 @@
 from __future__ import absolute_import, annotations
 
 import logging
+import os
+import shutil
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 
@@ -19,7 +21,7 @@ from common.data_model import Provenance, DataType, MeasureCollection, Pollution
     RoadWeatherObservationMeasureCollection, RoadWeatherObservationMeasureType
 from common.data_model.entry import GenericEntry
 from common.data_model.pollution_dispersal import PollutionDispersalEntry, PollutionDispersalMeasureCollection
-from common.data_model.weather import WeatherMeasureCollection, WeatherMeasure, WeatherMeasureType
+from common.data_model.weather import WeatherMeasureCollection, WeatherMeasureType
 from common.manager.station import StationManager
 from common.settings import DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN, \
     POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT, POLLUTION_DISPERSAL_STARTING_DATE
@@ -116,11 +118,17 @@ class PollutionDispersalManager(StationManager):
         measures = filter(lambda x: x.station.code in station_codes and x.station.station_type == road_weather_station_type, measures)
         return RoadWeatherObservationMeasureCollection(measures=list(measures))
 
-    def _download_data_and_compute(self, stations: List[TrafficSensorStation]) -> Tuple[List[GenericEntry], List[Station]]:
+    def _download_data_and_compute(self, stations: List[TrafficSensorStation]) -> Tuple[List[GenericEntry], List[Station], str]:
+        """
+        Download pollution and weather data for the given stations and compute pollution dispersal.
+
+        :param stations: The list of stations to compute.
+        :return: A tuple with the computed entries, the computed stations and the zip file name to upload.
+        """
 
         if len(stations) < 1:
             logger.error(f"Cannot compute pollution dispersal on empty station list ({len(stations)} passed)")
-            return [], []
+            return [], [], ""
 
         start_date = POLLUTION_DISPERSAL_STARTING_DATE
         to_date = start_date + timedelta(hours=DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN)
@@ -147,9 +155,17 @@ class PollutionDispersalManager(StationManager):
 
             expected_domains = set(domain_mapping.keys()) - skipped_domains
             model = PollutionDispersalModel(domain_mapping, expected_domains, self._connector_collector.pollution_dispersal)
-            return model.compute_data(pollution_data, weather_data, road_weather_data, start_date)
+            folder_name = model.compute_data(pollution_data, weather_data, road_weather_data, start_date)
+            computed_entries, computed_stations = model.get_pollution_dispersal_entries_from_folder(folder_name)
 
-        return [], []
+            # remove folder and its files
+            shutil.rmtree(folder_name)
+
+            zip_file_to_upload = folder_name + ".zip"
+
+            return computed_entries, computed_stations, zip_file_to_upload
+
+        return [], [], ""
 
     def _get_domain_mapping(self) -> dict:
         # Retrieve the list of domain mappings from the ws
@@ -202,10 +218,24 @@ class PollutionDispersalManager(StationManager):
 
         :param stations: The list of stations to compute.
         """
-        entries, dispersal_stations = self._download_data_and_compute(stations)
-        logger.info(f"Computed {len(entries)} pollution dispersal entries")
-        logger.info(f"Computed {len(dispersal_stations)} stations")
+        entries, dispersal_stations, zip_file_name = self._download_data_and_compute(stations)
 
-        self.get_output_connector().post_stations(dispersal_stations, self._provenance)
+        if dispersal_stations:
+            logger.info(f"Uploading environment stations: {len(dispersal_stations)}")
+            self.get_output_connector().post_stations(dispersal_stations, self._provenance)
+        else:
+            logger.info("No pollution dispersal stations to upload")
 
-        self._upload_data(entries)
+        if entries:
+            logger.info(f"Uploading pollution dispersal entries: {len(entries)}")
+            self._upload_data(entries)
+        else:
+            logger.info("No pollution dispersal entries to upload")
+
+        if zip_file_name:
+            logger.info(f"Uploading pollution dispersal zip file: {zip_file_name}")
+            # TODO: upload pollution dispersal zip file
+
+            os.remove(zip_file_name)
+        else:
+            logger.info("No pollution dispersal zip file to upload")
