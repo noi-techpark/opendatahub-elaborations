@@ -48,12 +48,31 @@ class Station:
 
     __version__: ClassVar[int] = 1
 
+    def to_odh_repr(self) -> dict:
+        """
+        Link to the Open Data Hub API documentation:
+        https://swagger.opendatahub.com/?url=https://raw.githubusercontent.com/noi-techpark/bdp-core/main/openapi3.yml#/Stations/post_syncStations__stationType_
+        """
+        return {
+            "id": self.code,
+            "stationType": self.station_type,
+            "name": self.name,
+            "latitude": self.coordinates.get("y"),
+            "longitude": self.coordinates.get("x"),
+            "elevation": 0,  # TODO: check
+            "coordinateReferenceSystem": "EPSG:" + str(self.coordinates.get("srid")),
+            "origin": self.origin,
+            "municipality": "",  # TODO: check
+            "parentStation": "",  # TODO: check
+            "metaData": self.metadata,
+        }
+
     @classmethod
     def from_odh_repr(cls, raw_data: dict):
         return cls(
             code=raw_data["scode"],
-            wrf_code=raw_data.get("wrf_code", None),
-            meteo_station_code=raw_data.get("meteo_station_code", None),
+            wrf_code=None,
+            meteo_station_code=None,
             active=raw_data["sactive"],
             available=raw_data["savailable"],
             coordinates=raw_data["scoordinate"],

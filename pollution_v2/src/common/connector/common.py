@@ -539,6 +539,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                                  measures_dict[provenance_id][station_code][data_type_name]]
                     }
 
+            logger.info(data_map)
             self._post_request(f"/json/pushRecords/{self._station_type}", data_map)
 
     def post_measures(self, measures: List[MeasureType]) -> None:
@@ -558,3 +559,51 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                 else:
                     if len(measures) > index * self._max_batch_size:
                         self._post_measure_batch(measures[index * self._max_batch_size:])
+
+
+    def _post_stations_batch(self, stations: List[Station], provenance: Provenance) -> None:
+        """
+        Synchronizes a batch of stations (if a station with the same name is already present it will be updated,
+        otherwise it will be created).
+
+        Link to the Open Data Hub API documentation:
+        https://swagger.opendatahub.com/?url=https://raw.githubusercontent.com/noi-techpark/bdp-core/main/openapi3.yml#/Stations/post_syncStations__stationType_
+
+        :param stations: The stations to sync.
+        :param provenance: The provenance related to the stations to be synced.
+        """
+        if stations:
+            station_type = stations[0].station_type
+            if len(list(filter(lambda x: x.station_type != station_type, stations))) > 0:
+                raise ValueError("Failed to push stations as they have different station types")
+            logger.debug(f"Creating a batch of stations of type [{station_type}]")
+            self._post_request(f"/json/syncStations/{station_type}",
+                               [station.to_odh_repr() for station in stations],
+                               query_params={
+                                   "stationType": self._station_type,
+                                   "prn": provenance.data_collector,
+                                   "prv": provenance.data_collector_version,
+                                   "syncState": True,
+                                   "onlyActivation": False
+                               })
+            logger.info([station.to_odh_repr() for station in stations])
+
+    def post_stations(self, stations: List[Station], provenance: Provenance) -> None:
+        """
+        Create or updated stations (if a station with the same name is already present it will be updated,
+        otherwise it will be created).
+
+        :param stations: The stations to be synced.
+        :param provenance: The provenance related to the stations to be synced.
+        """
+        logger.info("Creating stations")
+        if not self._max_batch_size or (self._max_batch_size and self._max_batch_size >= len(stations)):
+            self._post_stations_batch(stations, provenance)
+        else:
+            for index in range(len(stations) // self._max_batch_size + 1):
+                if index < len(stations) // self._max_batch_size:
+                    self._post_stations_batch(
+                        stations[index * self._max_batch_size: (index + 1) * self._max_batch_size], provenance)
+                else:
+                    if len(stations) > index * self._max_batch_size:
+                        self._post_stations_batch(stations[index * self._max_batch_size:], provenance)

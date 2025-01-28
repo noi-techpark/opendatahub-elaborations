@@ -5,22 +5,24 @@
 from __future__ import absolute_import, annotations
 
 import logging
-import mimetypes
+import json
 import os
 import time
 import urllib.request
 import zipfile
 from datetime import datetime
-from typing import List, Dict
+from typing import List, Tuple
 
 import pandas as pd
 
-from common.data_model.pollution import PollutionEntry, PollutionMeasureCollection
-from common.data_model import TrafficSensorStation
+from common.connector.pollution_dispersal import PollutionDispersalODHConnector
+from common.data_model.pollution import PollutionMeasureCollection
+from common.data_model import Station, RoadWeatherObservationMeasureCollection
 from common.data_model.pollution_dispersal import PollutionDispersalEntry
 from common.data_model.weather import WeatherMeasureCollection
 from common.model.helper import ModelHelper
-from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT
+from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT, PERIOD_1HOUR, \
+    POLLUTION_DISPERSAL_DOMAINS_COORDINATES_REFERENCE_SYSTEM
 
 logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_dispersal_model")
 
@@ -30,11 +32,60 @@ class PollutionDispersalModel:
     The model for computing pollution data.
     """
 
-    @staticmethod
-    def _get_pollution_dispersal_entries_from_df(dispersal_df: pd.DataFrame, stations_dict: Dict[str, TrafficSensorStation]) -> \
-        List[PollutionDispersalEntry]:
-        # TODO: implement
-        pass
+    def __init__(self, domain_mapping: dict, expected_computed_domains: set, connector: PollutionDispersalODHConnector):
+        self.domain_mapping = domain_mapping
+        self.expected_computed_domains = expected_computed_domains
+        self.pollution_dispersal_connector = connector
+
+    def _get_pollution_dispersal_entries_from_folder(self, folder_name: str) -> Tuple[List[PollutionDispersalEntry], List[Station]]:
+        poi_file = os.path.join(folder_name, "poi.json")
+        if not os.path.isfile(poi_file):
+            logger.error(f"POI file not found: {poi_file}")
+            return [], []
+
+        # the poi file contains a list of dictionaries, decode it:
+        with open(poi_file, "r") as f:
+            pois = json.load(f)
+
+        entries = []
+        stations = []
+        computed_domains = set()
+        for poi in pois:
+            domain_id = poi.get("domain_id")
+            point_id = poi.get("point_id")
+            computed_domains.add(str(domain_id))
+            station = Station(
+                code=f"{domain_id}_{point_id}",
+                name=self.domain_mapping.get(str(domain_id), {}).get("description", str(domain_id)) + f" - {point_id}",  # TODO: add description in capabilities endpoint
+                active=True,
+                available=True,
+                coordinates={
+                    "x": poi.get("x"),
+                    "y": poi.get("y"),
+                    "srid": poi.get("epsg", POLLUTION_DISPERSAL_DOMAINS_COORDINATES_REFERENCE_SYSTEM)
+                },
+                metadata={
+                    "dist_from_source_[m]": poi.get("dist_from_source_[m]")
+                },
+                station_type=self.pollution_dispersal_connector.station_type,
+                origin="CISMA-dispersion-model",
+                wrf_code=None,
+                meteo_station_code=None,
+            )
+            stations.append(station)
+            entry = PollutionDispersalEntry(
+                valid_time=datetime.now(),
+                station=station,
+                concentration_value=poi.get("conc_value_[ug/m3]"),
+                period=PERIOD_1HOUR,
+            )
+            entries.append(entry)
+
+        # check if all expected domains have been computed
+        if computed_domains != self.expected_computed_domains:
+            logger.warning(f"Some domains have not been computed: {self.expected_computed_domains - computed_domains}")
+
+        return entries, stations
 
     @staticmethod
     def _create_temp_pollution_csv(pollution_df: pd.DataFrame) -> str:
@@ -53,26 +104,25 @@ class PollutionDispersalModel:
         return pollution_filename
 
     @staticmethod
-    def _create_temp_weather_csv(weather_df: pd.DataFrame) -> str:
+    def _create_temp_weather_csv(weather_df: pd.DataFrame, road_weather_df: pd.DataFrame) -> str:
 
         weather_filename = f"{TMP_DIR}/weather_{round(time.time() * 1000)}.csv"
         with open(weather_filename, 'a') as tmp_csv:
-            tmp_csv.write('timestamp,station-type,station-id,air-temperature,air-humidity,wind-speed,wind-direction,global-radiation,precipitation\n')
-            for _, row in weather_df.iterrows():
-                timestamp = row.loc['timestamp']
-                station_type = row.loc['station-type']
-                station_id = row.loc['station-id']
-                temperature = row.loc['air-temperature']
-                humidity = row.loc['air-humidity']
-                wind_speed = row.loc['wind-speed']
-                wind_direction = row.loc['wind-direction']
-                radiation = row.loc['global-radiation']
-                precipitation = row.loc['precipitation']
-                tmp_csv.write(f'{timestamp},{station_type},{station_id},{temperature},{humidity},{wind_speed},{wind_direction},{radiation},{precipitation}\n')
+            tmp_csv.write('timestamp,station-type,station-id,air-temperature,air-humidity,wind-speed,wind-direction,global-radiation\n')
+            for df in [weather_df, road_weather_df]:
+                for _, row in df.iterrows():
+                    timestamp = row.loc['timestamp']
+                    station_type = row.loc['station-type']
+                    station_id = row.loc['station-id']
+                    temperature = row.loc['air-temperature']
+                    humidity = row.loc['air-humidity']
+                    wind_speed = row.loc['wind-speed']
+                    wind_direction = row.loc['wind-direction']
+                    radiation = row.loc['global-radiation']
+                    tmp_csv.write(f'{timestamp},{station_type},{station_id},{temperature},{humidity},{wind_speed},{wind_direction},{radiation}\n')
         return weather_filename
 
-    @staticmethod
-    def _ws_prediction(pollution_filename: str, weather_filename: str, start_date: datetime) -> List[PollutionDispersalEntry]:
+    def _ws_prediction(self, pollution_filename: str, weather_filename: str, start_date: datetime) -> Tuple[List[PollutionDispersalEntry], List[Station]]:
         formatted_dt = start_date.strftime("%Y-%m-%d-%H")
         url = f"{POLLUTION_DISPERSAL_PREDICTION_ENDPOINT}{formatted_dt}"
         logger.info(f"Sending prediction request to {url}")
@@ -89,7 +139,6 @@ class PollutionDispersalModel:
         req = urllib.request.Request(url, data=body)
         req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
 
-        response_data = None
         try:
             with urllib.request.urlopen(req) as response:
                 response_data = response.read()
@@ -108,36 +157,28 @@ class PollutionDispersalModel:
 
         except Exception as e:
             logger.error(f"error while processing request: {e}")
-            return []
+            return [], []
+
+        return self._get_pollution_dispersal_entries_from_folder(folder_name)
 
     def compute_data(self, pollution: PollutionMeasureCollection, weather: WeatherMeasureCollection,
-                     start_date: datetime, stations: List[TrafficSensorStation]) -> List[PollutionEntry]:
-
-        # TODO: check if stations parameter is needed
-
-        pollution_data_types = {str(measure.data_type) for measure in pollution.measures}
-        weather_data_types = {str(measure.data_type) for measure in weather.measures}
-
-        logger.info(f"{len(pollution.measures)} pollution measures available "
-                    f"on {len(pollution_data_types)} data types")
-        logger.info(f"{len(weather.measures)} weather measures available "
-                    f"on {len(weather_data_types)} data types")
+                     road_weather: RoadWeatherObservationMeasureCollection, start_date: datetime)\
+                     -> Tuple[List[PollutionDispersalEntry], List[Station]]:
 
         weather_entries = weather.get_entries()
         pollution_entries = pollution.get_entries()
+        road_weather_entries = road_weather.get_entries()
 
         if len(weather_entries) > 0 and len(pollution_entries) > 0:
-            weather_df = ModelHelper.get_weather_dataframe(weather_entries)
             pollution_df = ModelHelper.get_pollution_dataframe(pollution_entries)
+            weather_df = ModelHelper.get_weather_dataframe(weather_entries)
+            road_weather_df = ModelHelper.get_road_weather_dataframe(road_weather_entries)
 
             pollution_filename = self._create_temp_pollution_csv(pollution_df)
-            weather_filename = self._create_temp_weather_csv(weather_df)
+            weather_filename = self._create_temp_weather_csv(weather_df, road_weather_df)
+            return self._ws_prediction(pollution_filename, weather_filename, start_date)
 
-            self._ws_prediction(pollution_filename, weather_filename, start_date)
-
-            return []  # TODO: remove
-
-            return self._get_pollution_entries_from_df(pollution_df, weather.get_stations())
         else:
-            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}), skipping computation")
-            return []
+            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}),"
+                        f"road_weather: {len(road_weather_entries)}, skipping computation")
+            return [], []

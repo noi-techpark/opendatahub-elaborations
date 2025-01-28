@@ -8,7 +8,6 @@ from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
 from common.data_model import PollutionDispersalMeasure, Station
-from common.data_model.pollution_dispersal import PollutionDispersalMeasureType
 from common.settings import PERIOD_1HOUR
 
 
@@ -30,14 +29,14 @@ class PollutionDispersalODHConnector(ODHBaseConnector[PollutionDispersalMeasure,
                  requests_sleep_time: float,
                  requests_retry_sleep_time: float) -> None:
 
-        station_type = "PollutionDispersal"  # TODO: check if correct
-        measure_types = [measure_type.value for measure_type in PollutionDispersalMeasureType]
+        self.station_type = "EnvironmentStation"
+        measure_types = list(map(str, PollutionDispersalMeasure.get_data_types()))
         period = PERIOD_1HOUR
 
 
         super().__init__(base_reader_url,
                          base_writer_url,
-                         station_type,
+                         self.station_type,
                          measure_types,
                          authentication_url,
                          username,

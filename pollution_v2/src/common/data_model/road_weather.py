@@ -24,6 +24,9 @@ class RoadWeatherObservationMeasureType(Enum):
     TEMP_SOULO = "temp_suolo"
     VENTO_VEL = "vento_vel"
 
+    VENTO_DIR = "vento_dir"
+    UMIDITA_REL = "umidita_rel"
+
 
 class RoadWeatherForecastMeasureType(Enum):
 
@@ -47,7 +50,8 @@ class RoadWeatherConfLevelMeasureType(Enum):
 class RoadWeatherObservationEntry(GenericEntry):
 
     def __init__(self, station: Station, valid_time: datetime, temp_aria: float, temp_suolo: float,
-                 temp_rugiada: float, prec_qta: float, vento_vel: float, stato_meteo: int, period: Optional[int]):
+                 temp_rugiada: float, prec_qta: float, vento_vel: float, stato_meteo: int, umidita_rel: float,
+                 vento_dir: float, period: Optional[int]):
         super().__init__(station, valid_time, period)
         self.temp_aria = temp_aria
         self.temp_suolo = temp_suolo
@@ -55,6 +59,8 @@ class RoadWeatherObservationEntry(GenericEntry):
         self.prec_qta = prec_qta
         self.vento_vel = vento_vel
         self.stato_meteo = stato_meteo
+        self.umidita_rel = umidita_rel
+        self.vento_dir = vento_dir
 
 
 class RoadWeatherObservationMeasure(Measure):
@@ -115,11 +121,13 @@ class RoadWeatherObservationMeasureCollection(MeasureCollection[RoadWeatherObser
                     valid_time=group_by_time,
                     period=1,
                     temp_aria=entry['temp_aria'],
-                    temp_suolo=entry['temp_suolo'],
-                    temp_rugiada=entry['temp_rugiada'],
-                    prec_qta=entry['prec_qta'],
+                    temp_suolo=entry['temp_suolo'] if 'temp_suolo' in entry else None,
+                    temp_rugiada=entry['temp_rugiada'] if 'temp_rugiada' in entry else None,
+                    prec_qta=entry['prec_qta'] if 'prec_qta' in entry else None,
                     vento_vel=entry['vento_vel'],
-                    stato_meteo=entry['stato_meteo']
+                    stato_meteo=entry['stato_meteo'] if 'stato_meteo' in entry else None,
+                    umidita_rel=entry['umidita_rel'],
+                    vento_dir=entry['vento_dir']
                 )
 
         return result

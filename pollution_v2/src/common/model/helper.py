@@ -103,32 +103,6 @@ class ModelHelper:
         return pd.DataFrame(temp)
 
     @staticmethod
-    def get_observation_dataframe(observation_entries: Iterable[RoadWeatherObservationEntry]) -> pd.DataFrame:
-        """
-        Get a dataframe from the given observation entries. The resulting dataframe will have the following columns:
-        time,station_code,prec_qta,stato_meteo,temp_aria,temp_rugiada,temp_suolo,vento_vel
-
-        :param observation_entries: the observation entries
-        :return: the observation dataframe
-        """
-        temp = []
-        for entry in observation_entries:
-            temp.append({
-                "date": entry.valid_time.date().isoformat(),
-                "time": entry.valid_time.time().isoformat(),
-                "Location": entry.station.id_strada,
-                "Station": entry.station.id_stazione,
-                "Lane": entry.station.id_corsia,
-                "Category": entry.vehicle_class.value,
-                "Transits": entry.nr_of_vehicles,
-                "Speed": entry.average_speed,
-                "Period": entry.period,
-                "KM": km
-            })
-
-        return pd.DataFrame(temp)
-
-    @staticmethod
     def get_traffic_dataframe_for_validation(traffic_entries: Iterable[TrafficEntry], date: date) -> pd.DataFrame:
         """
         Get a dataframe from the given traffic entries. The resulting dataframe will have the following columns:
@@ -174,7 +148,7 @@ class ModelHelper:
     def get_weather_dataframe(weather_entries: Iterable[WeatherEntry]) -> pd.DataFrame:
         """
         Get a dataframe from the given weather entries. The resulting dataframe will have the following columns:
-        timestamp,station-type,station-id,air-temperature,air-humidity,wind-speed,wind-direction,global-radiation,precipitation
+        timestamp,station-type,station-id,air-temperature,air-humidity,wind-speed,wind-direction,global-radiation
 
         :param weather_entries: the weather entries
         :return: the weather dataframe
@@ -183,7 +157,6 @@ class ModelHelper:
         for entry in weather_entries:
             temp.append({
                 "timestamp": entry.valid_time.isoformat(),
-                # TODO: add the possibility to retrieve also the `RoadWeather` stations
                 "station-type": 'Weather',
                 "station-id": entry.station.code,
                 "air-temperature": entry.air_temperature,
@@ -191,33 +164,31 @@ class ModelHelper:
                 "wind-speed": entry.wind_speed,
                 "wind-direction": entry.wind_direction,
                 "global-radiation": entry.global_radiation,
-                "precipitation": entry.precipitation
             })
+        return pd.DataFrame(temp)
 
-        # precipitation data is every 5 minutes, while the others are all every 10 minutes
-        # we need to aggregate the precipitation data to match the other data
+    @staticmethod
+    def get_road_weather_dataframe(road_weather_entries: Iterable[RoadWeatherObservationEntry]) -> pd.DataFrame:
+        """
+        Get a dataframe from the given road weather entries. The resulting dataframe will have the following columns:
+        timestamp,station-type,station-id,air-temperature,air-humidity,wind-speed,wind-direction,global-radiation
 
-        # Convert to DataFrame
-        temp = pd.DataFrame(temp)
-
-        # Set timestamp as datetime index
-        temp["timestamp"] = pd.to_datetime(temp["timestamp"])
-        temp = temp.set_index("timestamp")
-
-        # Resample and aggregate data by station-id
-        # Assuming only the precipitation data needs to be summed (if also the other variables need to be aggregated,
-        # the aggregation function should be changed accordingly)
-        resampled = temp.groupby("station-id").resample("10min").agg({
-            "station-type": "first",
-            "air-temperature": "first",
-            "air-humidity": "first",
-            "wind-speed": "first",
-            "wind-direction": "first",
-            "global-radiation": "first",
-            "precipitation": "sum"
-        }).reset_index()
-
-        return pd.DataFrame(resampled)
+        :param road_weather_entries: the road weather entries
+        :return: the weather dataframe
+        """
+        temp = []
+        for entry in road_weather_entries:
+            temp.append({
+                "timestamp": entry.valid_time.isoformat(),
+                "station-type": 'RoadWeather',
+                "station-id": entry.station.code,
+                "air-temperature": entry.temp_aria,
+                "air-humidity": entry.umidita_rel,
+                "wind-speed": entry.vento_vel,
+                "wind-direction": entry.vento_dir,
+                "global-radiation": "",  # global radiation is not present in ODH data for road weather stations
+            })
+        return pd.DataFrame(temp)
 
     @staticmethod
     def get_pollution_dataframe(pollution_entries: Iterable[PollutionEntry]) -> pd.DataFrame:
@@ -242,7 +213,7 @@ class ModelHelper:
             columns="vehicle_class",
             values="pollution_value",
             aggfunc="sum"
-        ).reset_index().fillna(0)  # TODO: check if fillna(0) is correct
+        ).reset_index().fillna(0)
 
         # aggregate the pollution values by station.stazione_id
         pollution_df = pollution_df.groupby(["timestamp", "station-id"]).sum().reset_index()
