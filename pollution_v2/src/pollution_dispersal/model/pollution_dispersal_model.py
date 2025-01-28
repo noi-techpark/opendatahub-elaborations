@@ -11,7 +11,7 @@ import time
 import urllib.request
 import zipfile
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import pandas as pd
 
@@ -180,7 +180,7 @@ class PollutionDispersalModel:
         return folder_name
 
     def compute_data(self, pollution: PollutionMeasureCollection, weather: WeatherMeasureCollection,
-                     road_weather: RoadWeatherObservationMeasureCollection, start_date: datetime) -> str:
+                     road_weather: RoadWeatherObservationMeasureCollection, start_date: datetime) -> Optional[str]:
         """
         Compute the pollution dispersal data.
         Returns the folder name where the results are stored, also corresponds to the generated zip file name.
@@ -206,6 +206,6 @@ class PollutionDispersalModel:
             return self._ws_prediction(pollution_filename, weather_filename, start_date)
 
         else:
-            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}),"
-                        f"road_weather: {len(road_weather_entries)}, skipping computation")
-            return ""
+            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)},"
+                        f"road_weather: {len(road_weather_entries)}), skipping computation")
+            return None

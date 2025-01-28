@@ -302,13 +302,14 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         return [self.build_station(raw_station) for raw_station in raw_stations]
 
     def get_latest_measures(self, station: Optional[Station or str] = None,
-                            period_to_include: int = None) -> List[MeasureType]:
+                            period_to_include: int = None, data_types: list[str] = None) -> List[MeasureType]:
         """
         Retrieve the last measure for the connector DataType.
 
         :param station: If set, it is possible to retrieve only the measures for the given station. It can be a string
                         representing the station code or a Station object.
         :param period_to_include: If set, it allows filtering including period; otherwise, no filter on period
+        :param data_types: If set, uses this custom list of data types to retrieve data
         :return: The list of measures
         """
 
@@ -319,8 +320,11 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         logger.debug(f"Retrieving latest measures on [{type(self).__name__}] with where [{query_params['where']}]")
 
+        req_data_types = data_types if data_types else self._measure_types
+        if data_types:
+            logger.info(f"Retrieving latest measures for data types [{data_types}]")
         raw_measures = self._get_result_list(
-            path=f"/v2/flat,node/{self._station_type}/{','.join(self._measure_types)}/latest",
+            path=f"/v2/flat,node/{self._station_type}/{','.join(req_data_types)}/latest",
             query_params=query_params
         )
 
