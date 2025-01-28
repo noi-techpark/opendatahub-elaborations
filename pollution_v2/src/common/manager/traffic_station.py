@@ -327,6 +327,9 @@ class TrafficStationManager(StationManager, ABC):
                 logger.exception(f"Unable to compute data from stations {_get_stations_on_logs(stations)} in the "
                                  f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
 
+            updated_stations = [entry.station.code for entry in entries]
+            logger.info(f"evaluating updates on checkpoints for {updated_stations}")
+
             if self._checkpoint_cache is not None:
                 for station in stations:
                     checkpoint = self._checkpoint_cache.get(
