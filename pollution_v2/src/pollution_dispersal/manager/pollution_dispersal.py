@@ -75,13 +75,13 @@ class PollutionDispersalManager(TrafficStationManager):
 
             if self.computed_stations:
                 logger.info(f"Uploading environment stations: {len(self.computed_stations)}")
-                # self.get_output_connector().post_stations(self.computed_stations, self._provenance)
+                self.get_output_connector().post_stations(self.computed_stations, self._provenance)
             else:
                 logger.info("No pollution dispersal stations to upload")
 
             if entries:
                 logger.info(f"Uploading pollution dispersal entries: {len(entries)}")
-                # self._upload_data(entries)
+                self._upload_data(entries)
             else:
                 logger.info("No pollution dispersal entries to upload")
 

@@ -178,7 +178,6 @@ with TrafficStationsDAG(
         """
         manager = _init_manager()
 
-        # TODO: fix dates retrieval for next run
         def has_remaining_data(starting_date: datetime, ending_date: datetime) -> bool:
             """
             Determines if there are still enough data to be processed for another DAG run on the specific station.
@@ -189,8 +188,10 @@ with TrafficStationsDAG(
             """
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN
 
+
+        min_from_date, _ = dag.init_date_range(POLLUTION_DISPERSAL_STARTING_DATE, None)
         dag.trigger_next_dag_run(manager, dag, has_remaining_data, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
-                                 True, True, True, **kwargs)
+                                 True, True, True, min_from_date=min_from_date, **kwargs)
 
     tmp = get_stations_list()
 
