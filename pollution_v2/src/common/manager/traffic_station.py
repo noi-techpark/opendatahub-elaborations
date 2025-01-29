@@ -303,7 +303,7 @@ class TrafficStationManager(StationManager, ABC):
                         max_to_date: datetime,
                         batch_size: int,
                         keep_looking_for_input_data: bool,
-                        use_hours_for_batch_size: bool = False) -> None:
+                        use_hours_for_batch_size: bool = False) -> None:  # TODO: check if this is still needed
         """
         Start the computation of a batch of data measures on a specific station.
         As starting date for the  batch is used the latest measure available on the ODH,

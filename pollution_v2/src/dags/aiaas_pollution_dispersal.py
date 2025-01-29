@@ -163,7 +163,7 @@ with TrafficStationsDAG(
         computation_start_dt = datetime.now()
         logger.info(f"Running computation")
         manager.run_computation(stations, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
-                                keep_looking_for_input_data=True, use_hours_for_batch_size=True)
+                                keep_looking_for_input_data=True)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
