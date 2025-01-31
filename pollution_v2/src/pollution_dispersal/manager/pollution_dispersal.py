@@ -23,7 +23,7 @@ from common.data_model.entry import GenericEntry
 from common.data_model.pollution_dispersal import PollutionDispersalEntry, PollutionDispersalMeasureCollection
 from common.data_model.weather import WeatherMeasureCollection, WeatherMeasureType
 from common.manager.traffic_station import TrafficStationManager
-from common.settings import POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT
+from common.settings import POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT, POLLUTION_DISPERSAL_COMPUTATION_HOURS_SPAN
 from pollution_dispersal.model.pollution_dispersal_model import PollutionDispersalModel
 
 logger = logging.getLogger("pollution_v2.pollution_dispersal.manager.pollution_dispersal")
@@ -70,8 +70,12 @@ class PollutionDispersalManager(TrafficStationManager):
         :param to_date: The ending date for the computation.
         :param stations: The list of stations to process.
         """
+        # Overriding to_date to starting date + 1 hour.
+        # This is done because we used a range in days to look-up for the starting date, but the computation needs
+        # to be done on an hour span.
+        self.to_date_hours = start_date + timedelta(hours=POLLUTION_DISPERSAL_COMPUTATION_HOURS_SPAN)
         try:
-            entries = self._download_data_and_compute(start_date, to_date, stations)
+            entries = self._download_data_and_compute(start_date, self.to_date_hours, stations)
 
             if self.computed_stations:
                 logger.info(f"Uploading environment stations: {len(self.computed_stations)}")
@@ -95,7 +99,15 @@ class PollutionDispersalManager(TrafficStationManager):
                 logger.info("No pollution dispersal zip file to upload")
         except Exception as e:
             logger.exception(f"Unable to compute data from stations in the interval [{start_date.isoformat()}]"
-                             f"- [{to_date.isoformat()}]", exc_info=e)
+                             f"- [{self.to_date_hours.isoformat()}]", exc_info=e)
+
+    def _update_cache(self, to_date: datetime, stations: List[TrafficSensorStation]) -> None:
+        """
+        Update the cache with the latest computed data. Uses the updated to_date in hours instead of initial
+        days batch size range
+        """
+        # TODO: Fix problem related to gap in the data for pollution dispersal every 31/12 at 23:00
+        super()._update_cache(self.to_date_hours, stations)
 
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime, stations: List[TrafficSensorStation]) \
                                        -> List[GenericEntry]:
@@ -136,7 +148,7 @@ class PollutionDispersalManager(TrafficStationManager):
             model = PollutionDispersalModel(domain_mapping, expected_domains, self._connector_collector.pollution_dispersal)
             folder_name = model.compute_data(pollution_data, weather_data, road_weather_data, start_date)
             if folder_name:
-                computed_entries, computed_stations = model.get_pollution_dispersal_entries_from_folder(folder_name)
+                computed_entries, computed_stations = model.get_pollution_dispersal_entries_from_folder(folder_name, to_date)
 
                 # remove folder and its files
                 shutil.rmtree(folder_name)

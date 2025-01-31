@@ -143,7 +143,7 @@ class TrafficStationManager(StationManager, ABC):
                     from_date = min_from_date
 
                 if not keep_looking_for_input_data:
-                    logger.info(f"[{station.code}] Not keeping going, normalizing {from_date} with respect to min dat {min_from_date}")
+                    logger.info(f"[{station.code}] Not keeping going, normalizing {from_date} with respect to min date {min_from_date}")
                     return self.__normalize_from_date(from_date, min_from_date, station.code)
 
                 # if between from_date and from_date + batch_size there are no input data
@@ -173,7 +173,7 @@ class TrafficStationManager(StationManager, ABC):
                     logger.info(f"[{station.code}] Looking for more...")
                     return from_date, True
                 else:
-                    logger.info(f"[{station.code}] More data in the future, normalizing {from_date} with respect to min dat {min_from_date}")
+                    logger.info(f"[{station.code}] More data in the future, normalizing {from_date} with respect to min date {min_from_date}")
                     return self.__normalize_from_date(from_date, min_from_date, station.code)
             else:
                 # If there isn't any latest measure available, the min_from_date is used as starting date for the batch
@@ -193,7 +193,7 @@ class TrafficStationManager(StationManager, ABC):
                 logger.info(f"[{station.code}] Measures found and no checkpoints active, using latest output date [{latest_output_measure.valid_time}] as starting date")
                 from_date = latest_output_measure.valid_time
 
-        logger.info(f"[{station.code}] Finally, normalize {from_date} with respect to min dat {min_from_date}")
+        logger.info(f"[{station.code}] Finally, normalize {from_date} with respect to min date {min_from_date}")
         return self.__normalize_from_date(from_date, min_from_date, station.code)
 
     def __normalize_from_date(self, from_date: datetime, min_from_date: datetime,
@@ -297,6 +297,36 @@ class TrafficStationManager(StationManager, ABC):
             logger.exception(f"Unable to compute data from stations {_get_stations_on_logs(stations)} in the "
                              f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
 
+    def _update_cache(self, to_date: datetime, stations: List[TrafficSensorStation]) -> None:
+        """
+        Update the cache with the latest checkpoint for the given stations in the given interval.
+
+        :param to_date: The ending date for the computation.
+        :param stations: The list of stations to process.
+        """
+
+        if self._checkpoint_cache is not None:
+            for station in stations:
+                checkpoint = self._checkpoint_cache.get(
+                    ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
+                if checkpoint and checkpoint.checkpoint_dt:
+                    logger.info(f"[{station.code}] Cache found on manager [{self._get_manager_code()}]: "
+                                f"[{checkpoint.checkpoint_dt}]; comparing with {to_date}")
+                if checkpoint is None or checkpoint.checkpoint_dt is None or checkpoint.checkpoint_dt < to_date:
+                    logger.info(
+                        f"[{station.code}] Caching [{to_date}] on manager [{self._get_manager_code()}]")
+                    self._checkpoint_cache.set(
+                        ComputationCheckpoint(
+                            station_code=station.code,
+                            checkpoint_dt=to_date,
+                            manager_code=self._get_manager_code()
+                        )
+                    )
+                else:
+                    logger.info(f"Cache available but cache writing skipped.")
+        else:
+            logger.info(f"Cache unavailable, unable to cache date.")
+
     def run_computation(self,
                         stations: List[TrafficSensorStation],
                         min_from_date: datetime,
@@ -361,27 +391,7 @@ class TrafficStationManager(StationManager, ABC):
 
             self._compute_and_upload_data(start_date, to_date, stations)
 
-            if self._checkpoint_cache is not None:
-                for station in stations:
-                    checkpoint = self._checkpoint_cache.get(
-                        ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
-                    if checkpoint and checkpoint.checkpoint_dt:
-                        logger.info(f"[{station.code}] Cache found on manager [{self._get_manager_code()}]: "
-                                    f"[{checkpoint.checkpoint_dt}]; comparing with {to_date}")
-                    if checkpoint is None or checkpoint.checkpoint_dt is None or checkpoint.checkpoint_dt < to_date:
-                        logger.info(
-                            f"[{station.code}] Caching [{to_date}] on manager [{self._get_manager_code()}]")
-                        self._checkpoint_cache.set(
-                            ComputationCheckpoint(
-                                station_code=station.code,
-                                checkpoint_dt=to_date,
-                                manager_code=self._get_manager_code()
-                            )
-                        )
-                    else:
-                        logger.info(f"Cache available but cache writing skipped.")
-            else:
-                logger.info(f"Cache unavailable, unable to cache date.")
+            self._update_cache(to_date, stations)
         else:
             logger.info(f"Nothing to process for stations {_get_stations_on_logs(stations)} in interval "
                         f"[{start_date} - {to_date}]")
