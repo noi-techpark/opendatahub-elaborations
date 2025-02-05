@@ -109,8 +109,8 @@ class TrafficStationsDAG(StationsDAG):
     @staticmethod
     def trigger_next_dag_run(manager: TrafficStationManager, originator_dag: DAG,
                              has_remaining_data: Callable[[datetime, datetime], bool],
-                             batch_size: int, filter_km_gt0: bool = False,
-                             filter_indloop: bool = False, filter_famas: bool = False, **kwargs):
+                             batch_size: int, filter_km_gt0: bool = False, filter_indloop: bool = False,
+                             filter_famas: bool = False, min_from_date = None, **kwargs):
         """
         Checks if there are still data to be processed before ending DAG runs
 
@@ -121,15 +121,19 @@ class TrafficStationsDAG(StationsDAG):
         :param filter_km_gt0: filters on km > 0 stations
         :param filter_indloop: filters on induction loop sensor type
         :param filter_famas: filters on not famas stations
+        :param min_from_date: the minimum date to consider. If not specified, the default will be taken from
+                              the environmental variable `ODH_MINIMUM_STARTING_DATE`.
         """
 
         stations = []
         all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0, filter_indloop, filter_famas)
         for station in all_stations:
+            if not min_from_date:
+                min_from_date = ODH_MINIMUM_STARTING_DATE
             starting_date = manager.get_starting_date(manager.get_output_connector(), manager.get_input_connector(),
-                                                      [station], ODH_MINIMUM_STARTING_DATE, batch_size, False)
+                                                      [station], min_from_date, batch_size, False)
             ending_date = manager.get_starting_date(manager.get_input_connector(), None,
-                                                    [station], ODH_MINIMUM_STARTING_DATE, batch_size, False)
+                                                    [station], min_from_date, batch_size, False)
             if starting_date is None:
                 logger.info(f"Nothing to process on {station.code}, not forwarded to next execution")
             else:

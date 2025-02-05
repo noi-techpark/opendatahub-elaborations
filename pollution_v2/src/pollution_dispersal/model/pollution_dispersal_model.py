@@ -11,7 +11,7 @@ import time
 import urllib.request
 import zipfile
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import pandas as pd
 
@@ -37,12 +37,13 @@ class PollutionDispersalModel:
         self.expected_computed_domains = expected_computed_domains
         self.pollution_dispersal_connector = connector
 
-    def get_pollution_dispersal_entries_from_folder(self, folder_name: str) -> Tuple[List[PollutionDispersalEntry], List[Station]]:
+    def get_pollution_dispersal_entries_from_folder(self, folder_name: str, measures_date: datetime) -> Tuple[List[PollutionDispersalEntry], List[Station]]:
         """
         Get the pollution dispersal entries from a folder. The folder contains the POI.json file with the computed POIs.
         Returns a tuple with the pollution dispersal entries and the stations.
 
         :param folder_name: the folder name where the results are stored
+        :param measures_date: the valid_time of the pollution dispersal entries
         :return: a tuple with the pollution dispersal entries and the stations
         """
         poi_file = os.path.join(folder_name, "poi.json")
@@ -81,7 +82,7 @@ class PollutionDispersalModel:
             )
             stations.append(station)
             entry = PollutionDispersalEntry(
-                valid_time=datetime.now(),
+                valid_time=measures_date,
                 station=station,
                 concentration_value=poi.get("conc_value_[ug/m3]"),
                 period=PERIOD_1HOUR,
@@ -180,7 +181,7 @@ class PollutionDispersalModel:
         return folder_name
 
     def compute_data(self, pollution: PollutionMeasureCollection, weather: WeatherMeasureCollection,
-                     road_weather: RoadWeatherObservationMeasureCollection, start_date: datetime) -> str:
+                     road_weather: RoadWeatherObservationMeasureCollection, start_date: datetime) -> Optional[str]:
         """
         Compute the pollution dispersal data.
         Returns the folder name where the results are stored, also corresponds to the generated zip file name.
@@ -206,6 +207,6 @@ class PollutionDispersalModel:
             return self._ws_prediction(pollution_filename, weather_filename, start_date)
 
         else:
-            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)}),"
-                        f"road_weather: {len(road_weather_entries)}, skipping computation")
-            return ""
+            logger.info(f"Not enough entries found (pollution: {len(pollution_entries)}, weather: {len(weather_entries)},"
+                        f"road_weather: {len(road_weather_entries)}), skipping computation")
+            return None
