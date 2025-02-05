@@ -62,9 +62,10 @@ class PollutionDispersalModel:
             domain_id = poi.get("domain_id")
             point_id = poi.get("point_id")
             computed_domains.add(str(domain_id))
+            domain = self.domain_mapping.get(str(domain_id), {})
             station = Station(
                 code=f"{domain_id}_{point_id}",
-                name=self.domain_mapping.get(str(domain_id), {}).get("description", str(domain_id)) + f" - {point_id}",  # TODO: add description in capabilities endpoint
+                name=domain.get("description", str(domain_id)) + f" - {point_id}",  # TODO: add description in capabilities endpoint
                 active=True,
                 available=True,
                 coordinates={
@@ -73,7 +74,9 @@ class PollutionDispersalModel:
                     "srid": poi.get("epsg", POLLUTION_DISPERSAL_DOMAINS_COORDINATES_REFERENCE_SYSTEM)
                 },
                 metadata={
-                    "dist_from_source_[m]": poi.get("dist_from_source_[m]")
+                    "dist_from_source_[m]": poi.get("dist_from_source_[m]"),
+                    "traffic_station_code": domain.get("traffic_station_id", ""),
+                    "weather_station_code": domain.get("weather_station_id", ""),
                 },
                 station_type=self.pollution_dispersal_connector.station_type,
                 origin="CISMA-dispersion-model",

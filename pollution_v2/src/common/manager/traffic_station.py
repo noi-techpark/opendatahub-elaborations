@@ -152,8 +152,11 @@ class TrafficStationManager(StationManager, ABC):
                 if to_date_tmp is not None and to_date_tmp.tzinfo is None:
                     to_date_tmp = DEFAULT_TIMEZONE.localize(to_date_tmp)
                 if input_connector is not None:
+                    # TODO: convert to ENV VAR?
+                    limit = 10
+                    logger.info(f"Setting maximum limit to {limit} for input data request")
                     input_data = (input_connector.
-                                  get_measures(from_date=from_date, to_date=to_date_tmp, station=station))
+                                  get_measures(from_date=from_date, to_date=to_date_tmp, station=station, limit=limit))
                     logger.info(f"[{station.code}] Measures available on [{inconn_str}]: found {len(input_data)} records")
                 else:
                     logger.info(f"[{station.code}] Measures available on [{inconn_str}]: no connector available")

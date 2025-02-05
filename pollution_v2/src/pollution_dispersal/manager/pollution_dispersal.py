@@ -39,6 +39,7 @@ class PollutionDispersalManager(TrafficStationManager):
         super().__init__(connector_collector, provenance, checkpoint_cache)
         self.station_list_connector = self.get_input_connector()
         self.computed_stations = []
+        self.domain_mapping = self._get_domain_mapping()
         self.zip_file_to_upload = None
 
     def _get_manager_code(self) -> str:
@@ -140,12 +141,12 @@ class PollutionDispersalManager(TrafficStationManager):
         computed_entries = []
         if pollution_data and (weather_data or road_weather_data):
 
-            domain_mapping = self._get_domain_mapping()
+            # domain_mapping = self._get_domain_mapping()
 
-            skipped_domains = self._log_skipped_domains(pollution_data, weather_data, road_weather_data, stations, domain_mapping)
+            skipped_domains = self._log_skipped_domains(pollution_data, weather_data, road_weather_data, stations)
 
-            expected_domains = set(domain_mapping.keys()) - skipped_domains
-            model = PollutionDispersalModel(domain_mapping, expected_domains, self._connector_collector.pollution_dispersal)
+            expected_domains = set(self.domain_mapping.keys()) - skipped_domains
+            model = PollutionDispersalModel(self.domain_mapping, expected_domains, self._connector_collector.pollution_dispersal)
             folder_name = model.compute_data(pollution_data, weather_data, road_weather_data, start_date)
             if folder_name:
                 computed_entries, computed_stations = model.get_pollution_dispersal_entries_from_folder(folder_name, to_date)
@@ -236,7 +237,7 @@ class PollutionDispersalManager(TrafficStationManager):
         logger.info(f"Retrieved domain mapping: {response.text}")
         return response.json()
 
-    def _log_skipped_domains(self, pollution_data, weather_data, road_weather_data, stations, domain_mapping) -> set[str]:
+    def _log_skipped_domains(self, pollution_data, weather_data, road_weather_data, stations) -> set[str]:
         """
         Log the skipped weather and pollution data for the given stations.
         Also log the skipped domains.
@@ -264,7 +265,7 @@ class PollutionDispersalManager(TrafficStationManager):
         logger.info(f"Weather and road weather stations with no data found: {skipped_weather_stations}")
 
         skipped_domains = set()
-        for domain_id, domain in domain_mapping.items():
+        for domain_id, domain in self.domain_mapping.items():
             if domain.get('traffic_station_id') in skipped_pollution_stations:
                 skipped_domains.add(str(domain_id))
             elif domain.get('weather_station_id') in skipped_weather_stations:

@@ -234,21 +234,27 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         except KeyError as e:
             raise ValueError(f"Unable to build a result page from server response: {e}")
 
-    def _get_result_list(self, path: str, query_params: Optional[dict] = None) -> List[dict]:
+    def _get_result_list(self, path: str, query_params: Optional[dict] = None, max_elements: Optional[int] = None) -> List[dict]:
         """
         Request the result list from an endpoint.
 
         :param path:
         :param query_params: Any additional query param
+        :param max_elements: If set, it limits the number of elements to be retrieved
         :return: The result list
         """
         limit = self._pagination_size
+        if max_elements is not None and max_elements < limit:
+            limit = max_elements
         offset = 0
         completed = False
 
         results: List[dict] = []
 
         while not completed:
+            if max_elements is not None and len(results) >= max_elements:
+                break
+
             if limit == -1:
                 logger.debug("Retrieving all elements")
             else:
@@ -313,7 +319,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         :return: The list of measures
         """
 
-        where_conds = self.__build_where_conds(station, period_to_include)
+        where_conds = self._build_where_conds(station, period_to_include)
         query_params = {}
         if len(where_conds) > 0:
             query_params["where"] = f'and({",".join(where_conds)})'
@@ -331,7 +337,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         return [self.build_measure(raw_measure) for raw_measure in raw_measures]
 
     def get_measures(self, from_date: datetime, to_date: datetime, station: Optional[Station or str] = None,
-                     period_to_include: int = None, conditions: list[str] = None, measure_types: list[str] = None) -> List[MeasureType]:
+                     period_to_include: int = None, conditions: list[str] = None, measure_types: list[str] = None,
+                     limit: Optional[int] = None) -> List[MeasureType]:
         """
         Retrieve the measures for the connector DataType in the given interval.
 
@@ -342,6 +349,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         :param period_to_include: If set, it allows filtering including period; otherwise, no filter on period
         :param conditions: Additional conditions to be added to the where clause
         :param measure_types: If set, it passed the measure types to retrieve data
+        :param limit: If set, it limits the number of measures to be retrieved
         :return: the list of Measures
         """
 
@@ -351,7 +359,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         iso_from_date = from_date.isoformat(timespec="milliseconds")
         iso_to_date = to_date.isoformat(timespec="milliseconds")
 
-        where_conds = self.__build_where_conds(station, period_to_include, conditions)
+        where_conds = self._build_where_conds(station, period_to_include, conditions)
         query_params = {}
         if len(where_conds) > 0:
             query_params["where"] = f'and({",".join(where_conds)})'
@@ -361,12 +369,12 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         measure_types = measure_types if measure_types else self._measure_types
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(measure_types)}/{iso_from_date}/{iso_to_date}",
-            query_params=query_params
+            query_params=query_params, max_elements=limit
         )
 
         return [self.build_measure(raw_measure) for raw_measure in raw_measures]
 
-    def __build_where_conds(self, station: Optional[Station or str] = None,
+    def _build_where_conds(self, station: Optional[Station or str] = None,
                             period_to_include: int = None, conditions: list[str] = None) -> List[str]:
 
         where_condition = []
