@@ -51,7 +51,7 @@ class PollutionDispersalManager(TrafficStationManager):
     def get_output_connector(self) -> ODHBaseConnector:
         return self._connector_collector.pollution_dispersal
 
-    def _get_input_data_types(self) -> List[DataType]:
+    def get_input_data_types(self) -> List[DataType]:
         """
         We want to filter only the NOx pollution data when computing the starting dates.
         """

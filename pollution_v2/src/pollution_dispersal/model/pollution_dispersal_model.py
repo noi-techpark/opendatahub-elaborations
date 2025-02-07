@@ -65,7 +65,7 @@ class PollutionDispersalModel:
             domain = self.domain_mapping.get(str(domain_id), {})
             station = Station(
                 code=f"{domain_id}_{point_id}",
-                name=domain.get("description", str(domain_id)) + f" - {point_id}",  # TODO: add description in capabilities endpoint
+                name=domain.get("description", str(domain_id)) + f" - {point_id}",
                 active=True,
                 available=True,
                 coordinates={

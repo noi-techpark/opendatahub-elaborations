@@ -12,7 +12,7 @@ from typing import List, Optional, Tuple
 from common.cache.computation_checkpoint import ComputationCheckpointCache, ComputationCheckpoint
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
-from common.data_model import TrafficSensorStation
+from common.data_model import TrafficSensorStation, DataType
 from common.data_model.common import MeasureType, Provenance, Measure
 from common.data_model.entry import GenericEntry
 from common.manager.station import StationManager
@@ -46,7 +46,7 @@ class TrafficStationManager(StationManager, ABC):
                                    stations: List[TrafficSensorStation]) -> List[GenericEntry]:
         pass
 
-    def _get_input_data_types(self) -> Optional[List[MeasureType]]:
+    def get_input_data_types(self) -> Optional[List[MeasureType]]:
         """
         Returns the data types specific to filter the input data when retrieving the starting date.
         If None is returned, no filter is applied.
@@ -57,7 +57,7 @@ class TrafficStationManager(StationManager, ABC):
         latest_date_across_stations = None
         for station in stations:
             req_data_types = None
-            input_data_types = self._get_input_data_types()
+            input_data_types = self.get_input_data_types()
             if input_data_types:
                 req_data_types = list(map(lambda x: x.name, input_data_types))
             measures = connector.get_latest_measures(station=station, data_types=req_data_types)
@@ -68,8 +68,8 @@ class TrafficStationManager(StationManager, ABC):
         return latest_date_across_stations
 
     def get_starting_date(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector | None,
-                          stations: List[TrafficSensorStation], min_from_date: datetime,
-                          batch_size: int, keep_looking_for_input_data: bool) -> datetime:
+                          stations: List[TrafficSensorStation], min_from_date: datetime, batch_size: int,
+                          keep_looking_for_input_data: bool, output_data_types: list[DataType] = None) -> datetime:
         """
         Returns the starting date for further processing, even managing some fallback values if necessary.
 
@@ -81,6 +81,7 @@ class TrafficStationManager(StationManager, ABC):
         :param keep_looking_for_input_data: If input data has no data, updates checkpoin and goes on looking for data:
                                             Useful to find the first traffic data for a station on validation
                                             To be avoided when there are no validation data on pollution (wait for them)
+        :param output_data_types: The data types to filter the output measures.
         :return: Computation starting date.
         """
 
@@ -90,7 +91,7 @@ class TrafficStationManager(StationManager, ABC):
         for station in stations:
             from_date = self._iterate_while_data_found(output_connector, input_connector,
                                                        station, min_from_date, batch_size,
-                                                       keep_looking_for_input_data)
+                                                       keep_looking_for_input_data, output_data_types)
 
             if from_date is not None and from_date.tzinfo is None:
                 from_date = DEFAULT_TIMEZONE.localize(from_date)
@@ -102,24 +103,30 @@ class TrafficStationManager(StationManager, ABC):
         return from_date_across_stations
 
     def _iterate_while_data_found(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
-                                  station: TrafficSensorStation, min_from_date: datetime,
-                                  batch_size: int, keep_looking_for_input_data: bool) -> datetime:
+                                  station: TrafficSensorStation, min_from_date: datetime, batch_size: int,
+                                  keep_looking_for_input_data: bool, output_data_types: list[DataType] = None) -> datetime:
         from_date, keep_going = min_from_date, True
         while keep_going and from_date < datetime.now(from_date.tzinfo):
-            from_date, keep_going = self._get_starting_date_inner(output_connector, input_connector, station,
-                                                                  from_date, batch_size, keep_looking_for_input_data)
+            from_date, keep_going = self._get_starting_date_inner(
+                output_connector, input_connector, station, from_date,
+                batch_size, keep_looking_for_input_data, output_data_types
+            )
         return from_date
 
     def _get_starting_date_inner(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
-                                 station: TrafficSensorStation, min_from_date: datetime,
-                                 batch_size: int, keep_looking_for_input_data: bool) -> Tuple[datetime | None, bool]:
+                                 station: TrafficSensorStation, min_from_date: datetime, batch_size: int,
+                                 keep_looking_for_input_data: bool, output_data_types: list[DataType] = None
+                                 ) -> Tuple[datetime | None, bool]:
 
         inconn_str = type(input_connector).__name__
         outconn_str = type(output_connector).__name__
 
-        latest_output_measure = self.__get_latest_measure(output_connector, station)
+        req_data_types = None
+        if output_data_types:
+            req_data_types = list(map(lambda x: x.name, output_data_types))
+        latest_output_measure = self.__get_latest_measure(output_connector, station, data_types=req_data_types)
 
-        filtered_input_data_types = self._get_input_data_types()
+        filtered_input_data_types = self.get_input_data_types()
         req_data_types = None
         if filtered_input_data_types:
             req_data_types = list(map(lambda x: x.name, filtered_input_data_types))
