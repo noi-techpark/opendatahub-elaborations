@@ -15,6 +15,7 @@ SPDX-License-Identifier: CC0-1.0
 :rocket: New features
 * Added creation of `EnvironmentStation` for computed pollution dispersal entries.
 * Added retrieval of weather measures from road weather stations for pollution dispersal computation.
+* Added deletion of temporary files after computation.
 
 ## Version 2024.*
 
