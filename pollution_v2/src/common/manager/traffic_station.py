@@ -159,7 +159,7 @@ class TrafficStationManager(StationManager, ABC):
                 if to_date_tmp is not None and to_date_tmp.tzinfo is None:
                     to_date_tmp = DEFAULT_TIMEZONE.localize(to_date_tmp)
                 if input_connector is not None:
-                    # TODO: convert to ENV VAR?
+                    # in case, convert to env var
                     limit = 10
                     logger.info(f"Setting maximum limit to {limit} for input data request")
                     input_data = (input_connector.
