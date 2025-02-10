@@ -4,12 +4,14 @@
 
 from __future__ import absolute_import, annotations
 
+import logging
 from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
-from common.data_model import PollutionDispersalMeasure, Station
+from common.data_model import PollutionDispersalMeasure, Station, TrafficSensorStation
 from common.settings import PERIOD_1HOUR
 
+logger = logging.getLogger("pollution_v2.common.connector.pollution_dispersal")
 
 class PollutionDispersalODHConnector(ODHBaseConnector[PollutionDispersalMeasure, Station]):
 
@@ -59,3 +61,25 @@ class PollutionDispersalODHConnector(ODHBaseConnector[PollutionDispersalMeasure,
     @staticmethod
     def build_measure(raw_measure: dict) -> PollutionDispersalMeasure:
         return PollutionDispersalMeasure.from_odh_repr(raw_measure)
+
+    def _build_where_conds(self, station: Optional[Station or str] = None,
+                            period_to_include: int = None, conditions: list[str] = None) -> List[str]:
+        where_condition = []
+        if station:
+            if isinstance(station, str):
+                code = station
+            elif isinstance(station, TrafficSensorStation):
+                code = station.id_stazione
+            elif isinstance(station, Station):
+                code = station.code
+            else:
+                raise TypeError(f"Unable to handle a parameter of type [{type(station)}] as station")
+            where_condition.append(f'smetadata.traffic_station_code.eq."{code}"')
+
+        if period_to_include is not None:
+            where_condition.append(f'mperiod.eq.{period_to_include}')
+
+        if conditions is not None:
+            where_condition.extend(conditions)
+
+        return where_condition

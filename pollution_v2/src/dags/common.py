@@ -132,8 +132,9 @@ class TrafficStationsDAG(StationsDAG):
                 min_from_date = ODH_MINIMUM_STARTING_DATE
             starting_date = manager.get_starting_date(manager.get_output_connector(), manager.get_input_connector(),
                                                       [station], min_from_date, batch_size, False)
-            ending_date = manager.get_starting_date(manager.get_input_connector(), None,
-                                                    [station], min_from_date, batch_size, False)
+            input_data_types = manager.get_input_data_types()
+            ending_date = manager.get_starting_date(manager.get_input_connector(), None, [station], min_from_date,
+                                                    batch_size, False, output_data_types=input_data_types)
             if starting_date is None:
                 logger.info(f"Nothing to process on {station.code}, not forwarded to next execution")
             else:

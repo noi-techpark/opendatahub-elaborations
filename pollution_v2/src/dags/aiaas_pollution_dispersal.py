@@ -133,11 +133,11 @@ with TrafficStationsDAG(
             station_dicts.append(station.to_json())
 
         logger.info(f"Retrieved {len(station_dicts)} stations")
-        if len(unique_station_codes) == len(station_mapping):
+        difference = unique_station_codes - set(station_mapping.keys())
+        if len(difference) > 0:
             logger.info("All stations mapped in enabled domains have been retrieved: " + str(unique_station_codes))
         else:
-            difference_str = str(unique_station_codes - set(station_mapping.keys()))
-            logger.warning("Some stations mapped in enabled domains have not been retrieved: " + difference_str)
+            logger.warning("Some stations mapped in enabled domains have not been retrieved: " + str(difference))
 
         # Serialization and deserialization is dependent on speed.
         # Use built-in functions like dict as much as you can and stay away
@@ -163,7 +163,7 @@ with TrafficStationsDAG(
         computation_start_dt = datetime.now()
         logger.info(f"Running computation")
         manager.run_computation(stations, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
-                                keep_looking_for_input_data=True, use_hours_for_batch_size=True)
+                                keep_looking_for_input_data=True)
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
@@ -187,7 +187,6 @@ with TrafficStationsDAG(
             :return: true if there are enough data to run another DAG on this station
             """
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN
-
 
         min_from_date, _ = dag.init_date_range(POLLUTION_DISPERSAL_STARTING_DATE, None)
         dag.trigger_next_dag_run(manager, dag, has_remaining_data, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
