@@ -113,6 +113,19 @@ class Processor:
                 if processed_value != None:
                     if processed_value < 0:
                         processed_value = 0
-                    data_point_map[type_id+"_processed"] = DataPoint(parseODHTime(time).timestamp() * 1000, processed_value, 3600)
+                    odhtimestamp = parseODHTime(time).timestamp() * 1000
+                    data_point_map[type_id+"_processed"] = DataPoint(odhtimestamp, processed_value, 3600)
+                    if type_id == "NO2-Alphasense":
+                        if processed_value >= 40:
+                            public_value = "very bad"
+                        elif processed_value > 30:
+                            public_value = "bad"
+                        elif processed_value > 20:
+                            public_value = "pretty good"
+                        elif processed_value > 10:
+                            public_value = "good"
+                        else:
+                            public_value = "very good"
+                        data_point_map[type_id+"_processed_public"] = DataPoint(odhtimestamp, public_value, 3600)
                     processed_value = None
             return data_point_map
