@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import datetime
-from model.Dtos import DataPoint
+from model.Dtos import DataPoint, DataType
 from ODHAPIClient import DataFetcher
 from ODHPusher import DataPusher
 from ParameterImporter import getParameters
@@ -34,6 +34,14 @@ def parseODHTime(time: str) -> datetime:
 
 class Processor:
     def calc_by_station(self):
+        pusher.sync_datatypes([
+            DataType("O3_processed", None, "O3", "Mean"),
+            DataType("PM10_processed", None, "PM10", "Mean"),
+            DataType("PM2.5_processed", None, "PM2.5", "Mean"),
+            DataType("NO-Alphasense_processed", None, "NO (Alphasense)", "Mean"),
+            DataType("NO2-Alphasense_processed", None, "NO2 (Alphasense)", "Mean"),
+            DataType("NO2-Alphasense_processed_rating", None, "NO2 (Alphasense) rating", "Rating"),
+        ])
         time_map = fetcher.get_newest_data_timestamps(stations=STATIONS_TO_ELABORATE, types=TYPES_TO_ELABORATE)
         for s_id in time_map:
             
@@ -126,6 +134,6 @@ class Processor:
                             public_value = "good"
                         else:
                             public_value = "very good"
-                        data_point_map[type_id+"_processed_public"] = DataPoint(odhtimestamp, public_value, 3600)
+                        data_point_map[type_id+"_processed_rating"] = DataPoint(odhtimestamp, public_value, 3600)
                     processed_value = None
             return data_point_map
