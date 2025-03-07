@@ -38,7 +38,7 @@ CLIENT_SECRET=******************
 PROVENANCE_NAME=environment-a22-non-linear-calibration-local
 PROVENANCE_VERSION=0.0.0
 PROVENANCE_LINEAGE=NOI
-ODH_MOBILITY_API_WRITER=https://share.opendatahub.testingmachine.eu
+ODH_MOBILITY_API_WRITER=https://mobility.share.opendatahub.testingmachine.eu
 LOG_LEVEL=DEBUG
 ```
 

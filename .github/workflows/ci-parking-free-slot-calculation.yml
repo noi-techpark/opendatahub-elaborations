@@ -54,7 +54,7 @@ jobs:
           X_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET_TEST }}
           X_CLIENT_ID: odh-mobility-datacollector
           X_ODH_MOBILITY_API_NINJA: https://mobility.api.opendatahub.testingmachine.eu/v2
-          X_ODH_MOBILITY_API_WRITER: https://share.opendatahub.testingmachine.eu
+          X_ODH_MOBILITY_API_WRITER: https://mobility.share.opendatahub.testingmachine.eu
           X_PROVENANCE_LINEAGE: NOI
           X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_PROVENANCE_VERSION: ${{ github.sha }}
