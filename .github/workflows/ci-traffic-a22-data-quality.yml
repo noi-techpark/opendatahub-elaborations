@@ -40,11 +40,6 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v3
 
-      - name: Setup go
-        uses: actions/setup-go@v4
-        with:
-          go-version-file: ${{ env.WORKING_DIRECTORY }}/src/go.mod
-
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
         with:
@@ -58,7 +53,7 @@ jobs:
           X_ODH_CLIENT_ID: odh-a22-dataprocessor
           X_ODH_CLIENT_SECRET: ${{ secrets.COMBINED_CLIENT_SECRET_TEST }}
           
-          X_BDP_BASE_URL: https://share.opendatahub.testingmachine.eu
+          X_BDP_BASE_URL: https://mobility.share.opendatahub.testingmachine.eu
           X_BDP_PROVENANCE_VERSION: ${{ github.sha }}
           X_BDP_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
           X_BDP_ORIGIN: a22
@@ -75,10 +70,6 @@ jobs:
 
           # run once per day, calculates the previous day's sums
           X_SCHEDULER_CRON: "0 10 4 * * *"
-          
-      - name: Build go application
-        run: go build -o main main.go
-        working-directory: ${{ env.WORKING_DIRECTORY }}/src
 
       - name: Build and push 
         uses: noi-techpark/github-actions/docker-build-and-push@v2

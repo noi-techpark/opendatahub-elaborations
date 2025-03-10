@@ -36,3 +36,10 @@ class DataPusher:
         p = Provenance(None, lineage, collector, version)
         r = requests.post(os.getenv("ODH_MOBILITY_API_WRITER")+"/json/provenance", json= p, headers={"Authorization" : "Bearer " + self.token['access_token']})
         self.provenance_id = r.text
+
+    def sync_datatypes(self, datatypes):
+        log.debug("Pushing datatypes: " + str(datatypes))
+        r = requests.post(os.getenv("ODH_MOBILITY_API_WRITER")+"/json/syncDataTypes", json=datatypes, headers={"Authorization" : "Bearer " + self.token['access_token']})
+        if (r.status_code != 201):
+            log.warn("Status code not 201 but " + str(r.status_code))
+            log.warn(datatypes)
