@@ -8,7 +8,7 @@ import logging
 import os
 import shutil
 from datetime import datetime, timedelta
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import requests
 
@@ -17,7 +17,7 @@ from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.connector.common import ODHBaseConnector
 from common.data_model import Provenance, DataType, MeasureCollection, PollutionMeasureCollection, \
-    PollutionDispersalMeasure, TrafficSensorStation, PollutionMeasure, PollutantClass, Station, \
+    PollutionDispersalMeasure, TrafficSensorStation, PollutionMeasure, PollutantClass, \
     RoadWeatherObservationMeasureCollection, RoadWeatherObservationMeasureType
 from common.data_model.entry import GenericEntry
 from common.data_model.pollution_dispersal import PollutionDispersalEntry, PollutionDispersalMeasureCollection
@@ -75,6 +75,7 @@ class PollutionDispersalManager(TrafficStationManager):
         # This is done because we used a range in days to look-up for the starting date, but the computation needs
         # to be done on an hour span.
         self.to_date_hours = start_date + timedelta(hours=POLLUTION_DISPERSAL_COMPUTATION_HOURS_SPAN)
+        self.to_date_hours = min(self.to_date_hours, to_date)
         try:
             entries = self._download_data_and_compute(start_date, self.to_date_hours, stations)
 
@@ -107,7 +108,6 @@ class PollutionDispersalManager(TrafficStationManager):
         Update the cache with the latest computed data. Uses the updated to_date in hours instead of initial
         days batch size range
         """
-        # TODO: Fix problem related to gap in the data for pollution dispersal every 31/12 at 23:00
         super()._update_cache(self.to_date_hours, stations)
 
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime, stations: List[TrafficSensorStation]) \
