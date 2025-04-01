@@ -56,7 +56,7 @@ jobs:
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
           local-path: bluetooth-traffic/deltart.sql
 
-      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
+      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DB_PWD }} < bluetooth-traffic/deltart.sql
       - name: Import delta function into psql
         uses: noi-techpark/github-actions/psql-over-ssh@v2
         with:
@@ -131,7 +131,7 @@ jobs:
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
           local-path: bluetooth-traffic/deltart.sql
 
-      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
+      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DB_PWD }} < bluetooth-traffic/deltart.sql
       - name: Import delta function into psql
         uses: noi-techpark/github-actions/psql-over-ssh@v2
         with:
