@@ -156,6 +156,10 @@ with TrafficStationsDAG(
         stations = [TrafficSensorStation.from_json(station_dict) for station_dict in station_dicts]
         logger.info(f"Received stations {stations}")
 
+        if not stations:
+            logger.info("No stations to process")
+            return True
+
         manager = _init_manager()
 
         min_from_date, max_to_date = dag.init_date_range(POLLUTION_DISPERSAL_STARTING_DATE, None)
@@ -167,14 +171,15 @@ with TrafficStationsDAG(
 
         computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
+        return False
 
 
     @task(trigger_rule=TriggerRule.ALL_DONE)
-    def whats_next(already_processed_stations, **kwargs):
+    def whats_next(computation_skipped, **kwargs):
         """
         Checks if there are still data to be processed before ending DAG runs
 
-        :param already_processed_stations: the stations already processed (not used)
+        :param computation_skipped: whether the computation was skipped
         """
         manager = _init_manager()
 
@@ -188,12 +193,15 @@ with TrafficStationsDAG(
             """
             return (ending_date - starting_date).total_seconds() / 3600 > DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN
 
-        min_from_date, _ = dag.init_date_range(POLLUTION_DISPERSAL_STARTING_DATE, None)
-        dag.trigger_next_dag_run(manager, dag, has_remaining_data, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
-                                 True, True, True, min_from_date=min_from_date, **kwargs)
+        if computation_skipped:
+            logger.info(f"Not running next DAG run as computation was skipped")
+        else:
+            min_from_date, _ = dag.init_date_range(POLLUTION_DISPERSAL_STARTING_DATE, None)
+            dag.trigger_next_dag_run(manager, dag, has_remaining_data, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
+                                     False, False, False, min_from_date=min_from_date, **kwargs)
 
     tmp = get_stations_list()
 
-    processed_stations = process_stations(tmp)
+    skipped = process_stations(tmp)
 
-    whats_next(processed_stations)
+    whats_next(skipped)

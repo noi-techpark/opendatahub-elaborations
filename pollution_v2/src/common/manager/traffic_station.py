@@ -78,7 +78,7 @@ class TrafficStationManager(StationManager, ABC):
         :param stations: The list of traffic stations to query.
         :param min_from_date: The minimum date to start from.
         :param batch_size: The size of the batch (in days) to be extracted.
-        :param keep_looking_for_input_data: If input data has no data, updates checkpoin and goes on looking for data:
+        :param keep_looking_for_input_data: If input data has no data, updates checkpoint and goes on looking for data:
                                             Useful to find the first traffic data for a station on validation
                                             To be avoided when there are no validation data on pollution (wait for them)
         :param output_data_types: The data types to filter the output measures.
