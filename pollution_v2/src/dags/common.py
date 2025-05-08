@@ -135,7 +135,7 @@ class TrafficStationsDAG(StationsDAG):
             input_data_types = manager.get_input_data_types()
             ending_date = manager.get_starting_date(manager.get_input_connector(), None, [station], min_from_date,
                                                     batch_size, False, output_data_types=input_data_types)
-            if starting_date is None:
+            if starting_date is None or starting_date == ending_date:
                 logger.info(f"Nothing to process on {station.code}, not forwarded to next execution")
             else:
                 logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
