@@ -14,7 +14,7 @@ def get_now(tz: tzinfo | None = None):
     """
     Return now, given timezone. Useful to simulate now different from now.
     """
-    return datetime.now(tz) - timedelta(days=3)
+    return datetime.now(tz)  # - timedelta(days=3)
 
 
 def get_previous_midnight(tz: tzinfo | None = None):
