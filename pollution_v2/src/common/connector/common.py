@@ -15,6 +15,7 @@ import requests
 from keycloak import KeycloakOpenID
 
 from common.data_model.common import MeasureType, StationType, Station, Provenance, DataType
+from common.settings import get_now
 
 logger = logging.getLogger("pollution_v2.common.connector.common")
 
@@ -41,7 +42,7 @@ class Token:
             "not-before-policy": self.not_before_policy,
             "session_state": self.session_state,
             "scope": " ".join(self.scope),
-            "created_at": datetime.now().isoformat()
+            "created_at": get_now().isoformat()
         }
 
     @staticmethod
@@ -55,7 +56,7 @@ class Token:
             not_before_policy=raw_data["not-before-policy"],
             session_state=raw_data.get("session_state"),
             scope=raw_data["scope"].split(" "),
-            created_at=datetime.fromisoformat(raw_data["created_at"]) if raw_data.get("created_at") else datetime.now()
+            created_at=datetime.fromisoformat(raw_data["created_at"]) if raw_data.get("created_at") else get_now()
         )
 
     @property
@@ -63,14 +64,14 @@ class Token:
         """
         Check if the access token is expired.
         """
-        return (self.created_at + timedelta(seconds=self.expires_in)) < datetime.now()
+        return (self.created_at + timedelta(seconds=self.expires_in)) < get_now()
 
     @property
     def is_refresh_token_expired(self) -> bool:
         """
         Check if the refresh token is expired.
         """
-        return (self.created_at + timedelta(seconds=self.refresh_expires_in)) < datetime.now()
+        return (self.created_at + timedelta(seconds=self.refresh_expires_in)) < get_now()
 
 
 class MaximumRetryExceeded(Exception):
@@ -357,17 +358,17 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         if period_to_include is None:
             period_to_include = self._period
 
-        iso_from_date = from_date.isoformat(timespec="milliseconds")
-        iso_to_date = to_date.isoformat(timespec="milliseconds")
-
         where_conds = self._build_where_conds(station, period_to_include, conditions)
         query_params = {}
         if len(where_conds) > 0:
             query_params["where"] = f'and({",".join(where_conds)})'
 
-        logger.debug(f"Retrieving measures on [{type(self).__name__}] from date [{iso_from_date}] "
-                     f"to date [{iso_to_date}] for {self._station_type} with where [{query_params['where']}]")
+        logger.debug(f"Retrieving measures on [{type(self).__name__}] from date [{from_date.isoformat()}] "
+                     f"to date [{to_date.isoformat()}] for {self._station_type} with where [{query_params['where']}]")
         measure_types = measure_types if measure_types else self._measure_types
+
+        iso_from_date = from_date.isoformat(timespec="milliseconds")
+        iso_to_date = to_date.isoformat(timespec="milliseconds")
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(measure_types)}/{iso_from_date}/{iso_to_date}",
             query_params=query_params, max_elements=limit

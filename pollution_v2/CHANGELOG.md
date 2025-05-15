@@ -14,6 +14,10 @@ SPDX-License-Identifier: CC0-1.0
 
 :bug: Bug fixes
 * On stations not sending data, checkpoint is not anymore incremented by 1 day each DAG execution.
+* The pollution computer consider as ending date today at the previous midnight, to comply with validator processing from midnight to midnight.
+
+:nail_care: Polish
+* All datetimes in logs are expressed using ISO format.
 
 ### 2025.01.31
 
