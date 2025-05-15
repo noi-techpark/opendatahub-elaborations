@@ -10,6 +10,11 @@ SPDX-License-Identifier: CC0-1.0
 
 ## Version 2025.*
 
+### (next release)
+
+:bug: Bug fixes
+* On stations not sending data, checkpoint is not anymore incremented by 1 day each DAG execution.
+
 ### 2025.01.31
 
 :rocket: New features
