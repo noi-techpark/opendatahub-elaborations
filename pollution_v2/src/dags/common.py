@@ -11,7 +11,7 @@ from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from common.data_model import Station, TrafficSensorStation
 from common.manager.station import StationManager
 from common.manager.traffic_station import TrafficStationManager
-from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE
+from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, get_now, get_previous_midnight
 
 logger = logging.getLogger("pollution_v2.dags.common")
 
@@ -20,7 +20,8 @@ class StationsDAG(DAG):
 
     # TODO: decide if this method is necessary or should be moved to TrafficStationsDAG
     @staticmethod
-    def init_date_range(min_from_date: Optional[datetime], max_to_date: Optional[datetime]):
+    def init_date_range(min_from_date: Optional[datetime], max_to_date: Optional[datetime],
+                        stick_to_previous_midnight: bool = False):
         """
         Initializes the date range for the batch.
 
@@ -28,6 +29,8 @@ class StationsDAG(DAG):
                               default will be taken from the environmental variable `ODH_MINIMUM_STARTING_DATE`.
         :param max_to_date: Optional, if set the measures after this date are discarded.
                             If not specified, the default will be the current datetime.
+        :stick_to_previous_midnight: If True, the starting date (now) will be sticked to previous midnight for
+                                     correct pollution calculation execution.
         :return: correctly structured dates
         """
 
@@ -38,7 +41,8 @@ class StationsDAG(DAG):
             min_from_date = DEFAULT_TIMEZONE.localize(min_from_date)
 
         if max_to_date is None:
-            max_to_date = datetime.now(tz=DEFAULT_TIMEZONE)
+            max_to_date = get_now(tz=DEFAULT_TIMEZONE) if not stick_to_previous_midnight \
+                else get_previous_midnight(tz=DEFAULT_TIMEZONE)
 
         if max_to_date.tzinfo is None:
             max_to_date = DEFAULT_TIMEZONE.localize(max_to_date)
@@ -67,18 +71,22 @@ class StationsDAG(DAG):
 class TrafficStationsDAG(StationsDAG):
 
     @staticmethod
-    def init_date_range(min_from_date: Optional[datetime], max_to_date: Optional[datetime]):
+    def init_date_range(min_from_date: Optional[datetime], max_to_date: Optional[datetime],
+                        stick_to_previous_midnight: bool = False):
         """
         As starting date for the batch is used the latest pollution measure available on the ODH, if no pollution
         measures are available min_from_date is used.
 
         :param min_from_date: Optional, if set traffic measures before this date are discarded if no pollution measures
-                              are available. If not specified, the default will be taken from the environmental variable `ODH_MINIMUM_STARTING_DATE`.
+                              are available. If not specified, the default will be taken from the environmental
+                              variable `ODH_MINIMUM_STARTING_DATE`.
         :param max_to_date: Optional, if set the traffic measure after this date are discarded.
                             If not specified, the default will be the current datetime.
+        :stick_to_previous_midnight: If True, the starting date (now) will be sticked to previous midnight for
+                                     correct pollution calculation execution.
         :return: correctly structured dates
         """
-        return StationsDAG.init_date_range(min_from_date, max_to_date)
+        return StationsDAG.init_date_range(min_from_date, max_to_date, stick_to_previous_midnight)
 
     @staticmethod
     def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False,
@@ -138,7 +146,8 @@ class TrafficStationsDAG(StationsDAG):
             if starting_date is None or starting_date == ending_date:
                 logger.info(f"Nothing to process on {station.code}, not forwarded to next execution")
             else:
-                logger.info(f"Check if [{station.code}] has more data on dates ranging from [{starting_date}] to [{ending_date}]")
+                logger.info(f"Check if [{station.code}] has more data on dates ranging "
+                            f"from [{starting_date.isoformat()}] to [{ending_date.isoformat()}]")
                 if has_remaining_data(starting_date, ending_date):
                     logger.info(f"Forwarding station {station.code} to next execution")
                     stations.append(station.code)

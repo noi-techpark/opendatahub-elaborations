@@ -81,7 +81,7 @@ with DAG(
 
         start_date = kwargs["data_interval_start"]
         end_date = kwargs["data_interval_end"]
-        print(f"Data interval start: {start_date} and end: {end_date}")
+        print(f"Data interval start: {start_date.isoformat()} and end: {end_date.isoformat()}")
 
         return 'Whatever you return gets printed in the logs'
 

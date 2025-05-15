@@ -123,7 +123,8 @@ class PollutionDispersalManager(TrafficStationManager):
             logger.error(f"Cannot compute pollution dispersal on empty station list ({len(stations)} passed)")
             return []
 
-        logger.info(f"Computing pollution dispersal from {start_date} to {to_date} for stations {stations}")
+        logger.info(f"Computing pollution dispersal from {start_date.isoformat()} "
+                    f"to {to_date.isoformat()} for stations {stations}")
 
         pollution_data = None
         weather_data = None
@@ -175,7 +176,7 @@ class PollutionDispersalManager(TrafficStationManager):
         """
 
         connector = self.get_input_connector()
-        logger.info(f"Downloading pollution data from [{from_date}] to [{to_date}]")
+        logger.info(f"Downloading pollution data from [{from_date.isoformat()}] to [{to_date.isoformat()}]")
         nox_pollutants = PollutionMeasure.get_data_types([PollutantClass.NOx])
         measures = connector.get_measures(from_date=from_date, to_date=to_date, measure_types=list(map(lambda x: x.name, nox_pollutants)))
         logger.info(f"Downloaded {len(measures)} pollution measures")
@@ -195,7 +196,7 @@ class PollutionDispersalManager(TrafficStationManager):
         """
 
         connector = self._connector_collector.weather
-        logger.info(f"Downloading weather data from [{from_date}] to [{to_date}]")
+        logger.info(f"Downloading weather data from [{from_date.isoformat()}] to [{to_date.isoformat()}]")
         measure_types = [
             WeatherMeasureType.AIR_TEMPERATURE, WeatherMeasureType.AIR_HUMIDITY, WeatherMeasureType.WIND_SPEED,
             WeatherMeasureType.WIND_DIRECTION, WeatherMeasureType.GLOBAL_RADIATION
@@ -217,7 +218,8 @@ class PollutionDispersalManager(TrafficStationManager):
         """
 
         connector = self._connector_collector.road_weather_observation
-        logger.info(f"Downloading road weather observation data from [{from_date}] to [{to_date}]")
+        logger.info(f"Downloading road weather observation data from [{from_date.isoformat()}] "
+                    f"to [{to_date.isoformat()}]")
         measure_types = [
             RoadWeatherObservationMeasureType.TEMP_ARIA, RoadWeatherObservationMeasureType.UMIDITA_REL,
             RoadWeatherObservationMeasureType.VENTO_VEL, RoadWeatherObservationMeasureType.VENTO_DIR,

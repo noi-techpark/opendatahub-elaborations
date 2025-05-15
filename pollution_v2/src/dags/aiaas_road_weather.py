@@ -14,7 +14,7 @@ from common.data_model.common import Provenance
 from common.data_model import Station
 from common.settings import (ODH_MINIMUM_STARTING_DATE, PROVENANCE_ID, PROVENANCE_LINEAGE,
                              PROVENANCE_NAME_POLL_ELABORATION, PROVENANCE_VERSION, AIRFLOW_NUM_RETRIES,
-                             DAG_ROAD_WEATHER_EXECUTION_CRONTAB, ROAD_WEATHER_CONFIG_FILE)
+                             DAG_ROAD_WEATHER_EXECUTION_CRONTAB, ROAD_WEATHER_CONFIG_FILE, get_now)
 from road_weather.manager.road_weather import RoadWeatherManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -142,11 +142,11 @@ with StationsDAG(
         # TODO: are the dates needed? backfill?
         # min_from_date, max_to_date = dag.init_date_range(None, None)
 
-        computation_start_dt = datetime.now()
+        computation_start_dt = get_now()
         logger.info(f"Running computation")
         manager.run_computation_for_single_station(station)
 
-        computation_end_dt = datetime.now()
+        computation_end_dt = get_now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
 
 

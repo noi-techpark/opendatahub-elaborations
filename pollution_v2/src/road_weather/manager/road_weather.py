@@ -63,7 +63,8 @@ class RoadWeatherManager(StationManager):
         """
 
         connector = self.get_input_connector()
-        logger.info(f"Downloading observation data for station [{traffic_station.code}] from [{from_date}] to [{to_date}]")
+        logger.info(f"Downloading observation data for station [{traffic_station.code}] from [{from_date.isoformat()}] "
+                    f"to [{to_date.isoformat()}]")
         return RoadWeatherObservationMeasureCollection(
             measures=connector.get_measures(from_date=from_date, to_date=to_date, station=traffic_station)
         )
