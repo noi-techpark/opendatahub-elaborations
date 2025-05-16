@@ -399,29 +399,29 @@ class TrafficStationManager(StationManager, ABC):
         start_date = self.get_starting_date(self.get_output_connector(), self.get_input_connector(),
                                             stations, min_from_date, batch_size, keep_looking_for_input_data)
 
-        # Detect inactive stations:
-        # If we're about to request more than one window of measurements, do a check first if there even is any new data
-        batch_diff = (max_to_date - start_date).days if not use_hours_for_batch_size else (
-                                                                                                  max_to_date - start_date).seconds // 3600
-        if start_date is not None and batch_diff > batch_size:
-            latest_measurement_date = self._get_latest_date(self.get_input_connector(), stations)
-            # traffic data request range end is the latest measurement
-            # For inactive stations, this latest measurement date will be < start_date,
-            # thus no further requests will be made. In general, it makes no sense to ask for data
-            # beyond the latest measurement, if we already know which date that is.
-            if latest_measurement_date < max_to_date:
-                logger.info(
-                    f"Using latest input measurement date {latest_measurement_date.isoformat()} "
-                    f"as maximum end date for data request")
-            max_to_date = min(max_to_date, latest_measurement_date)
-
-        to_date = start_date
-
         if start_date is None or start_date == max_to_date:
             logger.info(f"Not computing data for stations {_get_stations_on_logs(stations)} in interval "
                         f"[{start_date.isoformat() if start_date else 'no-date'} - "
-                        f"{to_date.isoformat() if to_date else 'no-date'}] (no timespan)")
+                        f"no-date] (no timespan)")
         elif start_date < max_to_date:
+            # Detect inactive stations:
+            # If we're about to request more than one window of measurements, do a check first if there even is any new data
+            batch_diff = (max_to_date - start_date).days if not use_hours_for_batch_size \
+                else (max_to_date - start_date).seconds // 3600
+            if start_date is not None and batch_diff > batch_size:
+                latest_measurement_date = self._get_latest_date(self.get_input_connector(), stations)
+                # traffic data request range end is the latest measurement
+                # For inactive stations, this latest measurement date will be < start_date,
+                # thus no further requests will be made. In general, it makes no sense to ask for data
+                # beyond the latest measurement, if we already know which date that is.
+                if latest_measurement_date < max_to_date:
+                    logger.info(
+                        f"Using latest input measurement date {latest_measurement_date.isoformat()} "
+                        f"as maximum end date for data request")
+                max_to_date = min(max_to_date, latest_measurement_date)
+
+            to_date = start_date
+
             if use_hours_for_batch_size:
                 to_date = to_date + timedelta(hours=batch_size)
             else:
@@ -440,7 +440,7 @@ class TrafficStationManager(StationManager, ABC):
             self._update_cache(to_date, stations)
         else:
             logger.info(f"Nothing to process for stations {_get_stations_on_logs(stations)} in interval "
-                        f"[{start_date.isoformat()} - {to_date.isoformat()}]")
+                        f"[{start_date.isoformat()} - no-date]")
 
     def run_computation_and_upload_results(self,
                                            min_from_date: datetime,
