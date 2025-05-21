@@ -172,6 +172,9 @@ class TrafficStationManager(StationManager, ABC):
                     f"{from_date.isoformat()} and from_date + batch_size ({batch_size} days)")
                 to_date_tmp = from_date + timedelta(days=batch_size)
 
+                if to_date_tmp is not None and to_date_tmp.tzinfo is None:
+                    to_date_tmp = DEFAULT_TIMEZONE.localize(to_date_tmp)
+
                 if to_date_tmp > datetime.now():
                     logger.info(
                         f"[{station.code}] Not keeping going as now is reached, normalizing {from_date.isoformat()} "
@@ -179,8 +182,6 @@ class TrafficStationManager(StationManager, ABC):
                         f"{min_from_date.isoformat()}")
                     return self.__normalize_from_date(from_date, min_from_date, station.code)
 
-                if to_date_tmp is not None and to_date_tmp.tzinfo is None:
-                    to_date_tmp = DEFAULT_TIMEZONE.localize(to_date_tmp)
                 if input_connector is not None:
                     # in case, convert to env var
                     limit = 10
