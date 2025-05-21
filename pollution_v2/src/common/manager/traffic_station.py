@@ -174,8 +174,11 @@ class TrafficStationManager(StationManager, ABC):
 
                 if to_date_tmp is not None and to_date_tmp.tzinfo is None:
                     to_date_tmp = DEFAULT_TIMEZONE.localize(to_date_tmp)
+                now = datetime.now()
+                if now is not None and now.tzinfo is None:
+                    now = DEFAULT_TIMEZONE.localize(now)
 
-                if to_date_tmp > datetime.now():
+                if to_date_tmp > now:
                     logger.info(
                         f"[{station.code}] Not keeping going as now is reached, normalizing {from_date.isoformat()} "
                         f"with respect to min date "
