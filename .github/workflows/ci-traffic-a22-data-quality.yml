@@ -54,6 +54,7 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev/a22-traffic-data-quality'
     concurrency: deploy-test
+    environment: test
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
