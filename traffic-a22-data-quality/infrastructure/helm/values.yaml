@@ -7,6 +7,8 @@ env:
   ODH_TOKEN_URL: https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token
   ODH_CLIENT_ID: odh-a22-dataprocessor
 
+  BDP_ORIGIN: a22
+
   EL_STATION_TYPE: TrafficSensor
   EL_PARENT_STATION_TYPE: TrafficDirection
   EL_BASE_PERIOD: 600
@@ -16,11 +18,3 @@ env:
 
   # run once per day, calculates the previous day's sums
   SCHEDULER_CRON: "0 10 4 * * *"
-
-envSecret:
-  LORAWAN_PASSWORD: ""
-
-envSecretRef:
-  - name: MQ_URI
-    secret: rabbitmq-svcbind
-    key: uri
