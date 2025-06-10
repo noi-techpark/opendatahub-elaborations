@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: CC0-1.0
 
 version = 1
-SPDX-PackageName = "opendatahub-eaborations"
+SPDX-PackageName = "opendatahub-elaborations"
 SPDX-PackageSupplier = "NOI Techpark <digital@noi.bz.it>"
-SPDX-PackageDownloadLocation = "https://github.com/noi-techpark/opendatahub-eaborations"
+SPDX-PackageDownloadLocation = "https://github.com/noi-techpark/opendatahub-elaborations"
 
 [[annotations]]
 path = ["**helm/**.yaml", "**helm/**.tpl", "**helm/**/NOTES.txt", "**.helmignore"]
