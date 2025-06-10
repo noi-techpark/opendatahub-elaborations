@@ -51,7 +51,7 @@ jobs:
 
   deploy-test:
     runs-on: ubuntu-22.04
-    needs: test
+    needs: build
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev/a22-traffic-data-quality'
     concurrency: deploy-test
     steps:
