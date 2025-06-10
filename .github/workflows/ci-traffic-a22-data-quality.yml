@@ -85,6 +85,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_KEY_SECRET }}
           aws-eks-cluster-name: aws-main-eu-01
           aws-region: eu-west-1
+          
 
   # deploy-prod:
   #   runs-on: ubuntu-22.04
