@@ -122,7 +122,7 @@ join type t on t.id = m.type_id
 where stationtype = 'TrafficSensor'
 and s.origin = 'A22'
 AND m.timestamp > '2024-07-10'
-and m."period" = 600
+and m.period = 86400
 AND t.cname IN (
     'Nr. Light Vehicles', 
     'Nr. Heavy Vehicles', 
@@ -137,7 +137,5 @@ AND t.cname IN (
     'Average Gap', 
     'Average Headway', 
     'Average Density', 
-    'Average Flow', 
-    'Euro Emission Standard', 
-    'Vehicle Count by Nationality'
+    'Average Flow'
   );

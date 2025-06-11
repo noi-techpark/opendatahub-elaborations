@@ -32,7 +32,7 @@ func sumParentJob() {
 	err := ninja.Latest(req, res)
 	if err != nil {
 		slog.Error("sumParent: Error in ninja call. aborting", "err", err)
-		return
+		panic(err)
 	}
 
 	type window = struct {
@@ -92,7 +92,7 @@ func sumParentJob() {
 		err := ninja.History(req, res)
 		if err != nil {
 			slog.Error("sumParent: Error in ninja call. aborting", "err", err)
-			return
+			panic(err)
 		}
 
 		sums := make(map[string]map[time.Time]float64) // datatype / timestamp / sum value
