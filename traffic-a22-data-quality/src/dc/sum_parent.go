@@ -17,16 +17,17 @@ import (
 func sumParentJob() {
 	req := ninja.DefaultNinjaRequest()
 	req.DataTypes = append(maps.Keys(aggrDataTypes), TotalType.Name)
-	req.Select = "tname,mvalue,pcode,stype"
+	req.Select = "tname,mvalue,pcode,stype,scode"
 	req.Where = fmt.Sprintf("sorigin.eq.%s,sactive.eq.true,mperiod.eq.%d", origin, periodAgg)
 	req.Limit = -1
 
 	res := &ninja.NinjaResponse[[]struct {
-		Tstamp ninja.NinjaTime `json:"_timestamp"`
-		DType  string          `json:"tname"`
-		Value  float64         `json:"mvalue"`
-		Parent string          `json:"pcode"`
-		Stype  string          `json:"stype"`
+		Tstamp  ninja.NinjaTime `json:"_timestamp"`
+		DType   string          `json:"tname"`
+		Value   float64         `json:"mvalue"`
+		Parent  string          `json:"pcode"`
+		Station string          `json:"scode"`
+		Stype   string          `json:"stype"`
 	}]{}
 
 	err := ninja.Latest(req, res)
@@ -45,10 +46,17 @@ func sumParentJob() {
 
 	// For each parent/type find out where the elaboration window starts/ends
 	for _, m := range res.Data {
-		if _, exists := parents[m.Parent]; !exists {
-			parents[m.Parent] = make(map[string]window)
+		parentStationCode := m.Parent
+		// type is parent station, the code we are targeting is m.stationcode
+		if m.Stype == parentStationType {
+			parentStationCode = m.Station
 		}
-		t := parents[m.Parent][m.DType]
+
+		if _, exists := parents[parentStationCode]; !exists {
+			parents[parentStationCode] = make(map[string]window)
+		}
+
+		t := parents[parentStationCode][m.DType]
 		// There is only one parent record per data type
 		if m.Stype == parentStationType {
 			t.from = m.Tstamp.Time
@@ -57,7 +65,7 @@ func sumParentJob() {
 				t.to = m.Tstamp.Time
 			}
 		}
-		parents[m.Parent][m.DType] = t
+		parents[parentStationCode][m.DType] = t
 	}
 
 	for parId, types := range parents {
