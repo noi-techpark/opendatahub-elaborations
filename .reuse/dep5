@@ -3,6 +3,6 @@ Upstream-Name: bdp-elaborations
 Upstream-Contact: NOI Techpark <digital@noi.bz.it>
 Source: https://github.com/noi-techpark/bdp-elaborations
 
-Files: .github/* .gitignore LICENSE .editorconfig */.gitignore .pre-commit-config.yaml */.env.example */.editorconfig */*.txt */Jenkinsfile-CI */Jenkinsfile-Production-Archive */Jenkinsfile-Testserver-Archive */docker/* */infrastructure/* */documentation/* */**/*.properties */**/*.gif */**/*.json */**/*.csv */**/*.pyc */**/*.db */**/*.cpg */**/*.dbf */**/*.prj */**/*.qpj */**/*.shp */**/*.shx */**/*.jsp */**/*.css ts-model/doc/package-list environment-a22-averages/calls.http LocationReverseLookupService/package.json LocationReverseLookupService/Jenkinsfile LocationReverseLookupService/Jenkinsfile-Production */go.sum
+Files: **helm/** .github/* .gitignore LICENSE .editorconfig */.gitignore .pre-commit-config.yaml */.env.example */.editorconfig */*.txt */Jenkinsfile-CI */Jenkinsfile-Production-Archive */Jenkinsfile-Testserver-Archive */docker/* */infrastructure/* */documentation/* */**/*.properties */**/*.gif */**/*.json */**/*.csv */**/*.pyc */**/*.db */**/*.cpg */**/*.dbf */**/*.prj */**/*.qpj */**/*.shp */**/*.shx */**/*.jsp */**/*.css ts-model/doc/package-list environment-a22-averages/calls.http LocationReverseLookupService/package.json LocationReverseLookupService/Jenkinsfile LocationReverseLookupService/Jenkinsfile-Production */go.sum
 Copyright: (c) NOI Techpark <digital@noi.bz.it>
 License: CC0-1.0
