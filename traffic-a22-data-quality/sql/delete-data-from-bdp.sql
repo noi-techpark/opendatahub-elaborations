@@ -5,8 +5,9 @@ WHERE m.station_id = s.id
   AND m.type_id = t.id
   AND m.timestamp > '2024-07-10'
   AND m.period = 86400
-  AND s.stationtype = 'TrafficSensor'
+  AND s.stationtype IN ('TrafficSensor', 'TrafficDirection')
   AND s.origin = 'A22'
+  and s.available = true
   AND t.cname IN (
     'Nr. Light Vehicles', 
     'Nr. Heavy Vehicles', 
@@ -32,6 +33,7 @@ join type t on t.id = m.type_id
 AND m.period = 86400
   AND s.stationtype = 'TrafficSensor'
   AND s.origin = 'A22'
+  and s.available = true
   AND t.cname IN (
     'Nr. Light Vehicles', 
     'Nr. Heavy Vehicles', 
@@ -62,8 +64,9 @@ BEGIN
     FOR station_rec IN
         SELECT s.id AS station_id
         FROM station s
-        WHERE s.stationtype = 'TrafficSensor'
+        WHERE s.stationtype IN ('TrafficSensor', 'TrafficDirection')
           AND s.origin = 'A22'
+          and s.available = true
     LOOP
         station_count := station_count + 1;
         RAISE INFO 'Deleting for station %', station_rec.station_id;
