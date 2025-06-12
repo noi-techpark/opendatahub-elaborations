@@ -54,7 +54,7 @@ func sumJob() {
 	req.AddStationType(baseStationType)
 	req.DataTypes = maps.Keys(aggrDataTypes)
 	req.Limit = -1
-	req.Select = "mperiod,mvalidtime,pcode"
+	req.Select = "mperiod,mvalidtime,mtransactiontime,pcode"
 	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d,%d))", basePeriod, periodAgg)
 
 	var res ninja.NinjaResponse[NinjaTreeData]
