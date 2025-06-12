@@ -176,10 +176,11 @@ func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 	for _, stations := range dt {
 		for stationCode, station := range stations.Stations {
 			for tname, dataType := range station.Datatypes {
+				firstBase := minTime
+				lastBase := minTime
+				lastAggregate := minTime
+
 				for _, m := range dataType.Measurements {
-					firstBase := minTime
-					lastBase := minTime
-					lastAggregate := minTime
 
 					if m.Period == uint64(basePeriod) {
 						lastBase = m.Time.Time
@@ -188,17 +189,17 @@ func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 					if m.Period == periodAgg {
 						lastAggregate = m.Time.Time
 					}
+				}
 
-					// only consider stations that don't have up to date aggregates
-					if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
-						if _, exists := todos[stationCode]; !exists {
-							todos[stationCode] = make(map[string]window)
-						}
-						todos[stationCode][tname] = window{
-							firstBase:     firstBase,
-							lastBase:      lastBase,
-							lastAggregate: lastAggregate,
-						}
+				// only consider stations that don't have up to date aggregates
+				if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
+					if _, exists := todos[stationCode]; !exists {
+						todos[stationCode] = make(map[string]window)
+					}
+					todos[stationCode][tname] = window{
+						firstBase:     firstBase,
+						lastBase:      lastBase,
+						lastAggregate: lastAggregate,
 					}
 				}
 			}
