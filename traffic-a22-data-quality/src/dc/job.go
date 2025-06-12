@@ -5,6 +5,7 @@
 package dc
 
 import (
+	"log/slog"
 	"os"
 	"strconv"
 
@@ -35,9 +36,11 @@ func syncDataTypes() {
 }
 
 func Job() {
+	slog.Info("starting job")
 	bdp = *bdplib.FromEnv()
 	syncDataTypes()
 	combineJob()
 	sumJob()
 	sumParentJob()
+	slog.Info("job ended")
 }
