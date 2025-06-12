@@ -74,7 +74,7 @@ func sumParentJob() {
 		var from time.Time
 		var to time.Time
 		for _, tp := range types {
-			if tp.from.Before(from) {
+			if (!tp.from.IsZero() && from.IsZero()) || tp.from.Before(from) {
 				from = tp.from
 			}
 			if tp.to.After(to) {
