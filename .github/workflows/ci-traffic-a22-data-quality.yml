@@ -50,7 +50,6 @@ jobs:
         docker-username: ${{ github.actor }}
         docker-password: ${{ secrets.GITHUB_TOKEN }}
 
-        
   deploy-test:
     runs-on: ubuntu-22.04
     needs: build
