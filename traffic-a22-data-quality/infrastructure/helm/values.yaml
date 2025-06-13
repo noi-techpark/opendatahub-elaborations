@@ -1,0 +1,20 @@
+image:
+  repository: 
+  pullPolicy: IfNotPresent
+  tag: "0.2.0" # Set this when upgrading chart with --set-value
+
+env:
+  ODH_TOKEN_URL: https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token
+  ODH_CLIENT_ID: odh-a22-dataprocessor
+
+  BDP_ORIGIN: a22
+
+  EL_STATION_TYPE: TrafficSensor
+  EL_PARENT_STATION_TYPE: TrafficDirection
+  EL_BASE_PERIOD: 600
+
+  NINJA_QUERY_LIMIT: 50000
+  LOG_LEVEL: DEBUG
+
+  # run once per day, calculates the previous day's sums
+  SCHEDULER_CRON: "0 10 4 * * *"
