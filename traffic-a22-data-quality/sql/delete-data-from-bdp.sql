@@ -112,7 +112,8 @@ from station s
 join measurementhistory m on s.id = m.station_id
 join type t on t.id = m.type_id
 AND m.period = 86400
-  AND s.stationtype = 'TrafficSensor'
+and s.available = true
+  AND s.stationtype IN ('TrafficSensor', 'TrafficDirection')
   AND s.origin = 'A22'
   AND m.timestamp > '2025-05-20'
   ;
@@ -122,8 +123,9 @@ select count(*)
 from station s
 join measurementhistory m on s.id = m.station_id
 join type t on t.id = m.type_id
-where stationtype = 'TrafficSensor'
+where stationtype IN ('TrafficSensor', 'TrafficDirection')
 and s.origin = 'A22'
+and s.available = true
 AND m.timestamp > '2024-07-10'
 and m.period = 86400
 AND t.cname IN (
