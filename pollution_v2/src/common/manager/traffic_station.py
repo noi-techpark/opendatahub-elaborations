@@ -143,6 +143,7 @@ class TrafficStationManager(StationManager, ABC):
         if missing_input and not keep_looking_for_input_data:
             logger.info(f"[{station.code}] No input measures on [{inconn_str}]")
             return None, False
+
         elif missing_output:
             logger.info(f"[{station.code}] No output measures on [{outconn_str}]")
             if self._checkpoint_cache:
@@ -150,25 +151,25 @@ class TrafficStationManager(StationManager, ABC):
                     ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
                 if checkpoint and checkpoint.checkpoint_dt:
                     logger.info(
-                        f"[{station.code}] Found checkpoint [{checkpoint.checkpoint_dt}] on [{outconn_str}], used as starting date candidate")
+                        f"[{station.code}]   Found checkpoint [{checkpoint.checkpoint_dt}] on [{outconn_str}], used as starting date candidate")
                     from_date = checkpoint.checkpoint_dt
                 else:
                     # If there isn't any latest measure available, the min_from_date is used as starting date for the batch
                     logger.info(
-                        f"[{station.code}] No checkpoint on [{outconn_str}], starting date candidate is min date "
+                        f"[{station.code}]   No checkpoint on [{outconn_str}], starting date candidate is min date "
                         f"[{min_from_date.isoformat()}]")
                     from_date = min_from_date
 
                 if not keep_looking_for_input_data:
                     logger.info(
-                        f"[{station.code}] Not keeping going, normalizing {from_date.isoformat()} "
+                        f"[{station.code}]   Not keeping going, normalizing {from_date.isoformat()} "
                         f"with respect to min date "
                         f"{min_from_date.isoformat()}")
                     return self.__normalize_from_date(from_date, min_from_date, station.code)
 
                 # if between from_date and from_date + batch_size there are no input data
                 logger.info(
-                    f"[{station.code}] Looking for input data on [{inconn_str}] between from_date "
+                    f"[{station.code}]   Looking for input data on [{inconn_str}] between from_date "
                     f"{from_date.isoformat()} and from_date + batch_size ({batch_size} days)")
                 to_date_tmp = from_date + timedelta(days=batch_size)
 
@@ -180,7 +181,7 @@ class TrafficStationManager(StationManager, ABC):
 
                 if to_date_tmp > now:
                     logger.info(
-                        f"[{station.code}] Not keeping going as now is reached, normalizing {from_date.isoformat()} "
+                        f"[{station.code}]   Not keeping going as now is reached, normalizing {from_date.isoformat()} "
                         f"with respect to min date "
                         f"{min_from_date.isoformat()}")
                     return self.__normalize_from_date(from_date, min_from_date, station.code)
@@ -188,18 +189,18 @@ class TrafficStationManager(StationManager, ABC):
                 if input_connector is not None:
                     # in case, convert to env var
                     limit = 10
-                    logger.info(f"Setting maximum limit to {limit} for input data request")
+                    logger.info(f"[{station.code}]   Setting maximum limit to {limit} for input data request")
                     input_data = (input_connector.
                                   get_measures(from_date=from_date, to_date=to_date_tmp, station=station, limit=limit))
                     logger.info(
-                        f"[{station.code}] Measures available on [{inconn_str}]: found {len(input_data)} records")
+                        f"[{station.code}]   Measures available on [{inconn_str}]: found {len(input_data)} records")
                 else:
-                    logger.info(f"[{station.code}] Measures available on [{inconn_str}]: no connector available")
+                    logger.info(f"[{station.code}]   Measures available on [{inconn_str}]: no connector available")
                     input_data = []
                 if len(input_data) == 0:
                     if checkpoint is None or checkpoint.checkpoint_dt is None or checkpoint.checkpoint_dt < to_date_tmp:
                         # it is pointless trying to run model, save the from_date + batch_size as checkpoint for station
-                        logger.info(f"[{station.code}] Caching [{to_date_tmp}] on manager [{self._get_manager_code()}]")
+                        logger.info(f"[{station.code}]   Caching [{to_date_tmp}] on manager [{self._get_manager_code()}]")
                         self._checkpoint_cache.set(
                             ComputationCheckpoint(
                                 station_code=station.code,
@@ -208,36 +209,38 @@ class TrafficStationManager(StationManager, ABC):
                             )
                         )
                     # look again for more data with starting from updated checkpoint
-                    logger.info(f"[{station.code}] Looking for more...")
+                    logger.info(f"[{station.code}]   Looking for more...")
                     return from_date, True
                 else:
                     logger.info(
-                        f"[{station.code}] More data in the future, normalizing {from_date.isoformat()} "
+                        f"[{station.code}]   More data in the future, normalizing {from_date.isoformat()} "
                         f"with respect to min date {min_from_date.isoformat()}")
                     return self.__normalize_from_date(from_date, min_from_date, station.code)
             else:
                 # If there isn't any latest measure available, the min_from_date is used as starting date for the batch
                 logger.info(
-                    f"[{station.code}] No measures and no checkpoints active, using min date "
+                    f"[{station.code}] No output measures and no checkpoints active, using min date "
                     f"[{min_from_date.isoformat()}] as starting date")
                 from_date = min_from_date
-        else:
+
+        else:  # there are both input and output data
             if self._checkpoint_cache:
                 checkpoint = self._checkpoint_cache.get(
                     ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
                 if checkpoint and checkpoint.checkpoint_dt and checkpoint.checkpoint_dt > latest_output_measure.valid_time:
                     logger.info(
-                        f"[{station.code}] Found checkpoint date [{checkpoint.checkpoint_dt.isoformat()}] "
-                        f"on [{outconn_str}], used candidate as starting date")
+                        f"[{station.code}] Input and output measures found and found checkpoint date [{checkpoint.checkpoint_dt.isoformat()}] "
+                        f"more recent than latest output measure on [{outconn_str}], used candidate as starting date")
                     from_date = checkpoint.checkpoint_dt
                 else:
                     logger.info(
-                        f"[{station.code}] Measures found and no cache, using latest output measure "
+                        f"[{station.code}] Input and output measures found and no cache or checkpoint older than latest output measure, "
+                        f"using latest output measure "
                         f"[{latest_output_measure.valid_time.isoformat()}] as starting date")
                     from_date = latest_output_measure.valid_time
             else:
                 logger.info(
-                    f"[{station.code}] Measures found and no checkpoints active, using latest output date "
+                    f"[{station.code}] Input and output measures found and no checkpoints active, using latest output date "
                     f"[{latest_output_measure.valid_time.isoformat()}] as starting date")
                 from_date = latest_output_measure.valid_time
 
@@ -363,6 +366,8 @@ class TrafficStationManager(StationManager, ABC):
                     logger.info(f"[{station.code}] Cache found on manager [{self._get_manager_code()}]: "
                                 f"[{checkpoint.checkpoint_dt}]; comparing with {to_date.isoformat()}")
                 latest_date = self._get_latest_date(connector=self.get_input_connector(), stations=[station])
+                logger.info(f"[{station.code}] Latest date on [{type(self.get_input_connector()).__name__}]: "
+                            f"{latest_date.isoformat()}")
                 if checkpoint is None or checkpoint.checkpoint_dt is None \
                         or (checkpoint.checkpoint_dt < to_date and checkpoint.checkpoint_dt < latest_date):
                     logger.info(
