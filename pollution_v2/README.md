@@ -94,7 +94,33 @@ The next planned task for that station retrieves the date available from cache a
 
 When a reset of the workflow manager is needed (e.g. to make it process all the data available from the beginning or
 from a specific date), you need to clean the Redis volume used as state database as detailed above. Once
-stopped the docker compose, remove the dedicated volume and start again the compose.
+stopped the docker compose, remove the dedicated volume and start again the compose or cleanup keys as follows.
+
+Connect to the container
+```bash
+docker exec -it {{container_name}} bash
+```
+
+Clean Redis db
+```bash
+redis-cli -n 10 flushdb
+```
+
+Check there are no keys
+```bash
+redis-cli -n 10 keys '*'
+```
+
+Look for a specific key
+```bash
+redis-cli -n 10 GET "ComputationCheckpoint-A22:6127:4-VALIDATION"
+redis-cli -n 10 KEYS '*POLLUTION*'
+```
+
+Delete a specific key
+```bash
+redis-cli -n 10 KEYS '*POLLUTION*' | xargs -r redis-cli -n 10 DEL
+```
 
 ### Update "parco circolante"
 

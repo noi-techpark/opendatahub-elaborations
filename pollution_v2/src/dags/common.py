@@ -148,7 +148,7 @@ class TrafficStationsDAG(StationsDAG):
             else:
                 logger.info(f"Check if [{station.code}] has more data on dates ranging "
                             f"from [{starting_date.isoformat()}] to [{ending_date.isoformat()}]")
-                if has_remaining_data(starting_date, ending_date):
+                if has_remaining_data(starting_date, min(ending_date, DEFAULT_TIMEZONE.localize(get_now()))):
                     logger.info(f"Forwarding station {station.code} to next execution")
                     stations.append(station.code)
 
