@@ -369,15 +369,15 @@ class TrafficStationManager(StationManager, ABC):
                 latest_date = self._get_latest_date(connector=self.get_input_connector(), stations=[station])
                 logger.info(f"[{station.code}] Latest date on [{type(self.get_input_connector()).__name__}]: "
                             f"{latest_date.isoformat()}")
+                min_datetime = min(to_date, latest_date, DEFAULT_TIMEZONE.localize(get_now()))
                 if checkpoint is None or checkpoint.checkpoint_dt is None \
-                        or (checkpoint.checkpoint_dt.date() <
-                            min(to_date, latest_date, DEFAULT_TIMEZONE.localize(get_now())).date()):
+                        or checkpoint.checkpoint_dt.date() < min_datetime.date():
                     logger.info(
-                        f"[{station.code}] Caching [{to_date.isoformat()}] on manager [{self._get_manager_code()}]")
+                        f"[{station.code}] Caching [{min_datetime.isoformat()}] on manager [{self._get_manager_code()}]")
                     self._checkpoint_cache.set(
                         ComputationCheckpoint(
                             station_code=station.code,
-                            checkpoint_dt=to_date,
+                            checkpoint_dt=min_datetime,
                             manager_code=self._get_manager_code()
                         )
                     )
