@@ -198,14 +198,15 @@ class TrafficStationManager(StationManager, ABC):
                     logger.info(f"[{station.code}]   Measures available on [{inconn_str}]: no connector available")
                     input_data = []
                 if len(input_data) == 0:
+                    min_datetime = min(to_date_tmp, now)
                     if (checkpoint is None or checkpoint.checkpoint_dt is None or
-                        checkpoint.checkpoint_dt.date() < min(to_date_tmp, now).date()):
+                        checkpoint.checkpoint_dt.date() < min_datetime.date()):
                         # it is pointless trying to run model, save the from_date + batch_size as checkpoint for station
-                        logger.info(f"[{station.code}]   Caching [{to_date_tmp}] on manager [{self._get_manager_code()}]")
+                        logger.info(f"[{station.code}]   Caching [{min_datetime}] on manager [{self._get_manager_code()}]")
                         self._checkpoint_cache.set(
                             ComputationCheckpoint(
                                 station_code=station.code,
-                                checkpoint_dt=to_date_tmp,
+                                checkpoint_dt=min_datetime,
                                 manager_code=self._get_manager_code()
                             )
                         )
@@ -370,6 +371,8 @@ class TrafficStationManager(StationManager, ABC):
                 logger.info(f"[{station.code}] Latest date on [{type(self.get_input_connector()).__name__}]: "
                             f"{latest_date.isoformat()}")
                 min_datetime = min(to_date, latest_date, DEFAULT_TIMEZONE.localize(get_now()))
+                logger.info(f"Looking for min datetime among 'to_date' {to_date}, 'latest_date' {latest_date}, "
+                            f"'now' {DEFAULT_TIMEZONE.localize(get_now())} > {min_datetime}")
                 if checkpoint is None or checkpoint.checkpoint_dt is None \
                         or checkpoint.checkpoint_dt.date() < min_datetime.date():
                     logger.info(
