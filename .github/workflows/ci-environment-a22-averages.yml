@@ -16,12 +16,12 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
       - name: REUSE Compliance Check
-        uses: fsfe/reuse-action@v1
+        uses: fsfe/reuse-action@v5
       - name: Test code
         uses: noi-techpark/github-actions/maven-test@v2
         with:
@@ -31,7 +31,7 @@ jobs:
 
   # Deploy Test
   deploy-test-environment-a22-averages:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/main'
     needs: test
     concurrency: deploy-test-environment-a22-averages
@@ -103,7 +103,7 @@ jobs:
 
   # Deploy Prod
   deploy-prod-environment-a22-averages:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/prod'
     needs: test
     concurrency: deploy-prod-environment-a22-averages
