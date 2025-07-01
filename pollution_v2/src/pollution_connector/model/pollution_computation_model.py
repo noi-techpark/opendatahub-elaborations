@@ -58,33 +58,48 @@ class PollutionComputationModel:
         :return: A list of the new computed pollution measures
         """
 
-        validation_data_types = {str(measure.data_type) for measure in validation.measures}
-        traffic_data_types = {str(measure.data_type) for measure in traffic.measures}
+        validation_data_types = {}
+        valid_measures = []
+        validated_datetimes = {}
+        
+        for measure in validation.measures:
+            validation_data_types.add(str(measure.data_type))
+            if measure.value == 1:
+                valid_measures.append(measure)
+                validated_datetimes.add(measure.valid_time)
+
+        traffic_data_types = {}
+        traffic_datetimes = {}
+
+        skip_datetimes = {}
+        run_on_datetimes = {}
+
+        for measure in traffic.measures:
+            traffic_data_types.add(str(measure.data_type))
+            traffic_datetimes.add(measure.valid_time)
+
+            if measure.valid_time in validated_datetimes:
+                run_on_datetimes.add(measure.valid_time)
+            else:
+                skip_datetimes.add(measure.valid_time)
 
         logger.info(f"{len(validation.measures)} validation measures available "
                     f"on {len(validation_data_types)} data types")
-        valid_measures = [measure for measure in validation.measures if measure.value == 1]
         logger.info(f"{len(valid_measures)} "
                     f"validation measures available computed as valid "
                     f"on {len(validation_data_types)} data types")
         logger.info(f"{len(traffic.measures)} traffic measures available "
                     f"on {len(traffic_data_types)} data types")
 
-        validated_datetimes = {measure.valid_time for measure in valid_measures}
-        traffic_datetimes = {measure.valid_time for measure in traffic.measures}
-
-        not_validated_datetimes = traffic_datetimes.difference(validated_datetimes)
-
-        if len(not_validated_datetimes) > 0:
-            diff_datetime = {date.strftime("%m/%d/%Y, %H:%M:%S") for date in not_validated_datetimes}
-            diff_date = {date.strftime("%m/%d/%Y") for date in not_validated_datetimes}
+        if len(skip_datetimes) > 0:
+            diff_datetime = {date.strftime("%m/%d/%Y, %H:%M:%S") for date in skip_datetimes}
+            diff_date = {date.strftime("%m/%d/%Y") for date in skip_datetimes}
 
             logger.warning(
                 f"{len(diff_datetime)} discarded records: no validation "
                 f"for the dates [{sorted(diff_date)}] on station [{station.code}]) "
                 f"(and datetimes [{sorted(diff_datetime)}]")
 
-        run_on_datetimes = validated_datetimes.intersection(traffic_datetimes)
         logger.info(f"Ready to process pollution computation on {len(run_on_datetimes)} datetimes")
 
         traffic_entries = traffic.get_entries()
