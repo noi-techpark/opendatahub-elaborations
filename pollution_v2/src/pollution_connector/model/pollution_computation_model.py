@@ -73,11 +73,12 @@ class PollutionComputationModel:
         validated_datetimes = {measure.valid_time for measure in valid_measures}
         traffic_datetimes = {measure.valid_time for measure in traffic.measures}
 
-        diff_datetime = {measure.valid_time.strftime("%m/%d/%Y, %H:%M:%S") for measure in traffic.measures
-                         if measure.valid_time in traffic_datetimes.difference(validated_datetimes)}
-        diff_date = {measure.valid_time.strftime("%m/%d/%Y") for measure in traffic.measures
-                     if measure.valid_time in traffic_datetimes.difference(validated_datetimes)}
-        if len(diff_datetime) > 0:
+        not_validated_datetimes = traffic_datetimes.difference(validated_datetimes)
+
+        if len(not_validated_datetimes) > 0:
+            diff_datetime = {date.strftime("%m/%d/%Y, %H:%M:%S") for date in not_validated_datetimes}
+            diff_date = {date.strftime("%m/%d/%Y") for date in not_validated_datetimes}
+
             logger.warning(
                 f"{len(diff_datetime)} discarded records: no validation "
                 f"for the dates [{sorted(diff_date)}] on station [{station.code}]) "
