@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Apache Software Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
 x-airflow-common:
   &airflow-common
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
