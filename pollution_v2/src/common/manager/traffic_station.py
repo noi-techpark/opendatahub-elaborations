@@ -111,7 +111,7 @@ class TrafficStationManager(ABC):
         for station in stations:
             # see https://github.com/noi-techpark/opendatahub-elaborations/issues/38
             # for cctv camera sensors, use a hardcoded minimum date, since before that point the data is not reliable
-            camera_min_from_date = datetime(2024, 7, 10)
+            camera_min_from_date = datetime(2024, 7, 10, tzinfo=DEFAULT_TIMEZONE)
             start_date = max(min_from_date, camera_min_from_date) if station.sensor_type == 'camera' else min_from_date
             
             from_date = self._iterate_while_data_found(output_connector, input_connector,
