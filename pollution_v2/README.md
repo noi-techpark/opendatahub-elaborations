@@ -24,6 +24,40 @@ The TrafficData is periodically pulled from the A22 collection, data validation 
 - *Data validator*: This component downloads traffic data from ODH, validates them and upload them again into ODH.
 - *Pollution computer*: This task handles the computation of a batch of measures. It downloads the traffic data from the OpenDataHub (Using the TrafficMeasure connector), computes the pollution measures (using the Pollution Computation Model) and it uploads the new measure to the ODH using the PollutionMeasure connector.
 
+#### Validation Algorithm Criteria
+
+The validation algorithm is designed to assign a validity flag (`is_valid`) to traffic data, which can be either 1 (valid), 0 (not valid) or 999 (None). This flag is determined through a three-layer validation process:
+
+1. **Layer 1 - Daily traffic volume assessment at individual stations**  
+   This layer compares the total number of vehicles recorded at a monitoring station throughout the day against statistically derived historical data. If historical data is unavailable for a specific station, data from neighboring stations is used, assuming similar average behavior. The statistical comparison uses the Z-score method, which assesses how much the current value deviates from a reference parameter. This parameter is historically determined based on the day type (weekday or holiday) and the time of year. The calculated Z-score is compared to an acceptable range defined by lower and upper boundaries.
+
+   1. **Layer 1.1 - Consistency check with adjacent sations**
+      If a daily data set is flagged as invalid by Layer 1, an additional check evaluates whether the anomaly detected at one station systematically occurs at neighboring stations. This helps identify potential false positives, particularly when anomalies might be due to genuine, significant changes in road conditions rather than data errors. Here, the Z-score method is also used, but the reference parameter is based on values observed at adjacent stations instead of historical data.
+
+2. **Layer 2 - Daily traffic volume evaluation on individual lanes**
+   This layer mirrors Layer 1 but focuses on the ratio of daily traffic volumes between driving and passing lanes. This ratio is compared with historical data. This validation criterion helps detect anomalies in a single lane's traffic sensor that aren't significant enough to cause a Layer 1 validation failure.
+
+3. **Layer 3 - Time series anomalies**
+   Layer 3 assesses the consistency of daily time series data, identifying anomalies such as sudden increases or decreases and persistent null values.
+
+Each layer assigns a validation flag to the data, which are then combined to determine a final, unified validation state.
+
+The validation parameters are defined in the file `pollution_v2/src/config/validator.yaml`. The Z-score limit parameters can be set to *null* to effectively disable their influence.
+
+| Layer | Parameter | Description                                                                             | Default |
+|-------|-----------|-----------------------------------------------------------------------------------------|---------|
+| 1     | low       | Lower limit of the Z-score                                                              | -2.5    |
+| 1     | high      | Upper limit of the Z-score                                                              | *null*  |
+| 1     | n         | Number of upstream and downstream stations to consider if there is no reference history | 3       |
+| 1.1   | low       | Lower limit of the Z-score                                                              | -2      |
+| 1.1   | high      | Upper limit of the Z-score                                                              | *null*  |
+| 1.1   | n         | Number of upstream and downstream stations to consider for continuity check             | 2       |
+| 2     | low       | Lower limit of the Z-score                                                              | -5      |
+| 2     | high      | Upper limit of the Z-score                                                              | 5       |
+| 2     | n         | Number of upstream and downstream stations to consider if there is no reference history | 4       |
+
+Layer 3 has no adjustable parameters.
+
 ### Sequence
 
 The following sequence diagram describes how Airflow and the DAGs (validation or pollution computing) interact in order to process ODH data.

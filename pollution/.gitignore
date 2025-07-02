@@ -1,8 +1,1 @@
-/roles
-
-venv*
-.venv
-*.pyc
 .idea
-*.log
-celerybeat-schedule.db

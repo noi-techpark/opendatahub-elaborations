@@ -12,4 +12,5 @@ public record Stop_TimesValues(
 	String departure_time,
 	String stop_id,
 	int stop_sequence,
-	Timepoint timepoint) {}
+	Timepoint timepoint,
+	String shape_dist_traveled) {}

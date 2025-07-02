@@ -53,13 +53,10 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
     A22 = Dominio(data)
     for index, row in data.station_list.iterrows():
         station_type = data.station_type[row['station']]
-        if station_type != 'TVCC' or station_type != 'RADAR':
-            # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
-            s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
-                        params.layer1('n'))
-            A22.add_station(s)
-        else:
-            logger.error(f"skipping station_type {station_type}!")
+        # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
+        s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
+                    params.layer1('n'))
+        A22.add_station(s)
     # -------------------------------------------------------------------------
     # Layer 1
     # -------------------------------------------------------------------------

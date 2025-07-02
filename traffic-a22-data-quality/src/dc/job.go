@@ -5,9 +5,11 @@
 package dc
 
 import (
+	"log/slog"
 	"os"
 	"strconv"
-	"traffic-a22-data-quality/bdplib"
+
+	"github.com/noi-techpark/go-bdp-client/bdplib"
 )
 
 var sumRequestLimit, _ = strconv.Atoi(os.Getenv("NINJA_QUERY_LIMIT"))
@@ -27,13 +29,18 @@ const origin = "A22"
 
 var TotalType = bdplib.CreateDataType("Nr. Vehicles", "", "Number of vehicles", "total")
 
+var bdp bdplib.Bdp
+
 func syncDataTypes() {
-	bdplib.SyncDataTypes(baseStationType, []bdplib.DataType{TotalType})
+	bdp.SyncDataTypes(baseStationType, []bdplib.DataType{TotalType})
 }
 
 func Job() {
+	slog.Info("starting job")
+	bdp = *bdplib.FromEnv()
 	syncDataTypes()
 	combineJob()
 	sumJob()
 	sumParentJob()
+	slog.Info("job ended")
 }

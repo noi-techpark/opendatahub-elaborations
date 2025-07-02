@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
-	"traffic-a22-data-quality/bdplib"
 	"traffic-a22-data-quality/ninja"
 
+	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 )
@@ -54,13 +54,13 @@ func sumJob() {
 	req.AddStationType(baseStationType)
 	req.DataTypes = maps.Keys(aggrDataTypes)
 	req.Limit = -1
-	req.Select = "mperiod,mvalidtime,pcode"
+	req.Select = "mperiod,mvalidtime,mtransactiontime,pcode"
 	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d,%d))", basePeriod, periodAgg)
 
 	var res ninja.NinjaResponse[NinjaTreeData]
 	err := ninja.Latest(req, &res)
 	if err != nil {
-		slog.Error("error", err)
+		slog.Error("error getting latest records from ninja. aborting...", "err", err)
 		return
 	}
 
@@ -105,7 +105,7 @@ func sumJob() {
 			}
 		}()
 
-		bdpMap := bdplib.DataMap{}
+		bdpMap := bdp.CreateDataMap()
 		for r := range recs {
 			bdpMap.AddRecord(r.st, r.t, r.r)
 		}
@@ -115,7 +115,7 @@ func sumJob() {
 			continue
 		}
 
-		bdplib.PushData(baseStationType, bdpMap)
+		bdp.PushData(baseStationType, bdpMap)
 	}
 }
 
@@ -142,35 +142,46 @@ func sumHistory(win window, scode string, tname string, total chan tv, recs chan
 
 func getHistoryPaged(todo window, stationCode string, typeName string) ([]NinjaFlatData, error) {
 	var ret []NinjaFlatData
-	for page := 0; ; page += 1 {
-		start, end := getRequestDates(todo)
 
-		res, err := getNinjaData(stationCode, typeName, start, end, page)
-		if err != nil {
-			return nil, err
+	// Ninja cannot handle too large time period requests, so we do it one month at a time
+	for start, end := getRequestDates(todo); start.Before(end); start = start.AddDate(0, 1, 0) {
+		windowEnd := start.AddDate(0, 1, 0)
+		if windowEnd.After(end) {
+			windowEnd = end
 		}
+		for page := 0; ; page += 1 {
+			res, err := getNinjaData(stationCode, typeName, start, windowEnd, page)
+			if err != nil {
+				return nil, err
+			}
 
-		ret = append(ret, res.Data...)
+			ret = append(ret, res.Data...)
 
-		// only if limit = length, there might be more data
-		if res.Limit != int64(len(res.Data)) {
-			break
-		} else {
-			slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", page, "firstDate", res.Data[0].Timestamp.Time)
+			// only if limit = length, there might be more data
+			if res.Limit != int64(len(res.Data)) {
+				break
+			} else {
+				slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", page, "firstDate", res.Data[0].Timestamp.Time)
+			}
 		}
 	}
 	return ret, nil
 }
+
+// arbitraty starting point where there should be no data yet
+var minTime = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 	todos := make(map[string]map[string]window)
 	for _, stations := range dt {
 		for stationCode, station := range stations.Stations {
 			for tname, dataType := range station.Datatypes {
+				firstBase := minTime
+				lastBase := minTime
+				lastAggregate := minTime
+
 				for _, m := range dataType.Measurements {
-					var firstBase time.Time
-					var lastBase time.Time
-					var lastAggregate time.Time
+
 					if m.Period == uint64(basePeriod) {
 						lastBase = m.Time.Time
 						firstBase = m.Since.Time
@@ -178,17 +189,17 @@ func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 					if m.Period == periodAgg {
 						lastAggregate = m.Time.Time
 					}
+				}
 
-					// only consider stations that don't have up to date aggregates
-					if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
-						if _, exists := todos[stationCode]; !exists {
-							todos[stationCode] = make(map[string]window)
-						}
-						todos[stationCode][tname] = window{
-							firstBase:     firstBase,
-							lastBase:      lastBase,
-							lastAggregate: lastAggregate,
-						}
+				// only consider stations that don't have up to date aggregates
+				if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
+					if _, exists := todos[stationCode]; !exists {
+						todos[stationCode] = make(map[string]window)
+					}
+					todos[stationCode][tname] = window{
+						firstBase:     firstBase,
+						lastBase:      lastBase,
+						lastAggregate: lastAggregate,
 					}
 				}
 			}
@@ -221,10 +232,11 @@ func getRequestDates(todo window) (time.Time, time.Time) {
 func getNinjaData(stationCode string, typeName string, from time.Time, to time.Time, offset int) (*ninja.NinjaResponse[[]NinjaFlatData], error) {
 	req := ninja.DefaultNinjaRequest()
 	req.AddDataType(typeName)
+	req.AddStationType(baseStationType)
 	req.From = from
 	req.To = to
 	req.Select = "mvalue"
-	req.Where = fmt.Sprintf("and(mperiod.eq.%d,scode.eq.\"%s\")", basePeriod, stationCode)
+	req.Where = fmt.Sprintf("mperiod.eq.%d,scode.eq.\"%s\"", basePeriod, stationCode)
 	req.Limit = int64(sumRequestLimit)
 	req.Offset = uint64(offset * int(req.Limit))
 

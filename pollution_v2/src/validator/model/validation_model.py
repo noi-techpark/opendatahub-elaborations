@@ -45,17 +45,15 @@ class ValidationModel:
         history_dates = {measure.valid_time.date() for measure in history.measures}
         traffic_dates = {measure.valid_time.date() for measure in traffic.measures}
 
-        diff = {measure.valid_time.date() for measure in traffic.measures
-                if measure.valid_time.date() in history_dates.difference(traffic_dates)}
-        if len(diff) > 0:
-            logger.warning(f"Missing traffic data for the following dates [{sorted(diff)}] "
-                           f"while processing [{_get_station_on_logs(stations)}]: {len(diff)} "
+        traffic_missing_dates = history_dates.difference(traffic_dates)
+        if len(traffic_missing_dates) > 0:
+            logger.warning(f"Missing traffic data for the following dates [{sorted(traffic_missing_dates)}] "
+                           f"while processing [{_get_station_on_logs(stations)}]: {len(traffic_missing_dates)} "
                            f"records will not be processed")
-        diff = {measure.valid_time.date() for measure in traffic.measures
-                if measure.valid_time.date() in traffic_dates.difference(history_dates)}
-        if len(diff) > 0:
-            logger.warning(f"Missing history data for the following dates [{sorted(diff)}] "
-                           f"while processing [{_get_station_on_logs(stations)}]: {len(diff)} "
+        history_missing_dates = traffic_dates.difference(history_dates)
+        if len(history_missing_dates) > 0:
+            logger.warning(f"Missing history data for the following dates [{sorted(history_missing_dates)}] "
+                           f"while processing [{_get_station_on_logs(stations)}]: {len(history_missing_dates)} "
                            f"records will not be processed")
 
         run_on_dates = history_dates.intersection(traffic_dates)

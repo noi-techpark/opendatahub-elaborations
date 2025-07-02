@@ -1,22 +1,66 @@
-version: "3.7"
-    
+# SPDX-FileCopyrightText: 2025 Apache Software Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+x-airflow-common:
+  &airflow-common
+  # In order to add custom dependencies or upgrade provider packages you can use your extended image.
+  # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
+  # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
+  image: ${DOCKER_IMAGE}:${DOCKER_TAG}
+  env_file:
+  - .env
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    # yamllint disable rule:line-length
+    # Use simple http server on scheduler for health checks
+    # See https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/logging-monitoring/check-health.html#scheduler-health-check-server
+    # yamllint enable rule:line-length
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
+    # for other purpose (development, test and especially production usage) build/extend Airflow image.
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    AIRFLOW_VAR_ODH_AUTHENTICATION_URL: ${AIRFLOW_VAR_ODH_AUTHENTICATION_URL}
+    AIRFLOW_VAR_ODH_BASE_READER_URL: ${AIRFLOW_VAR_ODH_BASE_READER_URL}
+    AIRFLOW_VAR_ODH_BASE_WRITER_URL: ${AIRFLOW_VAR_ODH_BASE_WRITER_URL}
+    AIRFLOW_VAR_ODH_CLIENT_ID: ${AIRFLOW_VAR_ODH_CLIENT_ID}
+    AIRFLOW_VAR_ODH_CLIENT_SECRET: ${AIRFLOW_VAR_ODH_CLIENT_SECRET}
+    AIRFLOW_VAR_ODH_GRANT_TYPE: ${AIRFLOW_VAR_ODH_GRANT_TYPE}
+    AIRFLOW_VAR_ODH_MAX_POST_BATCH_SIZE: '10000'
+    AIRFLOW_VAR_ODH_PAGINATION_SIZE: '10000'
+    AIRFLOW_VAR_ODH_PASSWORD: ${AIRFLOW_VAR_ODH_PASSWORD}
+    AIRFLOW_VAR_ODH_USERNAME: ${AIRFLOW_VAR_ODH_USERNAME}
+    AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE: ${AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE}
+    AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_HOST: 'redis'
+    AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
+    AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_DB: 10
+    AIRFLOW_VAR_DATATYPE_PREFIX: ${AIRFLOW_VAR_DATATYPE_PREFIX}
+    # AIRFLOW__CORE__REMOTE_LOGGING: '<your_choice_on_remote_logging>'
+    # AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER: '<your_bucket_for_remote_logging>'
+    # AIRFLOW__CORE__REMOTE_LOG_CONN_ID: '<your_connection_id_for_remote_logging>'
+    # AIRFLOW__CORE__ENCRYPT_S3_LOGS: '<your_choice_on_encrypt_logs>'
+    # AIRFLOW_CONN_MINIO_S3_CONN: '<your_connection_details_for_remote_logging>'
+    AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG: ${AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG}
+    NO_PROXY: '*'
+  volumes:
+    -  pollution-logs:/opt/airflow/logs
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    &airflow-common-depends-on
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
 
 services:
-  x-airflow-common:
-    &airflow-common
-    image: ${DOCKER_IMAGE}:${DOCKER_TAG}
-    volumes:
-      - pollution-logs:/opt/airflow/logs
-    user: "${AIRFLOW_UID:-50000}:0"
-    env_file:
-    - .env
-    depends_on:
-      &airflow-common-depends-on
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-
   postgres:
     image: postgres:13
     environment:
@@ -36,6 +80,8 @@ services:
     image: redis:latest
     expose:
       - 6379
+    volumes:
+      - redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -48,7 +94,7 @@ services:
     <<: *airflow-common
     command: webserver
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT}:8080"
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -171,8 +217,8 @@ services:
     environment:
       _AIRFLOW_DB_MIGRATE: 'true'
       _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:
@@ -217,3 +263,4 @@ services:
 volumes:
   postgres-db-volume:
   pollution-logs:
+  redis:

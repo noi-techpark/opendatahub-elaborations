@@ -10,8 +10,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +23,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -34,20 +40,14 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.opendatahub.constants.SkyalpsAgency;
 import com.opendatahub.dto.Data;
 import com.opendatahub.dto.Flights;
-import com.opendatahub.file.GTFSCsvFile;
-import com.opendatahub.file.GTFSFile;
-import com.opendatahub.file.GTFSFolder;
-import com.opendatahub.file.GTFSStop_Times;
-import com.opendatahub.file.GTFSWriteAgency;
-import com.opendatahub.file.GTFSWriteCalendar;
-import com.opendatahub.file.GTFSWriteCalendar_Dates;
-import com.opendatahub.file.GTFSWriteRoutes;
-import com.opendatahub.file.GTFSWriteStops;
-import com.opendatahub.file.GTFSWriteTrips;
+import com.opendatahub.file.AirportCoordinates;
+import com.opendatahub.file.GTFSWriter;
 import com.opendatahub.gtfs.AgencyValues;
 import com.opendatahub.gtfs.CalendarValues;
 import com.opendatahub.gtfs.Calendar_DatesValues;
+import com.opendatahub.gtfs.FeedInfoValue;
 import com.opendatahub.gtfs.RoutesValues;
+import com.opendatahub.gtfs.ShapeValue;
 import com.opendatahub.gtfs.Stop_TimesValues;
 import com.opendatahub.gtfs.StopsValue;
 import com.opendatahub.gtfs.Timepoint;
@@ -60,11 +60,13 @@ public class JobScheduler {
 
     private static final Logger LOG = LoggerFactory.getLogger(JobScheduler.class);
 
+	private static final DecimalFormat twoDecimals = new DecimalFormat("0.00");
+
     @Autowired
     private S3FileUtil s3FileUtil;
 
     @Autowired
-    private GTFSCsvFile gtfsCsvFile;
+    private AirportCoordinates gtfsCsvFile;
 
     @Autowired
     private FlightsRest flightsRest;
@@ -94,22 +96,24 @@ public class JobScheduler {
     public void calculateGtfs() throws Exception {
         RestTemplate restTemplate = new RestTemplate();
 
-        ArrayList<AgencyValues> gtfsAgencies = new ArrayList<AgencyValues>();
-        ArrayList<Calendar_DatesValues> gtfsCalendarDates = new ArrayList<Calendar_DatesValues>();
+        List<AgencyValues> gtfsAgencies = new ArrayList<>();
+        List<Calendar_DatesValues> gtfsCalendarDates = new ArrayList<>();
         Map<String, CalendarValues> gtfsCalendar = new HashMap<>();
-        ArrayList<Stop_TimesValues> gtfsStopTimes = new ArrayList<Stop_TimesValues>();
-        ArrayList<TripsValues> gtfsTrips = new ArrayList<TripsValues>();
-        ArrayList<RoutesValues> gtfsRoutes = new ArrayList<RoutesValues>();
-        ArrayList<StopsValue> gtfsStops = new ArrayList<StopsValue>();
+        List<Stop_TimesValues> gtfsStopTimes = new ArrayList<>();
+        List<TripsValues> gtfsTrips = new ArrayList<>();
+        List<RoutesValues> gtfsRoutes = new ArrayList<>();
+        List<StopsValue> gtfsStops = new ArrayList<>();
+        List<FeedInfoValue> gtfsFeedInfos = new ArrayList<>();
+        List<ShapeValue> gtfsShapes = new ArrayList<>();
 
         Flights flightDtos = flightsRest.getFlights(restTemplate);
         LOG.debug("Result: " + flightDtos);
 
-        GTFSFolder.writeRequestAndResponse();
-        GTFSFile.writeFiles();
+        GTFSWriter.makeFolder();
 
         AgencyValues agencySkyalps = new AgencyValues(SkyalpsAgency.agencyName, SkyalpsAgency.agencyName, new URL(SkyalpsAgency.agencyUrl), SkyalpsAgency.agencyTimeZone);
         gtfsAgencies.add(agencySkyalps);
+        gtfsFeedInfos.add(new FeedInfoValue(SkyalpsAgency.agencyName, SkyalpsAgency.agencyUrl, "IT"));
 
         List<Flight> flights = new ArrayList<>();
         
@@ -122,14 +126,7 @@ public class JobScheduler {
             gtfsCalendar.put(calendar.getService_id(), calendar);
             
             boolean outboundDirection = flight.fromDestination.equals("BZO");
-
-            gtfsTrips.add(new TripsValues(
-                flight.id, 
-                calendar.getService_id(), 
-                flight.fullCode, 
-                outboundDirection ? 0 : 1)
-            );
-
+            
             var fromAirport = airports.get(flight.fromDestination);
             if (fromAirport == null) throw new Exception("Airport mapping not found in CSV for IATA code " + flight.fromDestination);
             gtfsStops.add(fromAirport);
@@ -138,13 +135,21 @@ public class JobScheduler {
             if (toAirport == null) throw new Exception("Airport mapping not found in CSV for IATA code " + flight.toDestination);
             gtfsStops.add(toAirport);
 
+            var airportDist = twoDecimals.format(haversineDist(
+                Double.parseDouble(fromAirport.stop_lat()), 
+                Double.parseDouble(fromAirport.stop_lon()), 
+                Double.parseDouble(toAirport.stop_lat()), 
+                Double.parseDouble(toAirport.stop_lon()) 
+            ));
+
             gtfsStopTimes.add(new Stop_TimesValues(
                 flight.fullCode, 
                 flight.departureTime, 
                 flight.departureTime, 
                 flight.fromDestination, 
                 1,
-                Timepoint.exact)
+                Timepoint.exact,
+                "0")
             );
 
             gtfsStopTimes.add(new Stop_TimesValues(
@@ -153,30 +158,54 @@ public class JobScheduler {
                 flight.arrivalTime, 
                 flight.toDestination, 
                 2,
-                Timepoint.exact)
+                Timepoint.exact,
+                airportDist)
+            );
+
+            var shapeId = flight.id;
+            gtfsShapes.add(new ShapeValue(shapeId, fromAirport.stop_lat(), fromAirport.stop_lon(), 1, "0"));
+            gtfsShapes.add(new ShapeValue(shapeId, toAirport.stop_lat(), toAirport.stop_lon(), 2, airportDist));
+
+            gtfsTrips.add(new TripsValues(
+                flight.id, 
+                calendar.getService_id(), 
+                flight.fullCode, 
+                outboundDirection ? 0 : 1,
+                shapeId)
             );
 
             gtfsRoutes.add(new RoutesValues(flight.id, flight.name, RoutesValues.ROUTE_TYPE_AIR_SERVICE, agencySkyalps.agency_id()));
         }
         
-        GTFSWriteAgency.writeAgency(gtfsAgencies);
-        GTFSWriteCalendar_Dates.writeCalendar_Dates(gtfsCalendarDates);
-        GTFSStop_Times.writeStop_Times(gtfsStopTimes);
-        GTFSWriteCalendar.writeCalendar(List.copyOf(gtfsCalendar.values()));
-        GTFSWriteStops.writeStops(gtfsStops);
-        GTFSWriteRoutes.writeRoutes(gtfsRoutes);
-        GTFSWriteTrips.writeTrips(gtfsTrips);
+        GTFSWriter.writeAgency(gtfsAgencies);
+        GTFSWriter.writeCalendar_Dates(gtfsCalendarDates);
+        GTFSWriter.writeStop_Times(gtfsStopTimes);
+        GTFSWriter.writeCalendar(List.copyOf(gtfsCalendar.values()));
+        GTFSWriter.writeStops(gtfsStops);
+        GTFSWriter.writeRoutes(gtfsRoutes);
+        GTFSWriter.writeTrips(gtfsTrips);
+        GTFSWriter.writeFeedInfo(gtfsFeedInfos);
+        GTFSWriter.writeShapes(gtfsShapes);
 
         uploadToS3();
+    }
+    
+    private static double haversineDist(double lat1, double lon1, double lat2, double lon2) {
+        double theta = lon1 - lon2;
+        double distance = 60 * 1.1515 * (180/Math.PI) * Math.acos(
+            Math.sin(lat1 * (Math.PI/180)) * Math.sin(lat2 * (Math.PI/180)) + 
+            Math.cos(lat1 * (Math.PI/180)) * Math.cos(lat2 * (Math.PI/180)) * Math.cos(theta * (Math.PI/180))
+        );
+        return distance * 1609.344;
     }
 
     private void uploadToS3() throws Exception {
         LOG.info("Uploading files to S3...");
 
-        File[] listFiles = GTFSFolder.FOLDER_FILE.listFiles();
+        File[] listFiles = GTFSWriter.FOLDER_FILE.listFiles();
 
         // create zip file
-        File zipFile = new File(GTFSFolder.ZIP_FILE_NAME);
+        File zipFile = new File(GTFSWriter.ZIP_FILE_NAME);
         ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile));
 
         for (File file : listFiles) {

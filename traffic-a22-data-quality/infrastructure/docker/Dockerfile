@@ -1,10 +1,17 @@
-FROM golang:1.21.5-bookworm
+# SPDX-FileCopyrightText: 2024 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
 
-# install if docker host doesn't has libc6 installed
-RUN apt-get update && apt-get install -y libc6
+FROM golang:1.23-bookworm AS base
 
-WORKDIR app
+FROM base AS build-env
+WORKDIR /app
+COPY src/. .
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o main
 
-COPY src/main main
-
-CMD [ "./main"]
+# BUILD published image
+FROM alpine:latest AS build
+WORKDIR /app
+COPY --from=build-env /app/main .
+ENTRYPOINT [ "./main"]

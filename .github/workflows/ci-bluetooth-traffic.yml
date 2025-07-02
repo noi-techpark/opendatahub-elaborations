@@ -17,12 +17,12 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v2
       - name: REUSE Compliance Check
-        uses: fsfe/reuse-action@v1
+        uses: fsfe/reuse-action@v5
       - name: Set up JDK 8
         uses: actions/setup-java@v2
         with:
@@ -36,7 +36,7 @@ jobs:
 
   # Deploy Test
   deploy-test-bluetooth-traffic:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/main'
     needs: test
     concurrency: deploy-test-bluetooth-traffic
@@ -56,7 +56,7 @@ jobs:
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
           local-path: bluetooth-traffic/deltart.sql
 
-      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
+      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DB_PWD }} < bluetooth-traffic/deltart.sql
       - name: Import delta function into psql
         uses: noi-techpark/github-actions/psql-over-ssh@v2
         with:
@@ -111,7 +111,7 @@ jobs:
 
   # Deploy Prod
   deploy-prod-bluetooth-traffic:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/prod'
     needs: test
     concurrency: deploy-prod-bluetooth-traffic
@@ -131,16 +131,17 @@ jobs:
           ssh-host: ${{ secrets.SSH_HOST_TEST }}
           local-path: bluetooth-traffic/deltart.sql
 
-      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DP_PSWD }} < bluetooth-traffic/deltart.sql
-      - name: Import delta function into psql
-        uses: noi-techpark/github-actions/psql-over-ssh@v2
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          ssh-host: ${{ secrets.SSH_HOST_TEST }}
-          ssh-setup: false
-          db-host: ${{ env.DB_URL }}
-          db-password: ${{ env.DB_PWD }}
-          db-query: < /home/noi-techpark-bot/deltart.sql
+      #   psql -h ${{ env.DB_URL }} -U ${{ env.DB_USR }} bdp ${{ env.DB_PWD }} < bluetooth-traffic/deltart.sql
+      #   Commented out because it uses a test host to access production, which is not allowed with new security groups anymore.
+      # - name: Import delta function into psql
+      #   uses: noi-techpark/github-actions/psql-over-ssh@v2
+      #   with:
+      #     ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      #     ssh-host: ${{ secrets.SSH_HOST_TEST }}
+      #     ssh-setup: false
+      #     db-host: ${{ env.DB_URL }}
+      #     db-password: ${{ env.DB_PWD }}
+      #     db-query: < /home/noi-techpark-bot/deltart.sql
 
       - name: Create .env file
         uses: noi-techpark/github-actions/env-file@v2
@@ -183,3 +184,4 @@ jobs:
           docker-username: "noi-techpark-bot"
           docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
           project-name: ${{ env.PROJECT_NAME }}
+

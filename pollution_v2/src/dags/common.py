@@ -90,7 +90,7 @@ class TrafficStationsDAG(StationsDAG):
 
     @staticmethod
     def get_stations_list(manager: TrafficStationManager, filter_km_gt0: bool = False,
-                          filter_indloop: bool = False, filter_famas: bool = False, **kwargs) -> List[TrafficSensorStation]:
+                          filter_sensortypes: bool = False, filter_famas: bool = False, **kwargs) -> List[TrafficSensorStation]:
         """
         Returns the complete list of traffic stations or the filtered list based on previous DAG run
 
@@ -102,10 +102,10 @@ class TrafficStationsDAG(StationsDAG):
             res = [station for station in res if station.km > 0]
             logger.info(f"Stations filtered on having km defined: {len(res)} elements")
 
-        if filter_indloop:
+        if filter_sensortypes:
             res = [station for station in res
-                   if station.sensor_type is not None and station.sensor_type == 'induction_loop']
-            logger.info(f"Stations filtered on sensor_type being induction_loop: {len(res)} elements")
+                   if station.sensor_type is not None and (station.sensor_type == 'induction_loop' or station.sensor_type == 'camera')]
+            logger.info(f"Stations filtered on sensor_type being induction_loop or camera: {len(res)} elements")
 
         if filter_famas:
             res = [station for station in res
@@ -117,8 +117,9 @@ class TrafficStationsDAG(StationsDAG):
     @staticmethod
     def trigger_next_dag_run(manager: TrafficStationManager, originator_dag: DAG,
                              has_remaining_data: Callable[[datetime, datetime], bool],
-                             batch_size: int, filter_km_gt0: bool = False, filter_indloop: bool = False,
-                             filter_famas: bool = False, min_from_date = None, **kwargs):
+                             batch_size: int, filter_km_gt0: bool = False,
+                             filter_sensortypes: bool = False, filter_famas: bool = False,
+                             min_from_date = None, **kwargs):
         """
         Checks if there are still data to be processed before ending DAG runs
 
@@ -127,14 +128,14 @@ class TrafficStationsDAG(StationsDAG):
         :param has_remaining_data: the function to use to check if there are still data to process
         :param batch_size: batch_size to consider
         :param filter_km_gt0: filters on km > 0 stations
-        :param filter_indloop: filters on induction loop sensor type
+        :param filter_sensortypes: filters on sensor type
         :param filter_famas: filters on not famas stations
         :param min_from_date: the minimum date to consider. If not specified, the default will be taken from
                               the environmental variable `ODH_MINIMUM_STARTING_DATE`.
         """
 
         stations = []
-        all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0, filter_indloop, filter_famas)
+        all_stations = TrafficStationsDAG.get_stations_list(manager, filter_km_gt0, filter_sensortypes, filter_famas)
         for station in all_stations:
             if not min_from_date:
                 min_from_date = ODH_MINIMUM_STARTING_DATE
