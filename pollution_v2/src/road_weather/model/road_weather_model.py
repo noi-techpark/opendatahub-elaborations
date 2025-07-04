@@ -95,7 +95,7 @@ class RoadWeatherModel:
             with urllib.request.urlopen(req) as response:
                 response_data = response.read()
                 response_content = response_data.decode('utf-8')
-                logger.info(f"server response: \n{response_content}")
+                logger.debug(f"server response: \n{response_content}")
 
                 root = ElementTree.fromstring(response_content)
                 header_element = root.findall('.//header')[0]
