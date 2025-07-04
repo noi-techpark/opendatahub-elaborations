@@ -147,9 +147,9 @@ class RoadWeatherManager(StationManager):
             model = RoadWeatherModel()
             res: list[ExtendedRoadCastEntry] = model.compute_data(observation_data, forecast_data_xml_path,
                                                                   forecast_start, station)
-            logger.info(f"Received {len(res)} records from road weahter WS")
+            logger.info(f"Received {len(res)} records from road weather WS")
             res = [item for item in res if item.valid_time > max_observation_data]
-            logger.info(f"Remaining with {len(res)} records from road weahter WS once filter on date {max_observation_data} is applied")
+            logger.info(f"Remaining with {len(res)} records from road weather WS once filter on date {max_observation_data} is applied")
             return res
 
         os.remove(forecast_data_xml_path)

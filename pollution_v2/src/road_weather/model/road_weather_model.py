@@ -90,33 +90,37 @@ class RoadWeatherModel:
         req = urllib.request.Request(url, data=body)
         req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
 
-        response = []
+        entries = []
         try:
             with urllib.request.urlopen(req) as response:
                 response_data = response.read()
                 response_content = response_data.decode('utf-8')
-                logger.debug(f"server response: \n{response_content}")
+                logger.info(f"server response: \n{response_content}")
 
                 root = ElementTree.fromstring(response_content)
                 header_element = root.findall('.//header')[0]
+                conf_level = ""
                 for tags in header_element:
                     if tags.tag == 'conf_level':
                         conf_level = tags.text
                         logger.info(f"conf level found: {conf_level}")
                         break
 
+                if not conf_level:
+                    logger.warning("No conf_level found in the response")
+
                 for entry in self._get_entries_from_xml(response_data, conf_level, station):
                     extended_entry = ExtendedRoadCastEntry(entry.station, entry.valid_time, entry.roadcast_class,
                                                            entry.entry_class, entry.entry_value, entry.period)
                     extended_entry.set_conf_level(conf_level)
-                    response.append(extended_entry)
+                    entries.append(extended_entry)
         except Exception as e:
             logger.error(f"error while processing request: {e}")
 
         # Remove observation temporary file (forecast file is removed later)
         os.remove(observation_filename)
 
-        return response
+        return entries
 
     @staticmethod
     def _get_entries_from_xml(response_data, conf_level: str, station: Station) -> List[RoadCastEntry]:
