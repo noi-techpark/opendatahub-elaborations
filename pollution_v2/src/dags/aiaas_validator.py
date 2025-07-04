@@ -18,7 +18,7 @@ from common.settings import (ODH_MINIMUM_STARTING_DATE, DAG_VALIDATION_EXECUTION
                              PROVENANCE_LINEAGE, PROVENANCE_NAME_VALIDATION, PROVENANCE_VERSION,
                              COMPUTATION_CHECKPOINT_REDIS_HOST, COMPUTATION_CHECKPOINT_REDIS_PORT,
                              COMPUTATION_CHECKPOINT_REDIS_DB, DEFAULT_TIMEZONE, DAG_VALIDATION_TRIGGER_DAG_HOURS_SPAN,
-                             ODH_COMPUTATION_BATCH_SIZE_VALIDATION, AIRFLOW_NUM_RETRIES)
+                             ODH_COMPUTATION_BATCH_SIZE_VALIDATION, AIRFLOW_NUM_RETRIES, get_now)
 from validator.manager.validation import ValidationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -116,13 +116,13 @@ with TrafficStationsDAG(
 
         min_from_date, max_to_date = dag.init_date_range(None, None)
 
-        computation_start_dt = datetime.now()
+        computation_start_dt = get_now()
 
-        logger.info(f"Running validation from [{min_from_date}] to [{max_to_date}]")
+        logger.info(f"Running validation from [{min_from_date.isoformat()}] to [{max_to_date.isoformat()}]")
         manager.run_computation(stations_to_process, min_from_date, max_to_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION,
                                 True)
 
-        computation_end_dt = datetime.now()
+        computation_end_dt = get_now()
         logger.info(f"Completed validation in [{(computation_end_dt - computation_start_dt).seconds}]")
 
 

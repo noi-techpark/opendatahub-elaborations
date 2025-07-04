@@ -7,12 +7,14 @@ import logging
 
 import pandas as pd
 
+from common.settings import VALIDATOR_CONFIG_FILE
 from validator.Dominio import Dominio
 from validator.Input import Input
 from validator.Parametri import Parametri
 from validator.Station import Station
 
-default_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../config/validator.yaml'))
+# default_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../config/validator.yaml'))
+default_config_path = os.path.abspath(VALIDATOR_CONFIG_FILE)
 
 logger = logging.getLogger("pollution_v2.validator.Validator")
 

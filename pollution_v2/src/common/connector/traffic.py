@@ -7,7 +7,7 @@ from __future__ import absolute_import, annotations
 from typing import Optional, List
 
 from common.connector.common import ODHBaseConnector
-from common.data_model.traffic import TrafficMeasure, TrafficSensorStation
+from common.data_model.traffic import TrafficMeasure, TrafficSensorStation, TrafficMeasureType
 from common.settings import PERIOD_10MIN
 
 
@@ -30,14 +30,7 @@ class TrafficODHConnector(ODHBaseConnector[TrafficMeasure, TrafficSensorStation]
                  requests_retry_sleep_time: float) -> None:
 
         station_type = "TrafficSensor"
-        measure_types = [
-            "Nr. Buses",
-            "Nr. Heavy Vehicles",
-            "Nr. Light Vehicles",
-            "Average Speed Buses",
-            "Average Speed Heavy Vehicles",
-            "Average Speed Light Vehicles"
-        ]
+        measure_types = [measure_type.value for measure_type in TrafficMeasureType]
         period = PERIOD_10MIN
 
         super().__init__(base_reader_url,

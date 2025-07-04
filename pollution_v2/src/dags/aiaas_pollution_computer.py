@@ -18,7 +18,8 @@ from common.settings import (ODH_MINIMUM_STARTING_DATE, COMPUTATION_CHECKPOINT_R
                              COMPUTATION_CHECKPOINT_REDIS_PORT, COMPUTATION_CHECKPOINT_REDIS_HOST,
                              PROVENANCE_ID, PROVENANCE_LINEAGE, PROVENANCE_NAME_POLL_ELABORATION,
                              PROVENANCE_VERSION, DAG_POLLUTION_EXECUTION_CRONTAB, DAG_POLLUTION_TRIGGER_DAG_HOURS_SPAN,
-                             DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, AIRFLOW_NUM_RETRIES)
+                             DEFAULT_TIMEZONE, ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, AIRFLOW_NUM_RETRIES,
+                             get_now, get_previous_midnight)
 from pollution_connector.manager.pollution_computation import PollutionComputationManager
 
 # see https://airflow.apache.org/docs/apache-airflow/stable/authoring-and-scheduling/dynamic-task-mapping.html
@@ -115,15 +116,18 @@ with TrafficStationsDAG(
 
         manager = _init_manager()
 
-        min_from_date, max_to_date = dag.init_date_range(None, None)
+        min_from_date, max_to_date = dag.init_date_range(None, None, True)
 
-        computation_start_dt = datetime.now()
+        # the validator process data from midnight to midnight, so it persist data in the same interval
+        # the pollution computer cannot run on different intervals, otherwise once its job has finished it will
+        # cache a checkpoint that is beyond the timeframe where validation has been run
+        computation_start_dt = get_previous_midnight()
+        computation_end_dt = get_previous_midnight()
 
-        logger.info(f"Running computation from [{min_from_date}] to [{max_to_date}]")
+        logger.info(f"Running computation from [{min_from_date.isoformat()}] to [{max_to_date.isoformat()}]")
         manager.run_computation([station], min_from_date, max_to_date,
                                 ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, False)
 
-        computation_end_dt = datetime.now()
         logger.info(f"Completed computation in [{(computation_end_dt - computation_start_dt).seconds}]")
 
 
