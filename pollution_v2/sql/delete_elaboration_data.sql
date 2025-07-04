@@ -6,8 +6,6 @@
 
 set search_path=intimev2,public;
 
-set search_path=intimev2,public;
-
 create temporary table tmp_delete as
 with
 vars as (select
