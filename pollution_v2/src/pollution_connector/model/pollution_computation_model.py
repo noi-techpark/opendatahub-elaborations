@@ -58,21 +58,21 @@ class PollutionComputationModel:
         :return: A list of the new computed pollution measures
         """
 
-        validation_data_types = {}
+        validation_data_types = set()
         valid_measures = []
-        validated_datetimes = {}
-        
+        validated_datetimes = set()
+
         for measure in validation.measures:
             validation_data_types.add(str(measure.data_type))
             if measure.value == 1:
                 valid_measures.append(measure)
                 validated_datetimes.add(measure.valid_time)
 
-        traffic_data_types = {}
-        traffic_datetimes = {}
+        traffic_data_types = set()
+        traffic_datetimes = set()
 
-        skip_datetimes = {}
-        run_on_datetimes = {}
+        skip_datetimes = set()
+        run_on_datetimes = set()
 
         for measure in traffic.measures:
             traffic_data_types.add(str(measure.data_type))
