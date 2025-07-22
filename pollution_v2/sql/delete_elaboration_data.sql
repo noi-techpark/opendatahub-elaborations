@@ -6,21 +6,20 @@
 
 set search_path=intimev2,public;
 
-set search_path=intimev2,public;
-
 create temporary table tmp_delete as
 with
 vars as (select
-        'odh-mobility-el-pollution-v2' as provenance,
-        timestamp '2023-01-01 00:00:00' as start_date
+	timestamp '2023-01-01 00:00:00' as start_date
 )
 select distinct s.id as station_id, s.stationtype, s.origin, t.cname, t.id as type_id, m."period", v.start_date
 from station s
 cross join vars v
 join measurement m on m.station_id = s.id
 join type t on t.id = m.type_id
-join provenance p on p.id  = m.provenance_id
-where p.data_collector = v.provenance;
+where s.stationtype = 'TrafficSensor'
+  and s.origin = 'A22'
+  and t.cname like '%-emissions'
+  and t.cname not like 'testuh_staging%';
 
 delete from measurementhistory mh
 using tmp_delete b
