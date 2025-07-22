@@ -61,13 +61,13 @@ class DataFetcher:
         types_str = ",".join(map(lambda x : x + "_raw", types))
         start_str = str(start).replace(" ","T")
         end_str = str(end).replace(" ","T")
-        req_path = f"/flat/EnvironmentStation/{types_str}/{start_str}/{end_str}"+
-                "?select=mvalidtime,mvalue,tname"
-                "&where=sactive.eq.true"
-                    ",sorigin.eq.a22-algorab"
-                    ",mperiod.eq.3600"
-                    ",scode.eq." + station_id + 
-                "&limit=-1"
+        req_path = (f"/flat/EnvironmentStation/{types_str}/{start_str}/{end_str}" +
+            "?select=mvalidtime,mvalue,tname"
+            "&where=sactive.eq.true"
+                ",sorigin.eq.a22-algorab"
+                ",mperiod.eq.3600"
+                ",scode.eq." + station_id + 
+            "&limit=-1")
         try:
             data = self.fetch_data(req_path)['data']
             if data:
