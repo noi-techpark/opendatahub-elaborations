@@ -61,7 +61,7 @@ class PollutionComputationModel:
         validation_data_types = set()
         valid_measures = []
         validated_datetimes = set()
-        
+
         for measure in validation.measures:
             validation_data_types.add(str(measure.data_type))
             if measure.value == 1:

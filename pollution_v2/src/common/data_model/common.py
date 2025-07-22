@@ -40,7 +40,7 @@ class Provenance:
             provenance_id=None,
             lineage=raw_data["prlineage"],
             data_collector=raw_data["prname"],
-            data_collector_version=raw_data["prversion"]
+            data_collector_version=raw_data.get("prversion", "")  # TODO: check default value (in some old data in MeteoStation it is missing)
         )
 
     def to_odh_repr(self) -> dict:
