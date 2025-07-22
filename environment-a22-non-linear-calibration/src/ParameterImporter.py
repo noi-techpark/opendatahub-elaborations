@@ -11,6 +11,7 @@ def getParameters():
     data_map = {}
     type_mapping = {
         "8":"O3",
+        "10":"CO",
         "12":"PM10",
         "13":"PM2.5",
         "14":"NO2-Alphasense",
