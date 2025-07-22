@@ -15,12 +15,13 @@ import logging
 DEFAULT_START_CALC = "2016-01-01 00:00:00.000+0000"
 NO2 = "NO2-Alphasense"
 NO = "NO-Alphasense"
+CO = "CO"
 O3 = "O3"
 RH = "RH"
 PM10 = "PM10"
 PM25 = "PM2.5"
 T_INT = "temperature-internal"
-TYPES_TO_ELABORATE = [O3,NO2,NO,PM10,PM25]
+TYPES_TO_ELABORATE = [O3,NO2,NO,PM10,PM25,CO]
 TYPES_TO_REQUEST = TYPES_TO_ELABORATE + [T_INT,RH]
 PARAMETER_MAP = getParameters()
 STATIONS_TO_ELABORATE = list(PARAMETER_MAP.keys())
@@ -41,6 +42,7 @@ class Processor:
             DataType("NO-Alphasense_processed", None, "NO (Alphasense)", "Mean"),
             DataType("NO2-Alphasense_processed", None, "NO2 (Alphasense)", "Mean"),
             DataType("NO2-Alphasense_processed_rating", None, "NO2 (Alphasense) rating", "Rating"),
+            DataType("CO_processed", None, "CO", "Mean"),
         ])
         time_map = fetcher.get_newest_data_timestamps(stations=STATIONS_TO_ELABORATE, types=TYPES_TO_ELABORATE)
         for s_id in time_map:
@@ -113,6 +115,13 @@ class Processor:
                         + float(parameters["c"]) * np.power(float(data[NO2]),0.58)
                         + float(parameters["d"]) * np.power(float(data[RH]),0.54)
                         + float(parameters["e"]) * np.power(float(data[T_INT]),1.2)
+                    )
+                elif (type_id == CO and all (t_id in data for t_id in (RH,T_INT))):
+                    processed_value = (
+                        float(parameters["a"])
+                        + float(parameters["b"]) * float(value)
+                        + float(parameters["c"]) * np.power(float(data[T_INT]),0.1)
+                        + float(parameters["d"]) * np.power(float(data[RH]),0.1)
                     )
                 else:
                     log.warn("Conditions were not met to do calculation for station: " 
