@@ -61,22 +61,26 @@ class DataFetcher:
         types_str = ",".join(map(lambda x : x + "_raw", types))
         start_str = str(start).replace(" ","T")
         end_str = str(end).replace(" ","T")
-        data = self.fetch_data( f"/flat/EnvironmentStation/{types_str}/{start_str}/{end_str}"+
-            "?select=mvalidtime,mvalue,tname"
-            "&where=sactive.eq.true"
-                ",sorigin.eq.a22-algorab"
-                ",mperiod.eq.3600"
-                ",scode.eq." + station_id + 
-            "&limit=-1"
-        )['data']
-        if data:
-            log.debug("fetched history data:" + str(data))
-            for record in data:
-                value = record['mvalue']
-                type_id = str(record['tname']).split("_")[0]
-                time = record['mvalidtime']
-                typeMap = {}
-                typeMap[type_id] = value
-                raw_data_map.setdefault(time,{}).update(typeMap)
-        log.debug("Raw history: " + str(raw_data_map))
+        req_path = f"/flat/EnvironmentStation/{types_str}/{start_str}/{end_str}"+
+                "?select=mvalidtime,mvalue,tname"
+                "&where=sactive.eq.true"
+                    ",sorigin.eq.a22-algorab"
+                    ",mperiod.eq.3600"
+                    ",scode.eq." + station_id + 
+                "&limit=-1"
+        try:
+            data = self.fetch_data(req_path)['data']
+            if data:
+                log.debug("fetched history data:" + str(data))
+                for record in data:
+                    value = record['mvalue']
+                    type_id = str(record['tname']).split("_")[0]
+                    time = record['mvalidtime']
+                    typeMap = {}
+                    typeMap[type_id] = value
+                    raw_data_map.setdefault(time,{}).update(typeMap)
+            log.debug("Raw history: " + str(raw_data_map))
+        except Exception as e:
+            log.error("Failed requesting raw history: %s", req_path, exc_info=e)
+            raise
         return raw_data_map
