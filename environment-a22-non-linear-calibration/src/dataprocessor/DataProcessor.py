@@ -145,7 +145,7 @@ class Processor:
                     )
                 else:
                     log.warn("Conditions were not met to do calculation for sensor: " 
-                    + sensor_id + " type:" + type_id + " at " + time + " on this dataset:")
+                    + sensor_id + " type:" + type_id + " at " + time.ctime() + " on this dataset:")
                     log.warn(data)
                 if processed_value != None:
                     if processed_value < 0:

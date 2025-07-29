@@ -19,7 +19,7 @@ def getParameters():
     }
     next(data, None)
     for row in data:
-        station_id = 'AUGEG4_' + row[0]
+        station_id = row[0]
         type_id =type_mapping[row[1]]
         type_map = data_map.get(station_id,{})
         temp_map = type_map.get(type_id,{})
