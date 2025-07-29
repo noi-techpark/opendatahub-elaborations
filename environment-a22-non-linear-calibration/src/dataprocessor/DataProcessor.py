@@ -49,7 +49,7 @@ class Processor:
             start = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
             end = parseODHTime(DEFAULT_START_CALC)
             for t_id in time_map[s_id]['types']:
-                state_map = time_map[s_id][t_id]
+                state_map = time_map[s_id]['types'][t_id]
                 end = max(parseODHTime(state_map.get('raw')), end)
                 start = min(parseODHTime(state_map.get('processed', DEFAULT_START_CALC)), start)
             timeseries = fetcher.get_raw_history(s_id, start, end+datetime.timedelta(0, 3), types=TYPES_TO_REQUEST)
@@ -61,7 +61,7 @@ class Processor:
     def calc(self, timeseries, sensor_history, station_id):
         station_map = {"branch":{ station_id:{"branch":{},"data":[],"name":"default"}}}
         sensor_idx = -1
-        sensor_end = datetime.date(0,1,1)
+        sensor_end = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
         sensor_start = None
         sensor_id = ""
         for timestr in timeseries:
@@ -73,9 +73,9 @@ class Processor:
                     log.warn("Sensor history not found for station " + station_id + " at time " + time)
                     # our current record is past the end of sensor history
                     return station_map 
-                sensor_start = datetime.strptime(sensor_history[sensor_idx].start, "%Y-%m-%d")
-                sensor_end = datetime.strptime(sensor_history[sensor_idx].end, "%Y-%m-%d") if sensor_history[sensor_idx].end != "" else datetime.date(9999,1,1)
-                sensor_id = sensor_history[sensor_idx].id
+                sensor_start = datetime.datetime.strptime(sensor_history[sensor_idx]["start"], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+                sensor_end = datetime.datetime.strptime(sensor_history[sensor_idx]["end"], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc) if sensor_history[sensor_idx]["end"] != "" else datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+                sensor_id = sensor_history[sensor_idx]["id"]
             # If the window starts after our time, or if the window doesn't have a sensor associated, discard the record
             if time < sensor_start or sensor_id == "":
                 log.warn("No sensor associated for " + station_id + " at time " + time)
