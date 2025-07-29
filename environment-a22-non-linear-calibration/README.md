@@ -47,6 +47,23 @@ Most of these are used for the communication with the Open Data Hub.
 See the corresponding [Github Action Yaml] on how to set these variables on our
 staging and production environments.
 
+### Debugging locally
+```bash
+# copy and customize local .env file
+cp .env.example .env
+# go to src folder
+cd src
+# setup python venv
+python -m venv .venv
+source .venv/bin/activate
+# install requirements and debugger
+pip install -r ../requirements.txt
+pip install debugpy
+# run using the local .env
+set -o allexport; source ../.env; set +o allexport; python -m debugpy --listen 0.0.0.0:5678 --wait-for-client main.py
+# connect remote debugger to localhost:5678
+```
+
 ### Keycloak settings
 
 The `CLIENT_SECRET` comes from a service account role, currently named
