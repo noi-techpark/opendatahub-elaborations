@@ -50,7 +50,7 @@ class DataFetcher:
                     state = type_map.get(type_split[0],{})
                     state[type_split[1]] = newest_record_timestamp
                     type_map[type_split[0]] = state
-                stations[station_id] = {
+                station_map[station_id] = {
                     'types': type_map,
                     'sensor_history': stations[station_id]['smetadata']['sensor_history']
                 }
