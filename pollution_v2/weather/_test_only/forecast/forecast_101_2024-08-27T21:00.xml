@@ -1,0 +1,1236 @@
+<?xml version='1.0' encoding='utf-8'?>
+<forecast>
+<header>
+     <filetype>forecast</filetype>
+     <version>1.1</version>
+     <station-id>1</station-id>
+     <production-date>2024-08-28T05:36:13+0200</production-date>
+     <stationid>km001_500</stationid>
+</header>
+
+<prediction-list source="101.csv" datetime="2024-08-28T05:36:13+02:00">
+     <prediction>
+          <forecast-time>2024-08-27T21:00:00Z</forecast-time>
+          <at> 12.9</at>
+          <td>  7.5</td>
+          <ap>1025</ap>
+          <ws>16.2</ws>
+          <wd>152</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 285</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-27T22:00:00Z</forecast-time>
+          <at>13.0</at>
+          <td>7.5</td>
+          <ap>1024.7</ap>
+          <ws>16.8</ws>
+          <wd>152.3</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>283.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-27T23:00:00Z</forecast-time>
+          <at>13.0</at>
+          <td>7.6</td>
+          <ap>1024.3</ap>
+          <ws>17.4</ws>
+          <wd>152.7</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>282.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T00:00:00Z</forecast-time>
+          <at> 13.1</at>
+          <td>  7.6</td>
+          <ap>1024</ap>
+          <ws>18.0</ws>
+          <wd>153</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 281</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T01:00:00Z</forecast-time>
+          <at>12.9</at>
+          <td>7.5</td>
+          <ap>1024.0</ap>
+          <ws>17.6</ws>
+          <wd>154.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>280.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T02:00:00Z</forecast-time>
+          <at>12.8</at>
+          <td>7.3</td>
+          <ap>1024.0</ap>
+          <ws>17.3</ws>
+          <wd>155.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>279.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T03:00:00Z</forecast-time>
+          <at> 12.6</at>
+          <td>  7.2</td>
+          <ap>1024</ap>
+          <ws>16.9</ws>
+          <wd>156</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 278</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T04:00:00Z</forecast-time>
+          <at>13.2</at>
+          <td>7.5</td>
+          <ap>1023.7</ap>
+          <ws>15.7</ws>
+          <wd>158.7</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>64.7</sf>
+          <ir>277.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T05:00:00Z</forecast-time>
+          <at>13.9</at>
+          <td>7.9</td>
+          <ap>1023.3</ap>
+          <ws>14.5</ws>
+          <wd>161.3</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>129.3</sf>
+          <ir>277.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T06:00:00Z</forecast-time>
+          <at> 14.5</at>
+          <td>  8.2</td>
+          <ap>1023</ap>
+          <ws>13.3</ws>
+          <wd>164</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf> 194</sf>
+          <ir> 277</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T07:00:00Z</forecast-time>
+          <at>16.4</at>
+          <td>8.5</td>
+          <ap>1021.7</ap>
+          <ws>15.1</ws>
+          <wd>176.7</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>366.0</sf>
+          <ir>280.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T08:00:00Z</forecast-time>
+          <at>18.3</at>
+          <td>8.7</td>
+          <ap>1020.3</ap>
+          <ws>16.9</ws>
+          <wd>189.3</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>538.0</sf>
+          <ir>283.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T09:00:00Z</forecast-time>
+          <at> 20.2</at>
+          <td>  9.0</td>
+          <ap>1019</ap>
+          <ws>18.7</ws>
+          <wd>202</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf> 710</sf>
+          <ir> 287</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T10:00:00Z</forecast-time>
+          <at>21.1</at>
+          <td>9.0</td>
+          <ap>1018.0</ap>
+          <ws>20.1</ws>
+          <wd>202.7</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>750.0</sf>
+          <ir>289.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T11:00:00Z</forecast-time>
+          <at>22.0</at>
+          <td>9.0</td>
+          <ap>1017.0</ap>
+          <ws>21.6</ws>
+          <wd>203.3</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>790.0</sf>
+          <ir>291.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T12:00:00Z</forecast-time>
+          <at> 22.9</at>
+          <td>  9.0</td>
+          <ap>1016</ap>
+          <ws>23.0</ws>
+          <wd>204</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf> 830</sf>
+          <ir> 294</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T13:00:00Z</forecast-time>
+          <at>22.7</at>
+          <td>9.4</td>
+          <ap>1016.0</ap>
+          <ws>23.9</ws>
+          <wd>203.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>713.7</sf>
+          <ir>295.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T14:00:00Z</forecast-time>
+          <at>22.6</at>
+          <td>9.8</td>
+          <ap>1016.0</ap>
+          <ws>24.7</ws>
+          <wd>202.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>597.3</sf>
+          <ir>297.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T15:00:00Z</forecast-time>
+          <at> 22.4</at>
+          <td> 10.2</td>
+          <ap>1016</ap>
+          <ws>25.6</ws>
+          <wd>201</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf> 481</sf>
+          <ir> 299</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T16:00:00Z</forecast-time>
+          <at>21.0</at>
+          <td>10.5</td>
+          <ap>1017.7</ap>
+          <ws>20.7</ws>
+          <wd>195.3</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>320.7</sf>
+          <ir>297.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T17:00:00Z</forecast-time>
+          <at>19.5</at>
+          <td>10.7</td>
+          <ap>1019.3</ap>
+          <ws>15.7</ws>
+          <wd>189.7</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>160.3</sf>
+          <ir>295.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T18:00:00Z</forecast-time>
+          <at> 18.1</at>
+          <td> 11.0</td>
+          <ap>1021</ap>
+          <ws>10.8</ws>
+          <wd>184</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 293</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T19:00:00Z</forecast-time>
+          <at>17.1</at>
+          <td>10.5</td>
+          <ap>1022.0</ap>
+          <ws>11.2</ws>
+          <wd>175.3</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>291.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T20:00:00Z</forecast-time>
+          <at>16.0</at>
+          <td>10.0</td>
+          <ap>1023.0</ap>
+          <ws>11.5</ws>
+          <wd>166.7</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>289.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T21:00:00Z</forecast-time>
+          <at> 15.0</at>
+          <td>  9.5</td>
+          <ap>1024</ap>
+          <ws>11.9</ws>
+          <wd>158</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 287</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T22:00:00Z</forecast-time>
+          <at>14.5</at>
+          <td>9.1</td>
+          <ap>1024.3</ap>
+          <ws>12.1</ws>
+          <wd>161.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>286.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-28T23:00:00Z</forecast-time>
+          <at>13.9</at>
+          <td>8.7</td>
+          <ap>1024.7</ap>
+          <ws>12.4</ws>
+          <wd>164.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>285.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T00:00:00Z</forecast-time>
+          <at> 13.4</at>
+          <td>  8.3</td>
+          <ap>1025</ap>
+          <ws>12.6</ws>
+          <wd>167</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 284</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T01:00:00Z</forecast-time>
+          <at>13.2</at>
+          <td>7.8</td>
+          <ap>1025.0</ap>
+          <ws>11.6</ws>
+          <wd>165.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>284.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T02:00:00Z</forecast-time>
+          <at>12.9</at>
+          <td>7.3</td>
+          <ap>1025.0</ap>
+          <ws>10.7</ws>
+          <wd>163.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>284.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T03:00:00Z</forecast-time>
+          <at> 12.7</at>
+          <td>  6.8</td>
+          <ap>1025</ap>
+          <ws> 9.7</ws>
+          <wd>161</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 285</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T04:00:00Z</forecast-time>
+          <at>13.4</at>
+          <td>7.2</td>
+          <ap>1024.3</ap>
+          <ws>8.6</ws>
+          <wd>139.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>61.3</sf>
+          <ir>285.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T05:00:00Z</forecast-time>
+          <at>14.2</at>
+          <td>7.5</td>
+          <ap>1023.7</ap>
+          <ws>7.6</ws>
+          <wd>117.0</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>122.7</sf>
+          <ir>285.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T06:00:00Z</forecast-time>
+          <at> 14.9</at>
+          <td>  7.9</td>
+          <ap>1023</ap>
+          <ws> 6.5</ws>
+          <wd> 95</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf> 184</sf>
+          <ir> 286</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T07:00:00Z</forecast-time>
+          <at>17.2</at>
+          <td>8.2</td>
+          <ap>1021.3</ap>
+          <ws>7.0</ws>
+          <wd>174.3</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>357.0</sf>
+          <ir>288.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T08:00:00Z</forecast-time>
+          <at>19.5</at>
+          <td>8.5</td>
+          <ap>1019.7</ap>
+          <ws>7.4</ws>
+          <wd>253.7</wd>
+          <ra>0.0</ra>
+          <sn>0.0</sn>
+          <sf>530.0</sf>
+          <ir>291.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T09:00:00Z</forecast-time>
+          <at> 21.8</at>
+          <td>  8.8</td>
+          <ap>1018</ap>
+          <ws> 7.9</ws>
+          <wd>333</wd>
+          <ra>  0.0</ra>
+          <sn>  0.</sn>
+          <sf> 703</sf>
+          <ir> 294</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T10:00:00Z</forecast-time>
+          <at>22.0</at>
+          <td>8.9</td>
+          <ap>1017.7</ap>
+          <ws>7.3</ws>
+          <wd>227.7</wd>
+          <ra>0.4</ra>
+          <sn>0.0</sn>
+          <sf>531.3</sf>
+          <ir>320.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T11:00:00Z</forecast-time>
+          <at>22.1</at>
+          <td>8.9</td>
+          <ap>1017.3</ap>
+          <ws>6.7</ws>
+          <wd>122.3</wd>
+          <ra>0.8</ra>
+          <sn>0.0</sn>
+          <sf>359.7</sf>
+          <ir>346.7</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T12:00:00Z</forecast-time>
+          <at> 22.3</at>
+          <td>  9.0</td>
+          <ap>1017</ap>
+          <ws> 6.1</ws>
+          <wd> 17</wd>
+          <ra>  1.2</ra>
+          <sn>  0.</sn>
+          <sf> 188</sf>
+          <ir> 373</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T13:00:00Z</forecast-time>
+          <at>22.7</at>
+          <td>8.6</td>
+          <ap>1016.7</ap>
+          <ws>6.3</ws>
+          <wd>46.3</wd>
+          <ra>1.3</ra>
+          <sn>0.0</sn>
+          <sf>161.7</sf>
+          <ir>374.0</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T14:00:00Z</forecast-time>
+          <at>23.0</at>
+          <td>8.2</td>
+          <ap>1016.3</ap>
+          <ws>6.6</ws>
+          <wd>75.7</wd>
+          <ra>1.3</ra>
+          <sn>0.0</sn>
+          <sf>135.3</sf>
+          <ir>375.0</ir>
+          <cc>2</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T15:00:00Z</forecast-time>
+          <at> 23.4</at>
+          <td>  7.8</td>
+          <ap>1016</ap>
+          <ws> 6.8</ws>
+          <wd>105</wd>
+          <ra>  1.4</ra>
+          <sn>  0.</sn>
+          <sf> 109</sf>
+          <ir> 376</ir>
+          <cc>2</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T16:00:00Z</forecast-time>
+          <at>21.6</at>
+          <td>9.1</td>
+          <ap>1017.7</ap>
+          <ws>7.4</ws>
+          <wd>185.3</wd>
+          <ra>1.6</ra>
+          <sn>0.0</sn>
+          <sf>72.7</sf>
+          <ir>351.0</ir>
+          <cc>2</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T17:00:00Z</forecast-time>
+          <at>19.9</at>
+          <td>10.4</td>
+          <ap>1019.3</ap>
+          <ws>8.0</ws>
+          <wd>265.7</wd>
+          <ra>1.8</ra>
+          <sn>0.0</sn>
+          <sf>36.3</sf>
+          <ir>326.0</ir>
+          <cc>2</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T18:00:00Z</forecast-time>
+          <at> 18.1</at>
+          <td> 11.7</td>
+          <ap>1021</ap>
+          <ws> 8.6</ws>
+          <wd>346</wd>
+          <ra>  2.0</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 301</ir>
+          <cc>2</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T19:00:00Z</forecast-time>
+          <at>17.3</at>
+          <td>11.1</td>
+          <ap>1022.0</ap>
+          <ws>6.7</ws>
+          <wd>238.3</wd>
+          <ra>2.3</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>298.3</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T20:00:00Z</forecast-time>
+          <at>16.4</at>
+          <td>10.6</td>
+          <ap>1023.0</ap>
+          <ws>4.8</ws>
+          <wd>130.7</wd>
+          <ra>2.6</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>295.7</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T21:00:00Z</forecast-time>
+          <at> 15.6</at>
+          <td> 10.0</td>
+          <ap>1024</ap>
+          <ws> 2.9</ws>
+          <wd> 23</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 293</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T22:00:00Z</forecast-time>
+          <at>14.9</at>
+          <td>9.2</td>
+          <ap>1024.0</ap>
+          <ws>6.3</ws>
+          <wd>70.0</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>291.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-29T23:00:00Z</forecast-time>
+          <at>14.3</at>
+          <td>8.5</td>
+          <ap>1024.0</ap>
+          <ws>9.6</ws>
+          <wd>117.0</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>290.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T00:00:00Z</forecast-time>
+          <at> 13.6</at>
+          <td>  7.7</td>
+          <ap>1024</ap>
+          <ws>13.0</ws>
+          <wd>164</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 289</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T01:00:00Z</forecast-time>
+          <at>13.4</at>
+          <td>7.5</td>
+          <ap>1024.0</ap>
+          <ws>13.3</ws>
+          <wd>163.0</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>287.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T02:00:00Z</forecast-time>
+          <at>13.2</at>
+          <td>7.2</td>
+          <ap>1024.0</ap>
+          <ws>13.7</ws>
+          <wd>162.0</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>285.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T03:00:00Z</forecast-time>
+          <at> 13.0</at>
+          <td>  7.0</td>
+          <ap>1024</ap>
+          <ws>14.0</ws>
+          <wd>161</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 284</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T04:00:00Z</forecast-time>
+          <at>13.7</at>
+          <td>7.3</td>
+          <ap>1023.7</ap>
+          <ws>13.5</ws>
+          <wd>161.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>59.0</sf>
+          <ir>281.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T05:00:00Z</forecast-time>
+          <at>14.3</at>
+          <td>7.5</td>
+          <ap>1023.3</ap>
+          <ws>13.1</ws>
+          <wd>162.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>118.0</sf>
+          <ir>279.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T06:00:00Z</forecast-time>
+          <at> 15.0</at>
+          <td>  7.8</td>
+          <ap>1023</ap>
+          <ws>12.6</ws>
+          <wd>163</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf> 177</sf>
+          <ir> 277</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T07:00:00Z</forecast-time>
+          <at>17.1</at>
+          <td>7.9</td>
+          <ap>1021.3</ap>
+          <ws>14.5</ws>
+          <wd>175.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>351.7</sf>
+          <ir>279.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T08:00:00Z</forecast-time>
+          <at>19.3</at>
+          <td>8.0</td>
+          <ap>1019.7</ap>
+          <ws>16.5</ws>
+          <wd>187.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>526.3</sf>
+          <ir>281.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T09:00:00Z</forecast-time>
+          <at> 21.4</at>
+          <td>  8.1</td>
+          <ap>1018</ap>
+          <ws>18.4</ws>
+          <wd>200</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf> 701</sf>
+          <ir> 284</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T10:00:00Z</forecast-time>
+          <at>22.3</at>
+          <td>7.9</td>
+          <ap>1017.0</ap>
+          <ws>19.1</ws>
+          <wd>201.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>741.7</sf>
+          <ir>286.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T11:00:00Z</forecast-time>
+          <at>23.3</at>
+          <td>7.6</td>
+          <ap>1016.0</ap>
+          <ws>19.8</ws>
+          <wd>203.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>782.3</sf>
+          <ir>289.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T12:00:00Z</forecast-time>
+          <at> 24.2</at>
+          <td>  7.4</td>
+          <ap>1015</ap>
+          <ws>20.5</ws>
+          <wd>205</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf> 823</sf>
+          <ir> 292</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T13:00:00Z</forecast-time>
+          <at>24.1</at>
+          <td>7.3</td>
+          <ap>1015.0</ap>
+          <ws>20.1</ws>
+          <wd>209.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>710.0</sf>
+          <ir>293.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T14:00:00Z</forecast-time>
+          <at>23.9</at>
+          <td>7.3</td>
+          <ap>1015.0</ap>
+          <ws>19.8</ws>
+          <wd>213.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>597.0</sf>
+          <ir>294.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T15:00:00Z</forecast-time>
+          <at> 23.8</at>
+          <td>  7.2</td>
+          <ap>1015</ap>
+          <ws>19.4</ws>
+          <wd>218</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf> 484</sf>
+          <ir> 296</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T16:00:00Z</forecast-time>
+          <at>22.1</at>
+          <td>8.0</td>
+          <ap>1016.3</ap>
+          <ws>15.9</ws>
+          <wd>214.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>322.7</sf>
+          <ir>294.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T17:00:00Z</forecast-time>
+          <at>20.5</at>
+          <td>8.9</td>
+          <ap>1017.7</ap>
+          <ws>12.5</ws>
+          <wd>210.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>161.3</sf>
+          <ir>292.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T18:00:00Z</forecast-time>
+          <at> 18.8</at>
+          <td>  9.7</td>
+          <ap>1019</ap>
+          <ws> 9.0</ws>
+          <wd>207</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 290</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T19:00:00Z</forecast-time>
+          <at>17.6</at>
+          <td>9.1</td>
+          <ap>1020.0</ap>
+          <ws>9.8</ws>
+          <wd>194.0</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>289.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T20:00:00Z</forecast-time>
+          <at>16.4</at>
+          <td>8.5</td>
+          <ap>1021.0</ap>
+          <ws>10.7</ws>
+          <wd>181.0</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>288.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T21:00:00Z</forecast-time>
+          <at> 15.2</at>
+          <td>  7.9</td>
+          <ap>1022</ap>
+          <ws>11.5</ws>
+          <wd>168</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 287</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T22:00:00Z</forecast-time>
+          <at>14.9</at>
+          <td>7.7</td>
+          <ap>1022.0</ap>
+          <ws>12.7</ws>
+          <wd>167.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>287.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-30T23:00:00Z</forecast-time>
+          <at>14.7</at>
+          <td>7.6</td>
+          <ap>1022.0</ap>
+          <ws>13.9</ws>
+          <wd>166.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>287.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T00:00:00Z</forecast-time>
+          <at> 14.4</at>
+          <td>  7.4</td>
+          <ap>1022</ap>
+          <ws>15.1</ws>
+          <wd>166</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 287</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T01:00:00Z</forecast-time>
+          <at>14.0</at>
+          <td>7.2</td>
+          <ap>1022.3</ap>
+          <ws>13.3</ws>
+          <wd>165.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>288.3</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T02:00:00Z</forecast-time>
+          <at>13.7</at>
+          <td>6.9</td>
+          <ap>1022.7</ap>
+          <ws>11.5</ws>
+          <wd>164.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>0.0</sf>
+          <ir>289.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T03:00:00Z</forecast-time>
+          <at> 13.3</at>
+          <td>  6.7</td>
+          <ap>1023</ap>
+          <ws> 9.7</ws>
+          <wd>164</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 291</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T04:00:00Z</forecast-time>
+          <at>13.7</at>
+          <td>7.1</td>
+          <ap>1022.7</ap>
+          <ws>9.1</ws>
+          <wd>144.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>40.7</sf>
+          <ir>292.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T05:00:00Z</forecast-time>
+          <at>14.2</at>
+          <td>7.5</td>
+          <ap>1022.3</ap>
+          <ws>8.5</ws>
+          <wd>125.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>81.3</sf>
+          <ir>294.3</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T06:00:00Z</forecast-time>
+          <at> 14.6</at>
+          <td>  7.9</td>
+          <ap>1022</ap>
+          <ws> 7.9</ws>
+          <wd>106</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf> 122</sf>
+          <ir> 296</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T07:00:00Z</forecast-time>
+          <at>17.0</at>
+          <td>8.7</td>
+          <ap>1020.0</ap>
+          <ws>7.1</ws>
+          <wd>166.3</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>307.7</sf>
+          <ir>298.3</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T08:00:00Z</forecast-time>
+          <at>19.3</at>
+          <td>9.4</td>
+          <ap>1018.0</ap>
+          <ws>6.2</ws>
+          <wd>226.7</wd>
+          <ra>2.9</ra>
+          <sn>0.0</sn>
+          <sf>493.3</sf>
+          <ir>300.7</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T09:00:00Z</forecast-time>
+          <at> 21.7</at>
+          <td> 10.2</td>
+          <ap>1016</ap>
+          <ws> 5.4</ws>
+          <wd>287</wd>
+          <ra>  2.9</ra>
+          <sn>  0.</sn>
+          <sf> 679</sf>
+          <ir> 303</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T10:00:00Z</forecast-time>
+          <at>21.8</at>
+          <td>10.1</td>
+          <ap>1016.0</ap>
+          <ws>6.4</ws>
+          <wd>207.3</wd>
+          <ra>3.4</ra>
+          <sn>0.0</sn>
+          <sf>564.7</sf>
+          <ir>326.7</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T11:00:00Z</forecast-time>
+          <at>21.8</at>
+          <td>10.0</td>
+          <ap>1016.0</ap>
+          <ws>7.3</ws>
+          <wd>127.7</wd>
+          <ra>3.8</ra>
+          <sn>0.0</sn>
+          <sf>450.3</sf>
+          <ir>350.3</ir>
+          <cc>2</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T12:00:00Z</forecast-time>
+          <at> 21.9</at>
+          <td>  9.9</td>
+          <ap>1016</ap>
+          <ws> 8.3</ws>
+          <wd> 48</wd>
+          <ra>  4.3</ra>
+          <sn>  0.</sn>
+          <sf> 336</sf>
+          <ir> 374</ir>
+          <cc>3</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T13:00:00Z</forecast-time>
+          <at>22.2</at>
+          <td>9.9</td>
+          <ap>1015.7</ap>
+          <ws>7.7</ws>
+          <wd>134.3</wd>
+          <ra>5.4</ra>
+          <sn>0.0</sn>
+          <sf>365.7</sf>
+          <ir>352.0</ir>
+          <cc>2</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T14:00:00Z</forecast-time>
+          <at>22.4</at>
+          <td>9.9</td>
+          <ap>1015.3</ap>
+          <ws>7.1</ws>
+          <wd>220.7</wd>
+          <ra>6.6</ra>
+          <sn>0.0</sn>
+          <sf>395.3</sf>
+          <ir>330.0</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T15:00:00Z</forecast-time>
+          <at> 22.7</at>
+          <td>  9.9</td>
+          <ap>1015</ap>
+          <ws> 6.5</ws>
+          <wd>307</wd>
+          <ra>  7.7</ra>
+          <sn>  0.</sn>
+          <sf> 425</sf>
+          <ir> 308</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T16:00:00Z</forecast-time>
+          <at>21.0</at>
+          <td>10.6</td>
+          <ap>1016.3</ap>
+          <ws>5.2</ws>
+          <wd>296.0</wd>
+          <ra>8.4</ra>
+          <sn>0.0</sn>
+          <sf>283.3</sf>
+          <ir>303.0</ir>
+          <cc>0</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T17:00:00Z</forecast-time>
+          <at>19.4</at>
+          <td>11.4</td>
+          <ap>1017.7</ap>
+          <ws>3.8</ws>
+          <wd>285.0</wd>
+          <ra>9.2</ra>
+          <sn>0.0</sn>
+          <sf>141.7</sf>
+          <ir>298.0</ir>
+          <cc>1</cc>
+     </prediction>
+     <prediction>
+          <forecast-time>2024-08-31T18:00:00Z</forecast-time>
+          <at> 17.7</at>
+          <td> 12.1</td>
+          <ap>1019</ap>
+          <ws> 2.5</ws>
+          <wd>274</wd>
+          <ra>  9.9</ra>
+          <sn>  0.</sn>
+          <sf>   0</sf>
+          <ir> 293</ir>
+          <cc>1</cc>
+     </prediction>
+</prediction-list>
+
+</forecast>
