@@ -19,22 +19,21 @@ Content-Type: application/x-www-form-urlencoded
 
 ### First call to get all stations with data
 GET {{host}}/tree/EnvironmentStation/*/latest
-Authorization: Bearer {{token}}
-
 ?limit=-1
 &where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600
-&select=mvalidtime,scode
+&select=mvalidtime,scode,smetadata.sensor_history
+Authorization: Bearer {{token}}
 
 ###
-GET {{host}}/flat/EnvironmentStation/O3_raw,NO2-Alphasense_raw,NO-Alphasense_raw,PM10_raw,PM2.5_raw/2016-01-01T00:00:00+00:00/2023-06-14T12:00:03+00:00
+GET {{host}}/flat/EnvironmentStation/O3_raw,NO2-Alphasense_raw,NO-Alphasense_raw,PM10_raw,PM2.5_raw/2024-01-01T00:00:00+00:00/2024-06-14T12:00:03+00:00
 ?select=mvalidtime,mvalue,tname
 &where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600,scode.eq.AUGEG4_AIRQ13
 &limit=-1
+Authorization: Bearer {{token}}
 
 ### Get history of single station
 GET {{host}}/flat/EnvironmentStation/*/2021-01-01/2021-01-02
-Authorization: Bearer {{token}}
-
 ?limit=-1
 &where=sactive.eq.true,sorigin.eq.a22-algorab,mperiod.eq.3600,scode.eq.AUGEG4_AIRQ01
 &select=mvalidtime,mvalue,tname
+Authorization: Bearer {{token}}

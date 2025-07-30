@@ -27,16 +27,14 @@ class DataFetcher:
         else:
             return r.json()
 
-    def get_newest_data_timestamps(self, stations, types):
+    def get_newest_data_timestamps(self, types):
         # each type is requested with _raw and _processed postfix, e.g. "NO2" becomes "NO2_raw,NO2_processed"
         types_to_fetch = ",".join([tp + postfix for tp in types for postfix in ["_raw", "_processed"]])
-        station_filter = ",scode.in.(" + ",".join(stations) + ")"
         response = self.fetch_data(f"/tree/EnvironmentStation/{types_to_fetch}/latest"
-            "?select=mvalidtime,scode"
+            "?select=mvalidtime,scode,smetadata.sensor_history"
             "&where=sactive.eq.true"
                 ",sorigin.eq.a22-algorab"
                 ",mperiod.eq.3600"
-                f"{station_filter}"
             "&limit=-1"
             )
         if (response != None):
@@ -46,13 +44,16 @@ class DataFetcher:
             for station_id in stations:
                 station_types = stations[station_id]['sdatatypes']
                 type_map = {}
-                station_map[station_id]= type_map
                 for type_id in station_types:
                     newest_record_timestamp = station_types[type_id]['tmeasurements'][0]['mvalidtime']
                     type_split = str(type_id).split("_")
                     state = type_map.get(type_split[0],{})
                     state[type_split[1]] = newest_record_timestamp
                     type_map[type_split[0]] = state
+                station_map[station_id] = {
+                    'types': type_map,
+                    'sensor_history': stations[station_id]['smetadata']['sensor_history']
+                }
             log.debug("Generated station map: " + str(station_map))
             return station_map
 
@@ -61,22 +62,26 @@ class DataFetcher:
         types_str = ",".join(map(lambda x : x + "_raw", types))
         start_str = str(start).replace(" ","T")
         end_str = str(end).replace(" ","T")
-        data = self.fetch_data( f"/flat/EnvironmentStation/{types_str}/{start_str}/{end_str}"+
+        req_path = (f"/flat/EnvironmentStation/{types_str}/{start_str}/{end_str}" +
             "?select=mvalidtime,mvalue,tname"
             "&where=sactive.eq.true"
                 ",sorigin.eq.a22-algorab"
                 ",mperiod.eq.3600"
                 ",scode.eq." + station_id + 
-            "&limit=-1"
-        )['data']
-        if data:
-            log.debug("fetched history data:" + str(data))
-            for record in data:
-                value = record['mvalue']
-                type_id = str(record['tname']).split("_")[0]
-                time = record['mvalidtime']
-                typeMap = {}
-                typeMap[type_id] = value
-                raw_data_map.setdefault(time,{}).update(typeMap)
-        log.debug("Raw history: " + str(raw_data_map))
+            "&limit=-1")
+        try:
+            data = self.fetch_data(req_path)['data']
+            if data:
+                log.debug("fetched history data:" + str(data))
+                for record in data:
+                    value = record['mvalue']
+                    type_id = str(record['tname']).split("_")[0]
+                    time = record['mvalidtime']
+                    typeMap = {}
+                    typeMap[type_id] = value
+                    raw_data_map.setdefault(time,{}).update(typeMap)
+            log.debug("Raw history: " + str(raw_data_map))
+        except Exception as e:
+            log.error("Failed requesting raw history: %s", req_path, exc_info=e)
+            raise
         return raw_data_map

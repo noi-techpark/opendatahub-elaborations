@@ -15,15 +15,15 @@ import logging
 DEFAULT_START_CALC = "2016-01-01 00:00:00.000+0000"
 NO2 = "NO2-Alphasense"
 NO = "NO-Alphasense"
+CO = "CO"
 O3 = "O3"
 RH = "RH"
 PM10 = "PM10"
 PM25 = "PM2.5"
 T_INT = "temperature-internal"
-TYPES_TO_ELABORATE = [O3,NO2,NO,PM10,PM25]
+TYPES_TO_ELABORATE = [O3,NO2,NO,PM10,PM25,CO]
 TYPES_TO_REQUEST = TYPES_TO_ELABORATE + [T_INT] # Temperature is required by calc, even though it's not elaborated
 PARAMETER_MAP = getParameters()
-STATIONS_TO_ELABORATE = list(PARAMETER_MAP.keys())
 log = logging.getLogger()
 
 fetcher = DataFetcher()
@@ -41,24 +41,46 @@ class Processor:
             DataType("NO-Alphasense_processed", None, "NO (Alphasense)", "Mean"),
             DataType("NO2-Alphasense_processed", None, "NO2 (Alphasense)", "Mean"),
             DataType("NO2-Alphasense_processed_rating", None, "NO2 (Alphasense) rating", "Rating"),
+            DataType("CO_processed", None, "CO", "Mean"),
         ])
-        time_map = fetcher.get_newest_data_timestamps(stations=STATIONS_TO_ELABORATE, types=TYPES_TO_ELABORATE)
+        
+        time_map = fetcher.get_newest_data_timestamps(types=TYPES_TO_ELABORATE)
         for s_id in time_map:
-            
             start = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
             end = parseODHTime(DEFAULT_START_CALC)
-            for t_id in time_map[s_id]:
-                state_map = time_map[s_id][t_id]
+            for t_id in time_map[s_id]['types']:
+                state_map = time_map[s_id]['types'][t_id]
                 end = max(parseODHTime(state_map.get('raw')), end)
                 start = min(parseODHTime(state_map.get('processed', DEFAULT_START_CALC)), start)
-            history = fetcher.get_raw_history(s_id, start, end+datetime.timedelta(0, 3), types=TYPES_TO_REQUEST)
-            if history:
-                elaborations = self.calc(history,s_id)
+            timeseries = fetcher.get_raw_history(s_id, start, end+datetime.timedelta(0, 3), types=TYPES_TO_REQUEST)
+            sensor_history = time_map[s_id]['sensor_history']
+            if timeseries:
+                elaborations = self.calc(timeseries,sensor_history,s_id)
                 pusher.send_data("EnvironmentStation", elaborations)
-    def calc(self, history, station_id):
+
+    def calc(self, timeseries, sensor_history, station_id):
         station_map = {"branch":{ station_id:{"branch":{},"data":[],"name":"default"}}}
-        for time in history:
-            elabs = self.process_single_dataset(history[time], station_id, time)
+        sensor_idx = -1
+        sensor_end = datetime.datetime.min.replace(tzinfo=datetime.timezone.utc)
+        sensor_start = None
+        sensor_id = ""
+        for timestr in timeseries:
+            time = parseODHTime(timestr)
+            # Find next potential sensor history entry
+            while sensor_end < time:
+                sensor_idx+=1
+                if sensor_history == None or sensor_idx >= len(sensor_history):
+                    log.warn("Sensor history not found for station " + station_id + " at time " + time)
+                    # our current record is past the end of sensor history
+                    return station_map 
+                sensor_start = datetime.datetime.strptime(sensor_history[sensor_idx]["start"], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
+                sensor_end = datetime.datetime.strptime(sensor_history[sensor_idx]["end"], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc) if sensor_history[sensor_idx]["end"] != "" else datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
+                sensor_id = sensor_history[sensor_idx]["id"]
+            # If the window starts after our time, or if the window doesn't have a sensor associated, discard the record
+            if time < sensor_start or sensor_id == "":
+                log.warn("No sensor associated for " + station_id + " at time " + time)
+                continue
+            elabs = self.process_single_dataset(timeseries[timestr], sensor_id, time)
             if elabs != None:
                 for type_id in elabs:
                     type_data = station_map['branch'][station_id]["branch"].get(type_id)
@@ -68,19 +90,19 @@ class Processor:
                         type_data["data"].append(elabs[type_id])
         return station_map
     
-    def process_single_dataset(self, data, station_id, time):
+    def process_single_dataset(self, data, sensor_id, time):
         T_INT = "temperature-internal"
         if T_INT in data:
             temparature_key = "hightemp" if (data[T_INT] >= 20) else "lowtemp"
             data_point_map = {}
             for type_id in (value for value in data if value in TYPES_TO_ELABORATE): #Intersection
                 # ignore stations/types missing parameters #32
-                if PARAMETER_MAP.get(station_id) is None or PARAMETER_MAP[station_id].get(type_id) is None:
+                if PARAMETER_MAP.get(sensor_id) is None or PARAMETER_MAP[sensor_id].get(type_id) is None:
                     continue
 
                 value = data[type_id]
                 processed_value = None
-                parameters = PARAMETER_MAP[station_id][type_id][temparature_key]
+                parameters = PARAMETER_MAP[sensor_id][type_id][temparature_key]
                 if ((type_id == NO2 or type_id == NO) and O3 in data and T_INT in data):
                     if(int(parameters["calc_version"]) == 1):
                         processed_value = (
@@ -114,14 +136,21 @@ class Processor:
                         + float(parameters["d"]) * np.power(float(data[RH]),0.54)
                         + float(parameters["e"]) * np.power(float(data[T_INT]),1.2)
                     )
+                elif (type_id == CO and all (t_id in data for t_id in (RH,T_INT))):
+                    processed_value = (
+                        float(parameters["a"])
+                        + float(parameters["b"]) * float(value)
+                        + float(parameters["c"]) * np.power(float(data[T_INT]),0.1)
+                        + float(parameters["d"]) * np.power(float(data[RH]),0.1)
+                    )
                 else:
-                    log.warn("Conditions were not met to do calculation for station: " 
-                    + station_id + " type:" + type_id + " at " + time + " on this dataset:")
+                    log.warn("Conditions were not met to do calculation for sensor: " 
+                    + sensor_id + " type:" + type_id + " at " + time.ctime() + " on this dataset:")
                     log.warn(data)
                 if processed_value != None:
                     if processed_value < 0:
                         processed_value = 0
-                    odhtimestamp = parseODHTime(time).timestamp() * 1000
+                    odhtimestamp = time.timestamp() * 1000
                     data_point_map[type_id+"_processed"] = DataPoint(odhtimestamp, processed_value, 3600)
                     if type_id == "NO2-Alphasense":
                         if processed_value >= 40:
