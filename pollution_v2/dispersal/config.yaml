@@ -1,0 +1,292 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+paths:
+  log_path: '../logs/'
+  log_file: 'ODH_pollution_dispersion.log'
+  input_path_source: '../data/input/'
+  input_path_output: './data/input/'
+  meteo_path: '../data/input/meteo/meteo.sfc'
+  output_base_path_python: '../out/'
+  output_base_path_rline: './out/'
+  vrt_file: 'virtual_raster.vrt'
+  POI_output_file: 'poi.json'
+  output_filename: 'concentration_contouring'
+  rline_input_file: '../Line_Source_Inputs.txt'
+  rline_executable: './RLINE/RLINEv1_2.ifort.x'
+
+domains:
+  - id: 1
+    enabled: True
+    description: 'Brennero - Vipiteno'
+    source: 'source_1.txt'
+    receptor: 'receptor_1.txt'
+    output: 'output_1.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: '37100MS'
+    traffic:
+      station_id: '678'
+    POI: # ID, dist_from_source, x, y
+      - [101, 200, 684409, 5196731] # ospedale Vipiteno
+      - [102, 100, 684509, 5196737]
+      - [103, 50, 684560, 5196739]
+      - [104, 50, 684660, 5196742]
+      - [105, 100, 684710, 5196745]
+      - [106, 200, 684809, 5196749]
+  - id: 2
+    enabled: True
+    description: 'Vipiteno - Bressanone'
+    source: 'source_2.txt'
+    receptor: 'receptor_2.txt'
+    output: 'output_2.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: '37100MS'
+    traffic:
+      station_id: '677'
+    POI:
+      - [201, 200, 696260, 5186647] # Mezzaselva
+      - [202, 100, 696294, 5186740]
+      - [203, 50, 696313, 5186787]
+      - [204, 50, 696345, 5186884]
+      - [205, 100, 696362, 5186932]
+      - [206, 200, 696404, 5187021]
+  - id: 3
+    enabled: True
+    description: 'Bressanone - Bressanone ZI'
+    source: 'source_3.txt'
+    receptor: 'receptor_3.txt'
+    output: 'output_3.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: '39100MS'
+    traffic:
+      station_id: '666'
+    POI:
+      - [301, 200, 702104, 5176997] # Bressanone
+      - [302, 100, 702202, 5177009]
+      - [303, 50, 702252, 5177018]
+      - [304, 50, 702350, 5177032]
+      - [305, 100, 702400, 5177040]
+      - [306, 200, 702498, 5177054]
+  - id: 4
+    enabled: True
+    description: 'Bressanone ZI - Chiusa'
+    source: 'source_4.txt'
+    receptor: 'receptor_4.txt'
+    output: 'output_4.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: '39100MS'
+    traffic:
+      station_id: '666'
+    POI:
+      - [401, 200, 698594, 5170199] # Bressanone ZI
+      - [402, 100, 698649, 5170114]
+      - [403, 50, 698675, 5170073]
+      - [404, 50, 698726, 5169987]
+      - [405, 100, 698751, 5169943]
+      - [406, 200, 698803, 5169857]
+  - id: 5
+    enabled: True
+    description: 'Chiusa - Bolzano nord'
+    source: 'source_5.txt'
+    receptor: 'receptor_5.txt'
+    output: 'output_5.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: '74900MS'
+    traffic:
+      station_id: '676'
+    POI:
+      - [501, 200, 693836, 5163629] # Ponte Gardena
+      - [502, 100, 693938, 5163624]
+      - [503, 50, 693986, 5163622]
+      - [504, 50, 694087, 5163619]
+      - [505, 100, 694138, 5163617]
+      - [506, 200, 694239, 5163613]
+  - id: 6
+    enabled: True
+    description: 'Bolzano nord - Bolzano sud'
+    source: 'source_6.txt'
+    receptor: 'receptor_6.txt'
+    output: 'output_6.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: '83200MS'
+    traffic:
+      station_id: '684'
+    POI:
+      - [601, 200, 679141, 5150977] # Bolzano
+      - [602, 100, 679172, 5150881]
+      - [603, 50, 679188, 5150830]
+      - [604, 50, 679218, 5150739]
+      - [605, 100, 679233, 5150689]
+      - [606, 200, 679261, 5150593]
+  - id: 7
+    enabled: True
+    description: 'Bolzano Sud - Egna-Ora'
+    source: 'source_7.txt'
+    receptor: 'receptor_7.txt'
+    output: 'output_7.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: '86600MS'
+    traffic:
+      station_id: '679'
+    POI:
+      - [701, 200, 677154, 5142597] # Vadena
+      - [702, 100, 677247, 5142573]
+      - [703, 50, 677297, 5142561]
+      - [704, 50, 677393, 5142525]
+      - [705, 100, 677439, 5142508]
+      - [706, 200, 677535, 5142475]
+  - id: 8
+    enabled: True
+    description: 'Egna-Ora - Mezzocorona'
+    source: 'source_8.txt'
+    receptor: 'receptor_8.txt'
+    output: 'output_8.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: '88820MS'
+    traffic:
+      station_id: '680'
+    POI:
+      - [801, 200, 671642, 5126140] # Cortina sldv
+      - [802, 100, 671735, 5126111]
+      - [803, 50, 671781, 5126091]
+      - [804, 50, 671877, 5126056]
+      - [805, 100, 671925, 5126041]
+      - [806, 200, 672018, 5126004]
+  - id: 9
+    enabled: True
+    description: 'Mezzocorona - Trento nord'
+    source: 'source_9.txt'
+    receptor: 'receptor_9.txt'
+    output: 'output_9.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: 'T0135'
+    traffic:
+      station_id: '668'
+    POI:
+      - [901, 200, 661339, 5113364] # Zambana
+      - [902, 100, 661436, 5113343]
+      - [903, 50, 661485, 5113332]
+      - [904, 50, 661582, 5113308]
+      - [905, 100, 661633, 5113301]
+      - [906, 200, 661732, 5113286]
+  - id: 10
+    enabled: True
+    description: 'Trento nord - Trento centro'
+    source: 'source_10.txt'
+    receptor: 'receptor_10.txt'
+    output: 'output_10.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: 'T0135'
+    traffic:
+      station_id: '5807'
+    POI:
+      - [1001, 200, 662190, 5106283] # Trento Nord
+      - [1002, 100, 662279, 5106333]
+      - [1003, 50, 662321, 5106358]
+      - [1004, 50, 662410, 5106413]
+      - [1005, 100, 662453, 5106440]
+      - [1006, 200, 662539, 5106483]
+  - id: 11
+    enabled: True
+    description: 'Trento centro - Trento sud'
+    source: 'source_11.txt'
+    receptor: 'receptor_11.txt'
+    output: 'output_11.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: 'T0129'
+    traffic:
+      station_id: '674'
+    POI:
+      - [1101, 200, 663000, 5103069] # Trento Centro
+      - [1102, 100, 663104, 5103060]
+      - [1103, 50, 663153, 5103054]
+      - [1104, 50, 663255, 5103043]
+      - [1105, 100, 663305, 5103035]
+      - [1106, 200, 663402, 5103027]
+  - id: 12
+    enabled: True
+    description: 'Trento sud - Rovereto nord'
+    source: 'source_12.txt'
+    receptor: 'receptor_12.txt'
+    output: 'output_12.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: 'T0146'
+    traffic:
+      station_id: '1886'
+    POI:
+      - [1201, 200, 664018, 5097305] # Mattarello
+      - [1202, 100, 664119, 5097304]
+      - [1203, 50, 664168, 5097305]
+      - [1204, 50, 664268, 5097300]
+      - [1205, 100, 664318, 5097304]
+      - [1206, 200, 664416, 5097304]
+  - id: 13
+    enabled: True
+    description: 'Rovereto nord - Rovereto sud'
+    source: 'source_13.txt'
+    receptor: 'receptor_13.txt'
+    output: 'output_13.csv'
+    weather:
+      station_type: 'Weather'
+      station_id: 'T0147'
+    traffic:
+      station_id: '5553'
+    POI:
+      - [1301, 200, 655872, 5083267] # Isera
+      - [1302, 100, 655969, 5083243]
+      - [1303, 50, 656014, 5083231]
+      - [1304, 50, 656113, 5083203]
+      - [1305, 100, 656162, 5083187]
+      - [1306, 200, 656255, 5083159]
+  - id: 14
+    enabled: True
+    description: 'Rovereto sud - Ala-Avio'
+    source: 'source_14.txt'
+    receptor: 'receptor_14.txt'
+    output: 'output_14.csv'
+    weather:
+      station_type: 'RoadWeather'
+      station_id: '2026'
+    traffic:
+      station_id: '686'
+    POI:
+      - [1401, 200, 655720, 5070254] # Ala
+      - [1402, 100, 655778, 5070173]
+      - [1403, 50, 655810, 5070136]
+      - [1404, 50, 655872, 5070052]
+      - [1405, 100, 655899, 5070009]
+      - [1406, 200, 655951, 5069933]
+  - id: 15
+    enabled: True
+    description: 'Ala-Avio - Affi'
+    source: 'source_15.txt'
+    receptor: 'receptor_15.txt'
+    output: 'output_15.csv'
+    weather:
+      station_type: 'RoadWeather'
+      station_id: '5508'
+    traffic:
+      station_id: '683'
+    POI:
+      - [1501, 200, 652060, 5066881] # Avio
+      - [1502, 100, 652112, 5066795]
+      - [1503, 50, 652135, 5066750]
+      - [1504, 50, 652182, 5066662]
+      - [1505, 100, 652205, 5066619]
+      - [1506, 200, 652248, 5066528]
+
+
+
