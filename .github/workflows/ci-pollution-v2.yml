@@ -94,6 +94,7 @@ jobs:
           X_AIRFLOW_VAR_DAG_VALIDATION_EXECUTION_CRONTAB: 0 7 * * *
           X_AIRFLOW_VAR_DAG_ROAD_WEATHER_EXECUTION_CRONTAB: 0 */3 * * *
           X_AIRFLOW_VAR_ROAD_WEATHER_CONFIG_FILE: "dags/config/road_weather.yaml"
+          X_AIRFLOW_VAR_VALIDATOR_CONFIG_FILE: "dags/config/validator.yaml"
 
           # username/pass not needed with client_credentials
           X_AIRFLOW_VAR_ODH_PASSWORD: 'ODH_PASSWORD'
