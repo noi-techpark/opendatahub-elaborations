@@ -313,7 +313,9 @@ services:
         condition: service_completed_successfully
 
   metro:
-    image: road_weather:latest
+    build:
+     context: ./weather/
+     dockerfile: Dockerfile
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:80/"]
       interval: 30s
@@ -323,7 +325,9 @@ services:
     restart: always
 
   rline:
-    image: pollution_dispersal:latest
+    build:
+     context: ./dispersal/
+     dockerfile: Dockerfile
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:81/"]
       interval: 30s

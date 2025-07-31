@@ -7,7 +7,7 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  image: ${DOCKER_IMAGE}:${DOCKER_TAG}
+  image: ${DOCKER_IMAGE_AIRFLOW}:${DOCKER_TAG}
   env_file:
   - .env
   environment:
@@ -263,6 +263,26 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  metro:
+    image: ${DOCKER_IMAGE_WEATHER}:${DOCKER_TAG}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+
+  rline:
+    image: ${DOCKER_IMAGE_DISPERSAL}:${DOCKER_TAG}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:81/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
 
 volumes:
   postgres-db-volume:
