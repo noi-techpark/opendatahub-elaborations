@@ -47,6 +47,7 @@ x-airflow-common:
     AIRFLOW_VAR_DAG_VALIDATION_EXECUTION_CRONTAB: 0 2 * * *
     AIRFLOW_VAR_DAG_ROAD_WEATHER_EXECUTION_CRONTAB: 0 */3 * * *
     AIRFLOW_VAR_ROAD_WEATHER_CONFIG_FILE: "dags/config/road_weather.yaml"
+    AIRFLOW_VAR_VALIDATOR_CONFIG_FILE: dags/config/validator.yaml
     AIRFLOW_VAR_DATATYPE_PREFIX: ${AIRFLOW_VAR_DATATYPE_PREFIX}
     # AIRFLOW__CORE__REMOTE_LOGGING: '<your_choice_on_remote_logging>'
     # AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER: '<your_bucket_for_remote_logging>'
