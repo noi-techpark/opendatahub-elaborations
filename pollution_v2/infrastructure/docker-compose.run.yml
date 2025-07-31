@@ -277,7 +277,7 @@ services:
   rline:
     image: ${DOCKER_IMAGE_DISPERSAL}:${DOCKER_TAG}
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:81/"]
+      test: ["CMD", "curl", "--fail", "http://localhost:80/"]
       interval: 30s
       timeout: 10s
       retries: 5
