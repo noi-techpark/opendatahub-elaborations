@@ -15,7 +15,7 @@ import requests
 from keycloak import KeycloakOpenID
 
 from common.data_model.common import MeasureType, StationType, Station, Provenance, DataType
-from common.settings import get_now
+from common.settings import get_now, ODH_STATIONS_FILTER_ORIGIN
 
 logger = logging.getLogger("pollution_v2.common.connector.common")
 
@@ -303,8 +303,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         """
         Retrieve the list of all the available stations.
         """
-        logger.info(f"Retrieving station list for type [{self._station_type}]")
-        raw_stations = self._get_result_list(f"/v2/flat,node/{self._station_type}")
+        logger.info(f"Retrieving station list for type [{self._station_type}] and origin [{ODH_STATIONS_FILTER_ORIGIN}]")
+        raw_stations = self._get_result_list(f"/v2/flat,node/{self._station_type}", query_params={"where": f'sorigin.eq."{ODH_STATIONS_FILTER_ORIGIN}"'})
 
         logger.info(f"Retrieved [{len(raw_stations)}] stations")
         return [self.build_station(raw_station) for raw_station in raw_stations]
