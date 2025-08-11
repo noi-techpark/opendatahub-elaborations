@@ -2,23 +2,23 @@
 
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package dc
+package main
 
 import (
 	"fmt"
 	"log/slog"
 	"time"
-	"traffic-a22-data-quality/ninja"
 
 	"github.com/noi-techpark/go-bdp-client/bdplib"
+	"github.com/noi-techpark/go-timeseries-client/odhts"
 	"golang.org/x/exp/maps"
 	"golang.org/x/sync/errgroup"
 )
 
 type NinjaMeasurement struct {
-	Period uint64          `json:"mperiod"`
-	Time   ninja.NinjaTime `json:"mvalidtime"`
-	Since  ninja.NinjaTime `json:"mtransactiontime"`
+	Period uint64       `json:"mperiod"`
+	Time   odhts.TsTime `json:"mvalidtime"`
+	Since  odhts.TsTime `json:"mtransactiontime"`
 }
 
 type NinjaTreeData = map[string]struct { // key = stationtype
@@ -30,8 +30,8 @@ type NinjaTreeData = map[string]struct { // key = stationtype
 }
 
 type NinjaFlatData = struct {
-	Timestamp ninja.NinjaTime `json:"_timestamp"`
-	Value     float64         `json:"mvalue"`
+	Timestamp odhts.TsTime `json:"_timestamp"`
+	Value     float64      `json:"mvalue"`
 }
 
 type tv = struct {
@@ -64,7 +64,7 @@ func sumJob() {
 		return
 	}
 
-	stationWindows := requestWindows(res.Data)
+	stationWindows := buildRequestWindows(res.Data)
 
 	// 	get data history from starting point until last EOD
 	for scode, typeMap := range stationWindows {
