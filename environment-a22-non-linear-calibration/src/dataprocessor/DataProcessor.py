@@ -35,12 +35,12 @@ def parseODHTime(time: str) -> datetime:
 class Processor:
     def calc_by_station(self):
         pusher.sync_datatypes([
-            DataType("O3_processed", None, "O3", "Mean"),
-            DataType("PM10_processed", None, "PM10", "Mean"),
-            DataType("PM2.5_processed", None, "PM2.5", "Mean"),
-            DataType("NO-Alphasense_processed", None, "NO (Alphasense)", "Mean"),
-            DataType("NO2-Alphasense_processed", None, "NO2 (Alphasense)", "Mean"),
-            DataType("NO2-Alphasense_processed_rating", None, "NO2 (Alphasense) rating", "Rating"),
+            DataType("O3_processed","ug/m3", "O3", "Mean"),
+            DataType("PM10_processed","ug/m3", "PM10", "Mean"),
+            DataType("PM2.5_processed","ug/m3", "PM2.5", "Mean"),
+            DataType("NO-Alphasense_processed", "ug/m3", "NO (Alphasense)", "Mean"),
+            DataType("NO2-Alphasense_processed", "ug/m3", "NO2 (Alphasense)", "Mean"),
+            DataType("NO2-Alphasense_processed_rating",None, "NO2 (Alphasense) rating", "Rating"),
             DataType("CO_processed", "mg/m3", "CO", "Mean"),
         ])
         
