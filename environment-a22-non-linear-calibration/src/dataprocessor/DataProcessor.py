@@ -41,7 +41,7 @@ class Processor:
             DataType("NO-Alphasense_processed", None, "NO (Alphasense)", "Mean"),
             DataType("NO2-Alphasense_processed", None, "NO2 (Alphasense)", "Mean"),
             DataType("NO2-Alphasense_processed_rating", None, "NO2 (Alphasense) rating", "Rating"),
-            DataType("CO_processed", None, "CO", "Mean"),
+            DataType("CO_processed", "mg/m3", "CO", "Mean"),
         ])
         
         time_map = fetcher.get_newest_data_timestamps(types=TYPES_TO_ELABORATE)
