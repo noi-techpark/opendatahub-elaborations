@@ -47,13 +47,17 @@ func main() {
 }
 
 type Elaboration struct {
-	stationtypes []string
-	filter       string
-	selectFields string
-	base         []BaseDataType
-	derived      []DerivedDataType
-	b            *bdplib.Bdp
-	c            *odhts.C
+	StationTypes       []string
+	Filter             string
+	OnlyActiveStations bool
+	BaseTypes          []BaseDataType
+	DerivedTypes       []DerivedDataType
+	b                  *bdplib.Bdp
+	c                  *odhts.C
+}
+
+func NewElaboration(ts *odhts.C, bdp *bdplib.Bdp) Elaboration {
+	return Elaboration{b: bdp, c: ts}
 }
 
 type BaseDataType struct {
@@ -71,7 +75,9 @@ type DerivedDataType struct {
 	DontSync    bool
 }
 
-func (e Elaboration) SyncDataTypes() []bdplib.DataTypeList
+func (e Elaboration) SyncDataTypes() []bdplib.DataTypeList {
+	return []bdplib.DataTypeList{}
+}
 
 type Station odhts.StationDto[map[string]any]
 type Measurement odhts.LatestDto
@@ -80,15 +86,15 @@ type Period uint64
 func (e Elaboration) GetInitialState() (ElaborationState, error) {
 	req := odhts.DefaultRequest()
 	req.Repr = odhts.TreeNode
-	req.StationTypes = e.stationtypes
+	req.StationTypes = e.StationTypes
 
 	datatypes := map[string]struct{}{}
 	periods := map[Period]struct{}{}
-	for _, t := range e.base {
+	for _, t := range e.BaseTypes {
 		datatypes[t.Name] = struct{}{}
 		periods[t.Period] = struct{}{}
 	}
-	for _, t := range e.derived {
+	for _, t := range e.DerivedTypes {
 		datatypes[t.Name] = struct{}{}
 		periods[t.Period] = struct{}{}
 	}
@@ -96,8 +102,21 @@ func (e Elaboration) GetInitialState() (ElaborationState, error) {
 	req.DataTypes = slices.Collect(maps.Keys(datatypes))
 	periodsStr := strings.Join(slices.Collect(maps.Keys(datatypes)), ",")
 
+	filters := []string{}
+	if e.OnlyActiveStations {
+		filters = append(filters, "sactive.eq.true")
+	}
+	if periodsStr != "" {
+		filters = append(filters, fmt.Sprintf("mperiod.in.(%s)", periodsStr))
+	}
+	if e.Filter != "" {
+		filters = append(filters, e.Filter)
+	}
+	if len(filters) > 0 {
+		req.Where = fmt.Sprintf("and(%s)", strings.Join(filters, ","))
+	}
+
 	req.Limit = -1
-	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d),%s)", periodsStr, e.filter)
 
 	var res odhts.Response[DtoTreeData]
 	err := odhts.Latest(*e.c, req, &res)
@@ -114,11 +133,14 @@ func mapNinja2ElabTree(o odhts.Response[DtoTreeData]) ElaborationState {
 	e := ElaborationState{}
 	for k, v := range o.Data {
 		stype := ESStationType{}
+		stype.Stations = map[string]ESStation{}
 		for k, v := range v.Stations {
 			st := ESStation{}
 			st.Station = v.Station
+			st.Datatypes = map[string]ESDataType{}
 			for k, v := range v.Datatypes {
 				dt := ESDataType{}
+				dt.Periods = map[Period]time.Time{}
 				for _, m := range v.Measurements {
 					// since this is supposed to be a /latest request, periods are assumed to be unique
 					dt.Periods[Period(m.Period)] = m.Time.Time
@@ -148,13 +170,17 @@ type ESDataType struct {
 
 type ElaborationState = map[string]ESStationType
 
-func (e Elaboration) GetHistory(stationtype string, stationcode string, datatype string, period Period, filter string, from time.Time, to time.Time) ([]Measurement, error)
+func (e Elaboration) GetHistory(stationtype string, stationcode string, datatype string, period Period, filter string, from time.Time, to time.Time) ([]Measurement, error) {
+	return []Measurement{}, nil
+}
 
 func (e Elaboration) FollowStation(ElaborationState, func(Station, []Measurement) ([]ElabResult, error)) {
 
 }
 
-func (e Elaboration) PushResults(results []ElabResult) error
+func (e Elaboration) PushResults(results []ElabResult) error {
+	return nil
+}
 
 type ElabResult struct {
 	Timestamp   int64

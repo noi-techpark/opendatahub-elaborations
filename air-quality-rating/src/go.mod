@@ -12,8 +12,7 @@ require (
 	github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3
 	github.com/noi-techpark/opendatahub-go-sdk/tel v1.0.0
 	github.com/robfig/cron/v3 v3.0.1
-	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6
-	golang.org/x/sync v0.16.0
+	gotest.tools/v3 v3.5.1
 )
 
 require (
@@ -22,6 +21,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
