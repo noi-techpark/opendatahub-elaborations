@@ -1,12 +1,19 @@
+// SPDX-FileCopyrightText: 2025 NOI Techpark <digital@noi.bz.it>
+//
+// SPDX-License-Identifier: CC0-1.0
+
 module opendatahub.com/el-air-quality-rating
 
 go 1.24.5
 
 require (
 	github.com/noi-techpark/go-bdp-client v1.2.1
+	github.com/noi-techpark/go-timeseries-client v0.0.0-20250811122041-e71ffe72f9e9
 	github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3
 	github.com/noi-techpark/opendatahub-go-sdk/tel v1.0.0
 	github.com/robfig/cron/v3 v3.0.1
+	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6
+	golang.org/x/sync v0.16.0
 )
 
 require (
@@ -19,7 +26,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/noi-techpark/go-timeseries-client v0.0.0-20250811122041-e71ffe72f9e9 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
