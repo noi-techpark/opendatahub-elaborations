@@ -150,7 +150,9 @@ type ElaborationState = map[string]ESStationType
 
 func (e Elaboration) GetHistory(stationtype string, stationcode string, datatype string, period Period, filter string, from time.Time, to time.Time) ([]Measurement, error)
 
-func (e Elaboration) FollowStation(ElaborationState, func(Station, []Measurement) ([]ElabResult, error))
+func (e Elaboration) FollowStation(ElaborationState, func(Station, []Measurement) ([]ElabResult, error)) {
+
+}
 
 func (e Elaboration) PushResults(results []ElabResult) error
 
