@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+@tsapi=https://mobility.api.opendatahub.com/v2
+
+###
+GET {{tsapi}}/tree,node/EChargingStation/*/latest?where=sactive.eq.true,sorigin.eq."Neogy"
