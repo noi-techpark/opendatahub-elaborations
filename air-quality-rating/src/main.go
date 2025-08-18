@@ -10,8 +10,8 @@ import (
 	"log/slog"
 	"maps"
 	"slices"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"github.com/noi-techpark/go-timeseries-client/odhts"
@@ -35,7 +35,7 @@ func main() {
 	slog.Info("Starting air-quality-rating elaboration...")
 	defer tel.FlushOnPanic()
 
-	b := bdplib.FromEnv()
+	// b := bdplib.FromEnv()
 
 	n := odhts.NewCustomClient(env.NINJA_BASEURL, env.ODH_TOKEN_URL, "el-air-quality-rating")
 	n.UseAuth(env.ODH_CLIENT_ID, env.ODH_CLIENT_SECRET)
@@ -43,137 +43,137 @@ func main() {
 	c := cron.New(cron.WithSeconds())
 	c.AddFunc(env.CRON, func() {
 
-		req := odhts.DefaultRequest()
-		req.Repr = odhts.TreeNode
-		req.AddStationType("EnvironmentStation")
-		req.DataTypes = []string{"PM10_raw,CO_raw"}
-		req.Limit = -1
-		req.Select = "mperiod,mvalidtime,mtransactiontime,pcode"
-		req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d,%d))", 600, 3600)
-
-		var res odhts.Response[NinjaTreeData]
-		err := odhts.Latest(n, req, &res)
-		if err != nil {
-			slog.Error("error getting latest records from ninja. aborting...", "err", err)
-			return
-		}
-
-		buildRequestWindows(res.Data)
-
-		// get current elaborated data advancement
-
-		// for each station / type
-
-		// partition by date
-
-		// func(station, type)
-
 	})
 }
 
-type Elab struct {
-	stationtypes []string
-	where        string
-}
-
-func foo() {
-	b := bdplib.FromEnv()
-
-	n := odhts.NewCustomClient(env.NINJA_BASEURL, env.ODH_TOKEN_URL, "el-air-quality-rating")
-	n.UseAuth(env.ODH_CLIENT_ID, env.ODH_CLIENT_SECRET)
-
-	aggs := []Aggregation[odhts.StationDto[map[string]any], odhts.LatestDto]{}
-
-	for _, agg := range aggs {
-		// Get all the latest records from base and derived types
-		req := odhts.DefaultRequest()
-		req.Repr = odhts.TreeNode
-		req.StationTypes = agg.stationtypes
-
-		datatypes := map[string]struct{}{}
-		periods := map[string]struct{}{}
-		for _, dt := range append(agg.base, agg.derived...) {
-			datatypes[dt.cname] = struct{}{}
-			periods[strconv.Itoa(dt.period)] = struct{}{}
-		}
-		req.DataTypes = slices.Collect(maps.Keys(datatypes))
-		periodsStr := strings.Join(slices.Collect(maps.Keys(periods)), ",")
-
-		req.Limit = -1
-		req.Select = agg.selectFields
-		req.Where = fmt.Sprintf("sactive.eq.true,mperiod.in.(%s),%s", periodsStr, agg.filter)
-
-		var res odhts.Response[NinjaTreeData]
-		err := odhts.Latest(n, req, &res)
-		if err != nil {
-			slog.Error("error getting latest records from ninja. aborting...", "err", err)
-			return
-		}
-
-		// Determine window per stationtype / station / type / period
-
-		// For each
-		// call handler function
-		// populate bdp datamap and push it (either once or per station/slice)
-
-	}
-
-}
-
-type Aggregation[Station any, Measure any] struct {
+type Elaboration struct {
 	stationtypes []string
 	filter       string
 	selectFields string
-	base         []DataType
-	derived      []DataType
-
-	handle func(Station, []Measure) ([]Result, error)
-}
-type DataType struct {
-	cname  string
-	period int
+	base         []BaseDataType
+	derived      []DerivedDataType
+	b            *bdplib.Bdp
+	c            *odhts.C
 }
 
-type Result struct {
-	Timestamp int64
-	Period    uint64
-	DataType  string
-	Value     interface{}
+type BaseDataType struct {
+	Name   string
+	Period Period
 }
 
-func buildRequestWindows(dt NinjaTreeData) map[string]map[string]window {
-	todos := make(map[string]map[string]window)
-	for _, stations := range dt {
-		for stationCode, station := range stations.Stations {
-			for tname, dataType := range station.Datatypes {
-				firstBase := minTime
-				lastBase := minTime
-				lastAggregate := minTime
+type DerivedDataType struct {
+	Name        string
+	Unit        string
+	Description string
+	Rtype       string
+	Period      Period
+	MetaData    map[string]any
+	DontSync    bool
+}
 
-				for _, m := range dataType.Measurements {
+func (e Elaboration) SyncDataTypes() []bdplib.DataTypeList
 
-					if m.Period == uint64(basePeriod) {
-						lastBase = m.Time.Time
-						firstBase = m.Since.Time
-					}
-					if m.Period == periodAgg {
-						lastAggregate = m.Time.Time
-					}
-				}
+type Station odhts.StationDto[map[string]any]
+type Measurement odhts.LatestDto
+type Period uint64
 
-				// only consider stations that don't have up to date aggregates
-				if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
-					if _, exists := todos[stationCode]; !exists {
-						todos[stationCode] = make(map[string]window)
-					}
-					todos[stationCode][tname] = window{
-						firstBase:     firstBase,
-						lastBase:      lastBase,
-						lastAggregate: lastAggregate,
-					}
-				}
-			}
-		}
+func (e Elaboration) GetInitialState() (ElaborationState, error) {
+	req := odhts.DefaultRequest()
+	req.Repr = odhts.TreeNode
+	req.StationTypes = e.stationtypes
+
+	datatypes := map[string]struct{}{}
+	periods := map[Period]struct{}{}
+	for _, t := range e.base {
+		datatypes[t.Name] = struct{}{}
+		periods[t.Period] = struct{}{}
 	}
-	return todos
+	for _, t := range e.derived {
+		datatypes[t.Name] = struct{}{}
+		periods[t.Period] = struct{}{}
+	}
+
+	req.DataTypes = slices.Collect(maps.Keys(datatypes))
+	periodsStr := strings.Join(slices.Collect(maps.Keys(datatypes)), ",")
+
+	req.Limit = -1
+	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d),%s)", periodsStr, e.filter)
+
+	var res odhts.Response[DtoTreeData]
+	err := odhts.Latest(*e.c, req, &res)
+	if err != nil {
+		slog.Error("error getting latest records from ninja. aborting...", "err", err)
+		return ElaborationState{}, err
+	}
+
+	return mapNinja2ElabTree(res), nil
+}
+
+func mapNinja2ElabTree(o odhts.Response[DtoTreeData]) ElaborationState {
+	// Tree is the same stationtype / stationcode / datatype structure
+	e := ElaborationState{}
+	for k, v := range o.Data {
+		stype := ESStationType{}
+		for k, v := range v.Stations {
+			st := ESStation{}
+			st.Station = v.Station
+			for k, v := range v.Datatypes {
+				dt := ESDataType{}
+				for _, m := range v.Measurements {
+					// since this is supposed to be a /latest request, periods are assumed to be unique
+					dt.Periods[Period(m.Period)] = m.Time.Time
+				}
+				st.Datatypes[k] = dt
+			}
+			stype.Stations[k] = st
+		}
+		e[k] = stype
+	}
+
+	return e
+}
+
+type ESStationType struct {
+	Stations map[string]ESStation
+}
+
+type ESStation struct {
+	Station   Station
+	Datatypes map[string]ESDataType
+}
+
+type ESDataType struct {
+	Periods map[Period]time.Time
+}
+
+type ElaborationState = map[string]ESStationType
+
+func (e Elaboration) GetHistory(stationtype string, stationcode string, datatype string, period Period, filter string, from time.Time, to time.Time) ([]Measurement, error)
+
+func (e Elaboration) FollowStation(ElaborationState, func(Station, []Measurement) ([]ElabResult, error))
+
+func (e Elaboration) PushResults(results []ElabResult) error
+
+type ElabResult struct {
+	Timestamp   int64
+	Period      Period
+	StationType string
+	StationCode string
+	DataType    string
+	Value       interface{}
+}
+
+type DtoMeasurement struct {
+	Period uint64       `json:"mperiod"`
+	Time   odhts.TsTime `json:"mvalidtime"`
+	Since  odhts.TsTime `json:"mtransactiontime"`
+}
+
+type DtoTreeData = map[string]struct {
+	Stations map[string]struct {
+		Station
+		Datatypes map[string]struct {
+			Measurements []DtoMeasurement `json:"tmeasurements"`
+		} `json:"sdatatypes"`
+	} `json:"stations"`
 }
