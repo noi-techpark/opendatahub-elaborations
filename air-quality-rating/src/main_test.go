@@ -14,7 +14,7 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestElaboration_GetInitialState(t *testing.T) {
+func TestMapNinja2ElabTree(t *testing.T) {
 	// Read the file contents
 	byteValue, err := os.ReadFile("./testdata/echargingtree.json")
 	assert.NilError(t, err, "cant read file")
@@ -27,4 +27,24 @@ func TestElaboration_GetInitialState(t *testing.T) {
 	bt, err := json.Marshal(et)
 	assert.NilError(t, err, "cant marshal json")
 	fmt.Printf("%s", string(bt))
+}
+
+func TestElaboration_buildInitialStateRequest(t *testing.T) {
+	e := Elaboration{
+		Filter:             "scode.eq.\"123\"",
+		OnlyActiveStations: true,
+		BaseTypes: []BaseDataType{
+			{Name: "base1", Period: 60},
+			{Name: "base2", Period: 60},
+			{Name: "both", Period: 600},
+			{Name: "both", Period: 3600},
+		},
+		DerivedTypes: []DerivedDataType{
+			{Name: "der1", Period: 3600},
+			{Name: "both", Period: 3600},
+			{Name: "both", Period: 600},
+		},
+	}
+	req := e.buildInitialStateRequest()
+	assert.Equal(t, req.Where, "and(sactive.eq.true,mperiod.in.(60,600,3600),scode.eq.\"123\")")
 }
