@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -81,26 +82,39 @@ func (e Elaboration) SyncDataTypes() []bdplib.DataTypeList {
 
 type Station odhts.StationDto[map[string]any]
 type Measurement odhts.LatestDto
-type Period uint64
+type Period = uint64
 
 func (e Elaboration) GetInitialState() (ElaborationState, error) {
+	req := e.buildInitialStateRequest()
+
+	var res odhts.Response[DtoTreeData]
+	err := odhts.Latest(*e.c, req, &res)
+	if err != nil {
+		slog.Error("error getting latest records from ninja. aborting...", "err", err)
+		return ElaborationState{}, err
+	}
+
+	return mapNinja2ElabTree(res), nil
+}
+
+func (e Elaboration) buildInitialStateRequest() *odhts.Request {
 	req := odhts.DefaultRequest()
 	req.Repr = odhts.TreeNode
 	req.StationTypes = e.StationTypes
 
 	datatypes := map[string]struct{}{}
-	periods := map[Period]struct{}{}
+	periods := map[string]struct{}{}
 	for _, t := range e.BaseTypes {
 		datatypes[t.Name] = struct{}{}
-		periods[t.Period] = struct{}{}
+		periods[strconv.FormatUint(t.Period, 10)] = struct{}{}
 	}
 	for _, t := range e.DerivedTypes {
 		datatypes[t.Name] = struct{}{}
-		periods[t.Period] = struct{}{}
+		periods[strconv.FormatUint(t.Period, 10)] = struct{}{}
 	}
 
 	req.DataTypes = slices.Collect(maps.Keys(datatypes))
-	periodsStr := strings.Join(slices.Collect(maps.Keys(datatypes)), ",")
+	periodsStr := strings.Join(slices.Collect(maps.Keys(periods)), ",")
 
 	filters := []string{}
 	if e.OnlyActiveStations {
@@ -117,15 +131,7 @@ func (e Elaboration) GetInitialState() (ElaborationState, error) {
 	}
 
 	req.Limit = -1
-
-	var res odhts.Response[DtoTreeData]
-	err := odhts.Latest(*e.c, req, &res)
-	if err != nil {
-		slog.Error("error getting latest records from ninja. aborting...", "err", err)
-		return ElaborationState{}, err
-	}
-
-	return mapNinja2ElabTree(res), nil
+	return req
 }
 
 func mapNinja2ElabTree(o odhts.Response[DtoTreeData]) ElaborationState {
@@ -174,8 +180,12 @@ func (e Elaboration) GetHistory(stationtype string, stationcode string, datatype
 	return []Measurement{}, nil
 }
 
-func (e Elaboration) FollowStation(ElaborationState, func(Station, []Measurement) ([]ElabResult, error)) {
-
+func (e Elaboration) FollowStation(es ElaborationState, handle func(Station, []Measurement) ([]ElabResult, error)) {
+	for _, stp := range es {
+		for _, st := range stp.Stations {
+			handle(st.Station, []Measurement{})
+		}
+	}
 }
 
 func (e Elaboration) PushResults(results []ElabResult) error {
