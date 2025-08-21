@@ -48,17 +48,21 @@ func main() {
 }
 
 type Elaboration struct {
-	StationTypes       []string
-	Filter             string
-	OnlyActiveStations bool
-	BaseTypes          []BaseDataType
-	DerivedTypes       []DerivedDataType
-	b                  *bdplib.Bdp
-	c                  *odhts.C
+	StationTypes        []string
+	Filter              string
+	OnlyActiveStations  bool
+	BaseTypes           []BaseDataType
+	DerivedTypes        []DerivedDataType
+	b                   *bdplib.Bdp
+	c                   *odhts.C
+	timeBatchAdder      historyTimeBatcher
+	HistoryRequestLimit int
 }
 
+type historyTimeBatcher = func(time.Time) time.Time
+
 func NewElaboration(ts *odhts.C, bdp *bdplib.Bdp) Elaboration {
-	return Elaboration{b: bdp, c: ts}
+	return Elaboration{b: bdp, c: ts, timeBatchAdder: oneMonth, HistoryRequestLimit: 1000}
 }
 
 type BaseDataType struct {
@@ -176,9 +180,85 @@ type ESDataType struct {
 
 type ElaborationState = map[string]ESStationType
 
-func (e Elaboration) GetHistory(stationtype string, stationcode string, datatype string, period Period, filter string, from time.Time, to time.Time) ([]Measurement, error) {
-	return []Measurement{}, nil
+func oneMonth(t time.Time) time.Time {
+	return t.AddDate(0, 1, 0)
 }
+
+func (e Elaboration) GetHistory(stationtypes []string, stationcodes []string, datatypes []string, periods []Period, from time.Time, to time.Time) ([]Measurement, error) {
+	var ret []Measurement
+
+	// Ninja cannot handle too large time period requests, so we do it one month at a time
+	for start, end := from, to; start.Before(end); start = e.timeBatchAdder(start) {
+		windowEnd := e.timeBatchAdder(start)
+		if windowEnd.After(end) {
+			windowEnd = end
+		}
+		for page := 0; ; page += 1 {
+			req := e.buildHistoryRequest(stationtypes, stationcodes, datatypes, periods, from, to)
+
+			req.Select = "mvalue,mperiod,mvalidtime,scode,stype,tname"
+			req.Limit = e.HistoryRequestLimit
+			req.Offset = uint(page * req.Limit)
+
+			res := &odhts.Response[[]Measurement]{}
+
+			err := odhts.History(*e.c, req, res)
+			if err != nil {
+				return nil, err
+			}
+
+			ret = append(ret, res.Data...)
+
+			// only if limit = length, there might be more data
+			if res.Limit != int64(len(res.Data)) {
+				break
+			} else {
+				slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", req.Offset, "firstDate", res.Data[0].MValidTime.Time)
+			}
+		}
+	}
+	return ret, nil
+}
+func (e Elaboration) buildHistoryRequest(stationtypes []string, stationcodes []string, datatypes []string, periods []Period, from time.Time, to time.Time) *odhts.Request {
+	req := odhts.DefaultRequest()
+	req.Repr = odhts.FlatNode
+	req.StationTypes = stationtypes
+
+	req.DataTypes = datatypes
+
+	periodsStr := []string{}
+	for _, period := range periods {
+		periodsStr = append(periodsStr, strconv.FormatUint(period, 10))
+	}
+
+	stationCodesStr := []string{}
+	for _, stationcode := range stationcodes {
+		stationCodesStr = append(stationCodesStr, fmt.Sprintf("\"%s\"", stationcode))
+	}
+
+	filters := []string{}
+	if e.OnlyActiveStations {
+		filters = append(filters, "sactive.eq.true")
+	}
+	if len(periodsStr) > 0 {
+		filters = append(filters, fmt.Sprintf("mperiod.in.(%s)", strings.Join(periodsStr, ",")))
+	}
+	if len(stationCodesStr) > 0 {
+		filters = append(filters, fmt.Sprintf("scode.in.(%s)", strings.Join(stationCodesStr, ",")))
+	}
+	if e.Filter != "" {
+		filters = append(filters, e.Filter)
+	}
+	if len(filters) > 0 {
+		req.Where = fmt.Sprintf("and(%s)", strings.Join(filters, ","))
+	}
+
+	req.Limit = -1
+	return req
+}
+
+// arbitraty starting point where there should be no data yet
+var minTime = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func (e Elaboration) FollowStation(es ElaborationState, handle func(Station, []Measurement) ([]ElabResult, error)) {
 	for _, stp := range es {
