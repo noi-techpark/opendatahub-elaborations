@@ -1,0 +1,39 @@
+
+# stop transforming data after this timestamp (must be a multiple of 5 minutes):
+LAST_TRAIN_TS: "__LAST_TRAIN_TS__"
+
+# whether to use the one-hot encoded month as predictor
+USE_MONTH: True
+
+# how many hours to predict starting from LAST_TRAIN_TS + 5 minutes:
+HOURS_TO_PREDICT: 48
+
+# model type (DNN or LINEAR):
+MODEL_TYPE: "DNN"
+
+# how many epochs to train (typical values: 2 - 20):
+MODEL_EPOCHS: 15
+
+# how many distinct values to use for the hour column: 24 (1 hour resolution), 96 (15 min) or 288 (5 min):
+HOUR_COLS: 288
+
+# whether to one-hot encode hour column:
+HOUR_ONEHOT: True
+
+# whether to use autoregressive columns for occupation:
+USE_AUTOREG_COLS: True
+
+# whether to use autoregressive column with 1-day lag (applicable only for USE_AUTOREG_COLS = True)
+USE_AUTOREG_COLS_1DAY: True
+
+# the amount of (relative) noise to add to the autoregressive columns for occupation:
+AUTOREG_NOISE: 0.25
+
+# use 7-day mean
+USE_7DAY_MEAN: True
+
+# use 1-day-weather-forecasts
+USE_FORECAST: True
+
+# prediction output file name
+OUTPUT: "__OUTPUT__"
