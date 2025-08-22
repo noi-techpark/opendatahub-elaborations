@@ -223,6 +223,8 @@ func (e Elaboration) buildHistoryRequest(stationtypes []string, stationcodes []s
 	req := odhts.DefaultRequest()
 	req.Repr = odhts.FlatNode
 	req.StationTypes = stationtypes
+	req.From = from
+	req.To = to
 
 	req.DataTypes = datatypes
 
