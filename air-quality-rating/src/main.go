@@ -6,7 +6,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"maps"
 	"slices"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"github.com/noi-techpark/go-timeseries-client/odhts"
+	"github.com/noi-techpark/go-timeseries-client/where"
 	"github.com/noi-techpark/opendatahub-go-sdk/ingest/ms"
 	"github.com/noi-techpark/opendatahub-go-sdk/tel"
 	"github.com/robfig/cron/v3"
@@ -122,16 +122,16 @@ func (e Elaboration) buildInitialStateRequest() *odhts.Request {
 
 	filters := []string{}
 	if e.OnlyActiveStations {
-		filters = append(filters, "sactive.eq.true")
+		filters = append(filters, where.Eq("scode", "true"))
 	}
 	if periodsStr != "" {
-		filters = append(filters, fmt.Sprintf("mperiod.in.(%s)", periodsStr))
+		filters = append(filters, where.In("mperiod", periodsStr))
 	}
 	if e.Filter != "" {
 		filters = append(filters, e.Filter)
 	}
 	if len(filters) > 0 {
-		req.Where = fmt.Sprintf("and(%s)", strings.Join(filters, ","))
+		req.Where = where.And(filters...)
 	}
 
 	req.Limit = -1
@@ -231,26 +231,21 @@ func (e Elaboration) buildHistoryRequest(stationtypes []string, stationcodes []s
 		periodsStr = append(periodsStr, strconv.FormatUint(period, 10))
 	}
 
-	stationCodesStr := []string{}
-	for _, stationcode := range stationcodes {
-		stationCodesStr = append(stationCodesStr, fmt.Sprintf("\"%s\"", stationcode))
-	}
-
 	filters := []string{}
 	if e.OnlyActiveStations {
-		filters = append(filters, "sactive.eq.true")
+		filters = append(filters, where.Eq("sactive", "true"))
 	}
 	if len(periodsStr) > 0 {
-		filters = append(filters, fmt.Sprintf("mperiod.in.(%s)", strings.Join(periodsStr, ",")))
+		filters = append(filters, where.In("mperiod", periodsStr...))
 	}
-	if len(stationCodesStr) > 0 {
-		filters = append(filters, fmt.Sprintf("scode.in.(%s)", strings.Join(stationCodesStr, ",")))
+	if len(stationcodes) > 0 {
+		filters = append(filters, where.In("scode", where.EscapeList(stationcodes...)...))
 	}
 	if e.Filter != "" {
 		filters = append(filters, e.Filter)
 	}
 	if len(filters) > 0 {
-		req.Where = fmt.Sprintf("and(%s)", strings.Join(filters, ","))
+		req.Where = where.And(filters...)
 	}
 
 	req.Limit = -1
