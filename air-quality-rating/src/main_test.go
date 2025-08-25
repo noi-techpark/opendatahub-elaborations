@@ -39,7 +39,7 @@ func TestElaboration_buildInitialStateRequest(t *testing.T) {
 			{Name: "both", Period: 600},
 			{Name: "both", Period: 3600},
 		},
-		DerivedTypes: []DerivedDataType{
+		ElaboratedTypes: []ElaboratedDataType{
 			{Name: "der1", Period: 3600},
 			{Name: "both", Period: 3600},
 			{Name: "both", Period: 600},
