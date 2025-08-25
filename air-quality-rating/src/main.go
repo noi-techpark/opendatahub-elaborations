@@ -52,7 +52,8 @@ type Elaboration struct {
 	Filter              string
 	OnlyActiveStations  bool
 	BaseTypes           []BaseDataType
-	DerivedTypes        []DerivedDataType
+	ElaboratedTypes     []ElaboratedDataType
+	StartingPoint       time.Time
 	b                   *bdplib.Bdp
 	c                   *odhts.C
 	timeBatchAdder      historyTimeBatcher
@@ -61,8 +62,11 @@ type Elaboration struct {
 
 type historyTimeBatcher = func(time.Time) time.Time
 
+// arbitraty starting point where there should be no data yet
+var minTime = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
+
 func NewElaboration(ts *odhts.C, bdp *bdplib.Bdp) Elaboration {
-	return Elaboration{b: bdp, c: ts, timeBatchAdder: oneMonth, HistoryRequestLimit: 1000}
+	return Elaboration{b: bdp, c: ts, timeBatchAdder: oneMonth, HistoryRequestLimit: 1000, StartingPoint: minTime}
 }
 
 type BaseDataType struct {
@@ -70,12 +74,12 @@ type BaseDataType struct {
 	Period Period
 }
 
-type DerivedDataType struct {
+type ElaboratedDataType struct {
 	Name        string
+	Period      Period
 	Unit        string
 	Description string
 	Rtype       string
-	Period      Period
 	MetaData    map[string]any
 	DontSync    bool
 }
@@ -84,7 +88,19 @@ func (e Elaboration) SyncDataTypes() []bdplib.DataTypeList {
 	return []bdplib.DataTypeList{}
 }
 
-type Station odhts.StationDto[map[string]any]
+type Station struct {
+	Stationcode string `json:"scode"`
+	Name        string `json:"sname"`
+	Origin      string `json:"sorigin"`
+	Stationtype string `json:"stype"`
+	Coord       struct {
+		X    float32
+		Y    float32
+		Srid uint32
+	} `json:"scoordinate"`
+	Metadata map[string]any `json:"smetadata"`
+}
+
 type Measurement odhts.LatestDto
 type Period = uint64
 
@@ -112,7 +128,7 @@ func (e Elaboration) buildInitialStateRequest() *odhts.Request {
 		datatypes[t.Name] = struct{}{}
 		periods[strconv.FormatUint(t.Period, 10)] = struct{}{}
 	}
-	for _, t := range e.DerivedTypes {
+	for _, t := range e.ElaboratedTypes {
 		datatypes[t.Name] = struct{}{}
 		periods[strconv.FormatUint(t.Period, 10)] = struct{}{}
 	}
@@ -122,7 +138,7 @@ func (e Elaboration) buildInitialStateRequest() *odhts.Request {
 
 	filters := []string{}
 	if e.OnlyActiveStations {
-		filters = append(filters, where.Eq("scode", "true"))
+		filters = append(filters, where.Eq("sactive", "true"))
 	}
 	if periodsStr != "" {
 		filters = append(filters, where.In("mperiod", periodsStr))
@@ -254,28 +270,87 @@ func (e Elaboration) buildHistoryRequest(stationtypes []string, stationcodes []s
 	return req
 }
 
-// arbitraty starting point where there should be no data yet
-var minTime = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
+// we find the earlieast derived type (e.g. the end of)
+func (e Elaboration) StationCatchupInterval(s ESStation) (from time.Time, to time.Time) {
+	for _, t := range e.BaseTypes {
+		edt := s.Datatypes[t.Name]
+		if edt.Periods != nil {
+			per := edt.Periods[t.Period]
+			if to.Before(per) {
+				to = per
+			}
+		}
+	}
+	for _, t := range e.ElaboratedTypes {
+		edt := s.Datatypes[t.Name]
+		if edt.Periods != nil {
+			per := edt.Periods[t.Period]
+			if from.IsZero() || from.After(per) {
+				from = per
+			}
+		}
+	}
+	if from.IsZero() {
+		from = e.StartingPoint
+	}
+	return
+}
 
+func (e Elaboration) getStationInterval(s ESStation, from time.Time, to time.Time) ([]Measurement, error) {
+	dts := []string{}
+	periods := []Period{}
+	for _, t := range e.BaseTypes {
+		dts = append(dts, t.Name)
+		periods = append(periods, t.Period)
+	}
+	return e.GetHistory([]string{s.Station.Stationtype}, []string{s.Station.Stationcode}, dts, periods, from, to)
+}
+
+/*
+Elaborate one station at a time, catch up from earlierst elaborated measurement to latest base measurement.
+*/
 func (e Elaboration) FollowStation(es ElaborationState, handle func(Station, []Measurement) ([]ElabResult, error)) {
-	for _, stp := range es {
+	for stationtype, stp := range es {
 		for _, st := range stp.Stations {
-			handle(st.Station, []Measurement{})
+			from, to := e.StationCatchupInterval(st)
+			if !to.After(from) {
+				// No data or already caught up
+				slog.Debug("not computing anything for station", "station", st)
+				continue
+			}
+			ms, err := e.getStationInterval(st, from, to)
+			if err != nil {
+				slog.Error("failed requesting data for station. continuing...", "station", st, "err", err, "from", from, "to", to)
+				continue
+			}
+			res, err := handle(st.Station, ms)
+			if err != nil {
+				slog.Error("error during elaboration of station. continuing...", "station", st, "err", err, "from", from, "to", to)
+				continue
+			}
+			if err := e.PushResults(stationtype, res); err != nil {
+				slog.Error("error pushing result for station", "station", st, "err", err, "from", from, "to", to)
+				continue
+			}
 		}
 	}
 }
-
-func (e Elaboration) PushResults(results []ElabResult) error {
-	return nil
+func (e Elaboration) PushResults(stationtype string, results []ElabResult) error {
+	b := (*e.b)
+	dm := b.CreateDataMap()
+	for _, r := range results {
+		dm.AddRecord(r.StationCode, r.DataType, bdplib.CreateRecord(r.Timestamp.UnixMilli(), r.Value, r.Period))
+	}
+	return b.PushData(stationtype, dm)
 }
 
 type ElabResult struct {
-	Timestamp   int64
+	Timestamp   time.Time
 	Period      Period
 	StationType string
 	StationCode string
 	DataType    string
-	Value       interface{}
+	Value       any
 }
 
 type DtoMeasurement struct {
