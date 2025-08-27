@@ -5,7 +5,6 @@
 package elab
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -13,41 +12,13 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"github.com/noi-techpark/go-timeseries-client/odhts"
 	"github.com/noi-techpark/go-timeseries-client/where"
-	"github.com/noi-techpark/opendatahub-go-sdk/ingest/ms"
-	"github.com/noi-techpark/opendatahub-go-sdk/tel"
-	"github.com/robfig/cron/v3"
 )
-
-var env struct {
-	LOG_LEVEL         string
-	CRON              string
-	NINJA_BASEURL     string
-	NINJA_REFERER     string
-	ODH_TOKEN_URL     string
-	ODH_CLIENT_ID     string
-	ODH_CLIENT_SECRET string
-}
-
-func main() {
-	ms.InitWithEnv(context.Background(), "", &env)
-	slog.Info("Starting air-quality-rating elaboration...")
-	defer tel.FlushOnPanic()
-
-	// b := bdplib.FromEnv()
-
-	n := odhts.NewCustomClient(env.NINJA_BASEURL, env.ODH_TOKEN_URL, "el-air-quality-rating")
-	n.UseAuth(env.ODH_CLIENT_ID, env.ODH_CLIENT_SECRET)
-
-	c := cron.New(cron.WithSeconds())
-	c.AddFunc(env.CRON, func() {
-
-	})
-}
 
 type Elaboration struct {
 	StationTypes        []string
@@ -58,17 +29,14 @@ type Elaboration struct {
 	StartingPoint       time.Time
 	b                   *bdplib.Bdp
 	c                   *odhts.C
-	timeBatchAdder      historyTimeBatcher
 	HistoryRequestLimit int
 }
-
-type historyTimeBatcher = func(time.Time) time.Time
 
 // arbitraty starting point where there should be no data yet
 var minTime = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func NewElaboration(ts *odhts.C, bdp *bdplib.Bdp) Elaboration {
-	return Elaboration{b: bdp, c: ts, timeBatchAdder: oneMonth, HistoryRequestLimit: 1000, StartingPoint: minTime}
+	return Elaboration{b: bdp, c: ts, HistoryRequestLimit: 1000, StartingPoint: minTime}
 }
 
 type BaseDataType struct {
@@ -85,24 +53,29 @@ type ElaboratedDataType struct {
 	MetaData    map[string]any
 	DontSync    bool
 }
-
-func (e Elaboration) SyncDataTypes() error {
-	b := (*e.b)
-	dts := map[string]bdplib.DataType{}
-	for _, t := range e.ElaboratedTypes {
-		if !t.DontSync {
-			dts[t.Name] = bdplib.DataType{
-				Name:        t.Name,
-				Description: t.Description,
-				Unit:        t.Unit,
-				Rtype:       t.Rtype,
-				MetaData:    t.MetaData,
-			}
-		}
-	}
-	return b.SyncDataTypes(slices.Collect(maps.Values(dts)))
+type ElabResult struct {
+	Timestamp   time.Time
+	Period      Period
+	StationType string
+	StationCode string
+	DataType    string
+	Value       any
 }
 
+type DtoMeasurement struct {
+	Period uint64       `json:"mperiod"`
+	Time   odhts.TsTime `json:"mvalidtime"`
+	Since  odhts.TsTime `json:"mtransactiontime"`
+}
+
+type DtoTreeData = map[string]struct {
+	Stations map[string]struct {
+		Station
+		Datatypes map[string]struct {
+			Measurements []DtoMeasurement `json:"tmeasurements"`
+		} `json:"sdatatypes"`
+	} `json:"stations"`
+}
 type Station struct {
 	Stationcode string `json:"scode"`
 	Name        string `json:"sname"`
@@ -171,8 +144,25 @@ type Measurement struct {
 }
 type Period = uint64
 
-func (e Elaboration) GetInitialState() (ElaborationState, error) {
-	req := e.buildInitialStateRequest()
+func (e Elaboration) SyncDataTypes() error {
+	b := (*e.b)
+	dts := map[string]bdplib.DataType{}
+	for _, t := range e.ElaboratedTypes {
+		if !t.DontSync {
+			dts[t.Name] = bdplib.DataType{
+				Name:        t.Name,
+				Description: t.Description,
+				Unit:        t.Unit,
+				Rtype:       t.Rtype,
+				MetaData:    t.MetaData,
+			}
+		}
+	}
+	return b.SyncDataTypes(slices.Collect(maps.Values(dts)))
+}
+
+func (e Elaboration) RequestState() (ElaborationState, error) {
+	req := e.buildStateRequest()
 
 	var res odhts.Response[DtoTreeData]
 	err := odhts.Latest(*e.c, req, &res)
@@ -184,7 +174,7 @@ func (e Elaboration) GetInitialState() (ElaborationState, error) {
 	return mapNinja2ElabTree(res), nil
 }
 
-func (e Elaboration) buildInitialStateRequest() *odhts.Request {
+func (e Elaboration) buildStateRequest() *odhts.Request {
 	req := odhts.DefaultRequest()
 	req.Repr = odhts.TreeNode
 	req.StationTypes = e.StationTypes
@@ -267,37 +257,29 @@ func oneMonth(t time.Time) time.Time {
 	return t.AddDate(0, 1, 0)
 }
 
-func (e Elaboration) GetHistory(stationtypes []string, stationcodes []string, datatypes []string, periods []Period, from time.Time, to time.Time) ([]Measurement, error) {
+func (e Elaboration) RequestHistory(stationtypes []string, stationcodes []string, datatypes []string, periods []Period, from time.Time, to time.Time) ([]Measurement, error) {
 	var ret []Measurement
+	for page := 0; ; page += 1 {
+		req := e.buildHistoryRequest(stationtypes, stationcodes, datatypes, periods, from, to)
 
-	// Ninja cannot handle too large time period requests, so we do it one month at a time
-	for start, end := from, to; start.Before(end); start = e.timeBatchAdder(start) {
-		windowEnd := e.timeBatchAdder(start)
-		if windowEnd.After(end) {
-			windowEnd = end
+		req.Select = "mvalue,mperiod,mvalidtime,scode,stype,tname"
+		req.Limit = e.HistoryRequestLimit
+		req.Offset = uint(page * req.Limit)
+
+		res := &odhts.Response[[]Measurement]{}
+
+		err := odhts.History(*e.c, req, res)
+		if err != nil {
+			return nil, err
 		}
-		for page := 0; ; page += 1 {
-			req := e.buildHistoryRequest(stationtypes, stationcodes, datatypes, periods, from, to)
 
-			req.Select = "mvalue,mperiod,mvalidtime,scode,stype,tname"
-			req.Limit = e.HistoryRequestLimit
-			req.Offset = uint(page * req.Limit)
+		ret = append(ret, res.Data...)
 
-			res := &odhts.Response[[]Measurement]{}
-
-			err := odhts.History(*e.c, req, res)
-			if err != nil {
-				return nil, err
-			}
-
-			ret = append(ret, res.Data...)
-
-			// only if limit = length, there might be more data
-			if res.Limit != int64(len(res.Data)) {
-				break
-			} else {
-				slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", req.Offset, "firstDate", res.Data[0].Timestamp.Time)
-			}
+		// only if limit = length, there might be more data
+		if res.Limit != int64(len(res.Data)) {
+			break
+		} else {
+			slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", req.Offset, "firstDate", res.Data[0].Timestamp.Time)
 		}
 	}
 	return ret, nil
@@ -337,17 +319,8 @@ func (e Elaboration) buildHistoryRequest(stationtypes []string, stationcodes []s
 	return req
 }
 
-// we find the earlieast derived type (e.g. the end of)
-func (e Elaboration) StationCatchupInterval(s ESStation) (from time.Time, to time.Time) {
-	for _, t := range e.BaseTypes {
-		edt := s.Datatypes[t.Name]
-		if edt.Periods != nil {
-			per := edt.Periods[t.Period]
-			if to.Before(per) {
-				to = per
-			}
-		}
-	}
+// we find the earliest elaborated type (e.g. the end of previous elaboration) and the latest base type
+func (e Elaboration) stationCatchupInterval(s ESStation) (from time.Time, to time.Time, estimatedMeasurements uint64) {
 	for _, t := range e.ElaboratedTypes {
 		edt := s.Datatypes[t.Name]
 		if edt.Periods != nil {
@@ -357,50 +330,154 @@ func (e Elaboration) StationCatchupInterval(s ESStation) (from time.Time, to tim
 			}
 		}
 	}
+
+	for _, t := range e.BaseTypes {
+		edt := s.Datatypes[t.Name]
+		if edt.Periods != nil {
+			per := edt.Periods[t.Period]
+			if to.Before(per) {
+				to = per
+			}
+			// we assume that every period has a history for interval [from:per], and that records actually have that periodicity
+			if !per.IsZero() && t.Period > 0 {
+				intervalSeconds := per.Sub(from).Seconds()
+				if intervalSeconds > 0 {
+					estimatedMeasurements += uint64(intervalSeconds) / t.Period
+				}
+			}
+		}
+	}
 	if from.IsZero() {
 		from = e.StartingPoint
 	}
+
 	return
 }
 
-func (e Elaboration) getStationInterval(s ESStation, from time.Time, to time.Time) ([]Measurement, error) {
+type elabBucket struct {
+	stationtype string
+	drops       uint64
+	stations    []Station
+	from        time.Time
+	to          time.Time
+}
+
+func (e elabBucket) consolidate(drops uint64, station Station, from time.Time, to time.Time) elabBucket {
+	newBucket := elabBucket{
+		stationtype: e.stationtype,
+		drops:       e.drops + drops,
+		stations:    append(e.stations, station),
+		from:        e.from,
+		to:          e.to,
+	}
+
+	if newBucket.from.IsZero() || e.from.After(from) {
+		newBucket.from = from
+		// todo: update estimate
+	}
+	if e.to.Before(to) {
+		newBucket.to = to
+		//todo: update estimate
+	}
+	return newBucket
+}
+
+func (b elabBucket) flush(e Elaboration, handle func(s Station, ms []Measurement) ([]ElabResult, error)) {
 	dts := []string{}
 	periods := []Period{}
 	for _, t := range e.BaseTypes {
 		dts = append(dts, t.Name)
 		periods = append(periods, t.Period)
 	}
-	return e.GetHistory([]string{s.Station.Stationtype}, []string{s.Station.Stationcode}, dts, periods, from, to)
+	stations := map[string]Station{}
+	for _, st := range b.stations {
+		stations[st.Stationcode] = st
+	}
+
+	// request history for all stations in bucket at the same time
+	ms, err := e.RequestHistory([]string{b.stationtype}, slices.Collect(maps.Keys(stations)), dts, periods, b.from, b.to)
+	if err != nil {
+		slog.Error("failed requesting data. discarding bucket ...", "bucket", b, "err", err)
+		return
+	}
+
+	// sort out which measurements belong to which station
+	stMs := map[string][]Measurement{}
+	for _, m := range ms {
+		stMs[m.StationCode] = append(stMs[m.StationCode], m)
+	}
+
+	allResults := []ElabResult{}
+	// call handler for each individual station
+	for scode, ms := range stMs {
+		station := stations[scode]
+		stationResults, err := handle(station, ms)
+		if err != nil {
+			slog.Error("error during elaboration of station. continuing...", "station", station, "err", err)
+			continue
+		}
+		allResults = append(allResults, stationResults...)
+	}
+
+	if err := e.PushResults(b.stationtype, allResults); err != nil {
+		slog.Error("error pushing results", "bucket", b, "err", err)
+		return
+	}
+}
+
+type stationFollower struct {
+	// Station elaborations are grouped while their estimated measurement count does not exceed this
+	BucketMax  uint64
+	WorkerPool int
+	e          Elaboration
+}
+
+func (e Elaboration) NewStationFollower() stationFollower {
+	return stationFollower{
+		BucketMax:  20000,
+		WorkerPool: 10,
+		e:          e,
+	}
 }
 
 /*
 Elaborate one station at a time, catch up from earlierst elaborated measurement to latest base measurement.
 */
-func (e Elaboration) FollowStation(es ElaborationState, handle func(s Station, ms []Measurement) ([]ElabResult, error)) {
+func (f stationFollower) Elaborate(es ElaborationState, handle func(s Station, ms []Measurement) ([]ElabResult, error)) {
+	wg := sync.WaitGroup{}
+	workers := make(chan struct{}, f.WorkerPool)
 	for stationtype, stp := range es {
+		bucket := elabBucket{stationtype: stationtype}
 		for _, st := range stp.Stations {
-			from, to := e.StationCatchupInterval(st)
+			from, to, estimatedMeasurements := f.e.stationCatchupInterval(st)
 			if !to.After(from) {
 				// No data or already caught up
 				slog.Debug("not computing anything for station", "station", st)
 				continue
 			}
-			ms, err := e.getStationInterval(st, from, to)
-			if err != nil {
-				slog.Error("failed requesting data for station. continuing...", "station", st, "err", err, "from", from, "to", to)
-				continue
+
+			// if it would overflow the bucket, go flush the old one first, and create a new bucket
+			if estimatedMeasurements+bucket.drops > f.BucketMax {
+				wg.Add(1)
+				workers <- struct{}{}
+				go func() {
+					defer func() { <-workers; wg.Done() }()
+					bucket.flush(f.e, handle)
+				}()
+				bucket = elabBucket{stationtype: stationtype}
 			}
-			res, err := handle(st.Station, ms)
-			if err != nil {
-				slog.Error("error during elaboration of station. continuing...", "station", st, "err", err, "from", from, "to", to)
-				continue
-			}
-			if err := e.PushResults(stationtype, res); err != nil {
-				slog.Error("error pushing result for station", "station", st, "err", err, "from", from, "to", to)
-				continue
-			}
+			bucket.consolidate(estimatedMeasurements, st.Station, from, to)
 		}
+
+		wg.Add(1)
+		workers <- struct{}{}
+		go func() {
+			defer func() { <-workers; wg.Done() }()
+			bucket.flush(f.e, handle)
+		}()
+		bucket = elabBucket{stationtype: stationtype}
 	}
+	wg.Wait()
 }
 
 func (e Elaboration) PushResults(stationtype string, results []ElabResult) error {
@@ -410,28 +487,4 @@ func (e Elaboration) PushResults(stationtype string, results []ElabResult) error
 		dm.AddRecord(r.StationCode, r.DataType, bdplib.CreateRecord(r.Timestamp.UnixMilli(), r.Value, r.Period))
 	}
 	return b.PushData(stationtype, dm)
-}
-
-type ElabResult struct {
-	Timestamp   time.Time
-	Period      Period
-	StationType string
-	StationCode string
-	DataType    string
-	Value       any
-}
-
-type DtoMeasurement struct {
-	Period uint64       `json:"mperiod"`
-	Time   odhts.TsTime `json:"mvalidtime"`
-	Since  odhts.TsTime `json:"mtransactiontime"`
-}
-
-type DtoTreeData = map[string]struct {
-	Stations map[string]struct {
-		Station
-		Datatypes map[string]struct {
-			Measurements []DtoMeasurement `json:"tmeasurements"`
-		} `json:"sdatatypes"`
-	} `json:"stations"`
 }

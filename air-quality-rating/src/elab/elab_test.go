@@ -45,6 +45,6 @@ func TestElaboration_buildInitialStateRequest(t *testing.T) {
 			{Name: "both", Period: 600},
 		},
 	}
-	req := e.buildInitialStateRequest()
+	req := e.buildStateRequest()
 	assert.Equal(t, req.Where, "and(sactive.eq.true,mperiod.in.(60,600,3600),scode.eq.\"123\")")
 }

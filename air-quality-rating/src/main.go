@@ -46,9 +46,9 @@ func main() {
 
 	c := cron.New(cron.WithSeconds())
 	c.AddFunc(env.CRON, func() {
-		is, err := e.GetInitialState()
+		is, err := e.RequestState()
 		ms.FailOnError(context.Background(), err, "failed to get initial state")
-		e.FollowStation(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+		e.NewStationFollower().Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
 			capacity := s.Metadata["capacity"].(float64)
 			ret := []elab.ElabResult{}
 			for i, m := range ms {
