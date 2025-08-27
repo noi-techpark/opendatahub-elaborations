@@ -55,9 +55,9 @@ func main() {
 			ret := []elab.ElabResult{}
 			for i, m := range ms {
 				no2_um := *m.Value.Num
-				no2_rating, err := rateNo2(no2_um, m)
+				no2_rating, err := rateNo2(no2_um)
 				if err != nil {
-					slog.Error("could not elaborate measurement. continuing", "measurement", m)
+					slog.Error("could not elaborate measurement. skipping", "measurement", m)
 					continue
 				}
 
@@ -74,7 +74,7 @@ func main() {
 	})
 }
 
-func rateNo2(rating float64, m elab.Measurement) (string, error) {
+func rateNo2(rating float64) (string, error) {
 	concentration := ""
 	switch {
 	case rating >= 340:
