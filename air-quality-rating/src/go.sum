@@ -27,14 +27,12 @@ github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/noi-techpark/go-bdp-client v1.2.1 h1:kiIX8jv4N9q5VNO3cQ0YrHixq3Haxq3aIDclAYOD+gg=
-github.com/noi-techpark/go-bdp-client v1.2.1/go.mod h1:aooKwED49M7Au+9Y/o8wW/4yggIvaVRHc0JJvPnS10c=
 github.com/noi-techpark/go-bdp-client v1.3.0 h1:NQ+F6c40HUDYsWY8mNlQCB/5IUmDqZXp7Tp3X5FIDk4=
 github.com/noi-techpark/go-bdp-client v1.3.0/go.mod h1:aooKwED49M7Au+9Y/o8wW/4yggIvaVRHc0JJvPnS10c=
-github.com/noi-techpark/go-timeseries-client v0.0.0-20250822082949-b75fd6283caf h1:3xZ3SrmZPyz253V0rTUPYW1zkEqiJJYEH+AUVqfY1Rk=
-github.com/noi-techpark/go-timeseries-client v0.0.0-20250822082949-b75fd6283caf/go.mod h1:HzbXTeKGUegflWeRfgwfQFduX7P7YrZydBfVzeW0D4s=
 github.com/noi-techpark/go-timeseries-client v0.0.0-20250822084439-8aae699d91e0 h1:WsGKe9o0N4dgQrAzNR0moNs2UzjwSLNFge9KQgUKlj8=
 github.com/noi-techpark/go-timeseries-client v0.0.0-20250822084439-8aae699d91e0/go.mod h1:HzbXTeKGUegflWeRfgwfQFduX7P7YrZydBfVzeW0D4s=
+github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250827084348-58044b5a99fc h1:yn21un3vLcsq+HZfdWH7pvhlFcCtg/mgEqf1pwT/wJU=
+github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250827084348-58044b5a99fc/go.mod h1:ydIe9n4v8lzIgM/rE6Ehoh/mGI70enIWt/Sebcs5SHQ=
 github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3 h1:7RQ9CTRLoM4EGUcFq5ddEucAclwzLOU3WjVdVVPyGng=
 github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3/go.mod h1:nrdL8vMSFYWzkhxCiB1mD0lD3OcnXl9K4FYzFx0M0VY=
 github.com/noi-techpark/opendatahub-go-sdk/tel v1.0.0 h1:qZNcndXyVDNMjm97UUHY83SE/ajxFb3EG8Fy0knYJVA=

@@ -11,10 +11,10 @@ import (
 	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"github.com/noi-techpark/go-timeseries-client/odhts"
 	"github.com/noi-techpark/go-timeseries-client/where"
+	"github.com/noi-techpark/opendatahub-go-sdk/elab"
 	"github.com/noi-techpark/opendatahub-go-sdk/ingest/ms"
 	"github.com/noi-techpark/opendatahub-go-sdk/tel"
 	"github.com/robfig/cron/v3"
-	"opendatahub.com/el-air-quality-rating/elab"
 )
 
 var env struct {
