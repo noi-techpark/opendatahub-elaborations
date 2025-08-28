@@ -6,12 +6,10 @@ module opendatahub.com/el-air-quality-rating
 
 go 1.24.0
 
-replace github.com/noi-techpark/opendatahub-go-sdk/elab => /home/kmb/work/odh/opendatahub-go-sdk/elab
-
 require (
 	github.com/noi-techpark/go-bdp-client v1.3.0
 	github.com/noi-techpark/go-timeseries-client v0.0.0-20250822084439-8aae699d91e0
-	github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250827111229-e64331683ae3
+	github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250828162112-6fd06df6061d
 	github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3
 	github.com/noi-techpark/opendatahub-go-sdk/tel v1.0.0
 	github.com/robfig/cron/v3 v3.0.1
