@@ -1,6 +1,0 @@
-image:
-  repository: 
-  pullPolicy: IfNotPresent
-  tag: "0.2.0" # Set this when upgrading chart with --set-value
-
-env:
