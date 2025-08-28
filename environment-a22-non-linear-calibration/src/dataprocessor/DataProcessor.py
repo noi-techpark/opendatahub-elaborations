@@ -40,7 +40,6 @@ class Processor:
             DataType("PM2.5_processed","ug/m3", "PM2.5", "Mean"),
             DataType("NO-Alphasense_processed", "ug/m3", "NO (Alphasense)", "Mean"),
             DataType("NO2-Alphasense_processed", "ug/m3", "NO2 (Alphasense)", "Mean"),
-            DataType("NO2-Alphasense_processed_rating",None, "NO2 (Alphasense) rating", "Rating"),
             DataType("CO_processed", "mg/m3", "CO", "Mean"),
         ])
         
@@ -152,17 +151,5 @@ class Processor:
                         processed_value = 0
                     odhtimestamp = time.timestamp() * 1000
                     data_point_map[type_id+"_processed"] = DataPoint(odhtimestamp, processed_value, 3600)
-                    if type_id == "NO2-Alphasense":
-                        if processed_value >= 40:
-                            public_value = "very bad"
-                        elif processed_value > 30:
-                            public_value = "bad"
-                        elif processed_value > 20:
-                            public_value = "pretty good"
-                        elif processed_value > 10:
-                            public_value = "good"
-                        else:
-                            public_value = "very good"
-                        data_point_map[type_id+"_processed_rating"] = DataPoint(odhtimestamp, public_value, 3600)
                     processed_value = None
             return data_point_map
