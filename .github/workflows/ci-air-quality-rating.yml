@@ -33,7 +33,7 @@ jobs:
   deploy-test:
     runs-on: ubuntu-24.04
     needs: build
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/air-rating'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/airq-rating'
     concurrency: deploy-test
     environment: test
     env:
