@@ -18,13 +18,13 @@ import (
 )
 
 var env struct {
-	LOG_LEVEL          string
-	CRON               string
-	TS_API_BASEURL     string
-	TS_API_REFERER     string
-	AUTH_TOKEN_URL     string
-	AUTH_CLIENT_ID     string
-	AUTH_CLIENT_SECRET string
+	LOG_LEVEL         string
+	CRON              string
+	TS_API_BASE_URL   string
+	TS_API_REFERER    string
+	ODH_TOKEN_URL     string
+	ODH_CLIENT_ID     string
+	ODH_CLIENT_SECRET string
 }
 
 var EIAQ_NO2 = elab.ElaboratedDataType{Name: "EAQI-NO2", Description: "European Air Quality Index - NO2", Period: 3600, Rtype: "rating"}
@@ -36,8 +36,8 @@ func main() {
 
 	b := bdplib.FromEnv()
 
-	n := odhts.NewCustomClient(env.TS_API_BASEURL, env.AUTH_TOKEN_URL, env.TS_API_REFERER)
-	n.UseAuth(env.AUTH_CLIENT_ID, env.AUTH_CLIENT_SECRET)
+	n := odhts.NewCustomClient(env.TS_API_BASE_URL, env.ODH_TOKEN_URL, env.TS_API_REFERER)
+	n.UseAuth(env.ODH_CLIENT_ID, env.ODH_CLIENT_SECRET)
 
 	e := elab.NewElaboration(&n, &b)
 	e.StationTypes = []string{"EnvironmentStation"}
@@ -47,12 +47,11 @@ func main() {
 	e.ElaboratedTypes = []elab.ElaboratedDataType{EIAQ_NO2}
 	ms.FailOnError(context.Background(), e.SyncDataTypes(), "error syncing data types")
 
-	c := cron.New(cron.WithSeconds())
-	c.AddFunc(env.CRON, func() {
+	job := func() {
 		is, err := e.RequestState()
 		ms.FailOnError(context.Background(), err, "failed to get initial state")
 		e.NewStationFollower().Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
-			ret := []elab.ElabResult{}
+			ret := make([]elab.ElabResult, len(ms))
 			for i, m := range ms {
 				no2_um := *m.Value.Num
 				no2_rating, err := rateNo2(no2_um)
@@ -71,7 +70,13 @@ func main() {
 			}
 			return ret, nil
 		})
-	})
+	}
+
+	job()
+	c := cron.New(cron.WithSeconds())
+	c.AddFunc(env.CRON, job)
+	c.Start()
+	select {}
 }
 
 func rateNo2(rating float64) (string, error) {
