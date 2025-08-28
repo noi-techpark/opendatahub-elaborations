@@ -4,7 +4,7 @@
 
 module opendatahub.com/el-air-quality-rating
 
-go 1.24.5
+go 1.24.0
 
 require (
 	github.com/noi-techpark/go-bdp-client v1.3.0
