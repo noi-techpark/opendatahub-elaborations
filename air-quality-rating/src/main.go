@@ -49,7 +49,7 @@ func main() {
 		{Name: "nitrogen-dioxide", Period: 3600},
 	}
 	e.ElaboratedTypes = []elab.ElaboratedDataType{EIAQ_NO2}
-	e.Filter = where.In("sorigin", "a22-algorab", "APPABZ", "APPATN-open")
+	e.Filter = where.And(where.In("sorigin", "a22-algorab", "APPABZ", "APPATN-open"), where.Eq("scode", "RE1"))
 	ms.FailOnError(context.Background(), e.SyncDataTypes(), "error syncing data types")
 
 	job := func() {
