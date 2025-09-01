@@ -31,8 +31,8 @@ github.com/noi-techpark/go-bdp-client v1.3.1 h1:SKUsH2Ah4a5myuLtZhI4g53PHxlavWKK
 github.com/noi-techpark/go-bdp-client v1.3.1/go.mod h1:aooKwED49M7Au+9Y/o8wW/4yggIvaVRHc0JJvPnS10c=
 github.com/noi-techpark/go-timeseries-client v0.0.0-20250901121345-bc4dc5c06bba h1:z5wVREbdhjNPIPntqbPHk7fSWiUyDOYwmXJOo1OnHcU=
 github.com/noi-techpark/go-timeseries-client v0.0.0-20250901121345-bc4dc5c06bba/go.mod h1:HzbXTeKGUegflWeRfgwfQFduX7P7YrZydBfVzeW0D4s=
-github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250901132809-7bcd43375c34 h1:kND4epMWcDWwlps/6V6tAThhq894fFImBBsz3PHpXVo=
-github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250901132809-7bcd43375c34/go.mod h1:miJR5Y5uX0buiQAWTxmyGyIdBfJw+5+02NWXwuOh7Uk=
+github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250901133724-9fd4bf3f8b97 h1:1/jIoCFLmSHQO6z9jlRjIYkr1vTyRLyTBj/3fEDh4wA=
+github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250901133724-9fd4bf3f8b97/go.mod h1:miJR5Y5uX0buiQAWTxmyGyIdBfJw+5+02NWXwuOh7Uk=
 github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3 h1:7RQ9CTRLoM4EGUcFq5ddEucAclwzLOU3WjVdVVPyGng=
 github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3/go.mod h1:nrdL8vMSFYWzkhxCiB1mD0lD3OcnXl9K4FYzFx0M0VY=
 github.com/noi-techpark/opendatahub-go-sdk/tel v1.0.0 h1:qZNcndXyVDNMjm97UUHY83SE/ajxFb3EG8Fy0knYJVA=
