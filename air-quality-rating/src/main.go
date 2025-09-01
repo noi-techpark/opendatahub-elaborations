@@ -11,6 +11,7 @@ import (
 
 	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"github.com/noi-techpark/go-timeseries-client/odhts"
+	"github.com/noi-techpark/go-timeseries-client/where"
 	"github.com/noi-techpark/opendatahub-go-sdk/elab"
 	"github.com/noi-techpark/opendatahub-go-sdk/ingest/ms"
 	"github.com/noi-techpark/opendatahub-go-sdk/tel"
@@ -43,8 +44,11 @@ func main() {
 	e.StationTypes = []string{"EnvironmentStation"}
 	e.BaseTypes = []elab.BaseDataType{
 		{Name: "NO2-Alphasense_processed", Period: 3600},
-		{Name: "NO2 - Ossidi di azoto", Period: 3600}}
+		{Name: "NO2 - Ossidi di azoto", Period: 3600},
+		{Name: "nitrogen-dioxide", Period: 3600},
+	}
 	e.ElaboratedTypes = []elab.ElaboratedDataType{EIAQ_NO2}
+	e.Filter = where.In("sorigin", "a22-algorab", "APPABZ", "APPATN-open")
 	ms.FailOnError(context.Background(), e.SyncDataTypes(), "error syncing data types")
 
 	job := func() {
