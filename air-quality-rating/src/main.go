@@ -52,9 +52,11 @@ func main() {
 	ms.FailOnError(context.Background(), e.SyncDataTypes(), "error syncing data types")
 
 	job := func() {
+		slog.Info("Starting elaboration run")
 		is, err := e.RequestState()
 		ms.FailOnError(context.Background(), err, "failed to get initial state")
 		e.NewStationFollower().Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+			slog.Debug("Elaborating station", "station", s, "rec_cnt", len(ms))
 			ret := make([]elab.ElabResult, len(ms))
 			for i, m := range ms {
 				no2_um := *m.Value.Num
@@ -74,6 +76,7 @@ func main() {
 			}
 			return ret, nil
 		})
+		slog.Info("Elaboration job complete")
 	}
 
 	job()
