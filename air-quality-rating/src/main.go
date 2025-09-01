@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync/atomic"
 
 	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"github.com/noi-techpark/go-timeseries-client/odhts"
@@ -55,7 +56,9 @@ func main() {
 		slog.Info("Starting elaboration run")
 		is, err := e.RequestState()
 		ms.FailOnError(context.Background(), err, "failed to get initial state")
+		count := atomic.Int32{}
 		e.NewStationFollower().Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+			count.Add(1)
 			slog.Debug("Elaborating station", "station", s, "rec_cnt", len(ms))
 			ret := make([]elab.ElabResult, len(ms))
 			for i, m := range ms {
@@ -76,7 +79,7 @@ func main() {
 			}
 			return ret, nil
 		})
-		slog.Info("Elaboration job complete")
+		slog.Info("Elaboration job complete", "stationsCount", count.Load())
 	}
 
 	job()
