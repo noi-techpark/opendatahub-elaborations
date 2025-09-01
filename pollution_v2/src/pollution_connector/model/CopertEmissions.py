@@ -32,7 +32,13 @@ def copert_emissions(traffic_df, fc_info_year: str = ""):
         logger.warning(f"No fc_info file found for year '{fc_info_year}', using default 'fc_info.csv'")
         fc_info_filename = f'fc_info.csv'
 
-    input_copert = input_data_path + 'copert55.db'
+    copert_filename = f'copert55_{fc_info_year}.db'
+    my_file = Path(input_data_path + copert_filename)
+    if not my_file.is_file():
+        logger.warning(f"No copert55 file found for year '{fc_info_year}', using default 'copert55.db'")
+        copert_filename = f'copert55.db'
+
+    input_copert = input_data_path + copert_filename
     # Importa tabella dei coefficienti COPERT da DB
     con = sqlite3.connect(input_copert)
     copert = pd.read_sql_query("SELECT * FROM COPERT", con)
