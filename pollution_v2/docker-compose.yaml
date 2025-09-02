@@ -128,7 +128,7 @@ services:
       interval: 10s
       retries: 5
       start_period: 5s
-    restart: unless_stopped
+    restart: unless-stopped
 
   redis:
     image: redis:latest
@@ -142,7 +142,7 @@ services:
       timeout: 30s
       retries: 50
       start_period: 30s
-    restart: unless_stopped
+    restart: unless-stopped
 
   airflow-webserver:
     <<: *airflow-common
@@ -155,7 +155,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless_stopped
+    restart: unless-stopped
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -170,7 +170,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless_stopped
+    restart: unless-stopped
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -194,7 +194,7 @@ services:
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
-    restart: unless_stopped
+    restart: unless-stopped
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -209,7 +209,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless_stopped
+    restart: unless-stopped
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -308,7 +308,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless_stopped
+    restart: unless-stopped
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
@@ -324,7 +324,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless_stopped
+    restart: unless-stopped
 
   rline:
     build:
@@ -336,7 +336,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    restart: unless_stopped
+    restart: unless-stopped
 
 volumes:
   postgres-db-volume:
