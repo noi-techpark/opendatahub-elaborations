@@ -3,7 +3,7 @@
 ## Overview
 
 This projects gathers parking occupation data from the [Open Data
-Hub](]https://opendatahub.com/datasets) and uses that data together with weather forecast data
+Hub](https://opendatahub.com/datasets) and uses that data together with weather forecast data
 and information about holidays and school days. From this data,
 it trains a simple, shallow neural network that can forecast occupation.
 
