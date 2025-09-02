@@ -2,8 +2,6 @@
 
 set -e
 
-cd /data/ml/sit-sta-modules/parking-production || exit 1
-
 if [ "$CONDA_DEFAULT_ENV" != "tf" ]; then
     echo "not in expected conda environment"
     exit 1
