@@ -161,20 +161,17 @@ redis-cli -n 10 KEYS '*POLLUTION*' | xargs -r redis-cli -n 10 DEL
 "Parco circolante" stands for the configuration containing the estimate of the distribution of the types of car moving
 on the considered road.
 
-The folder `pollution_v2/src/pollution_connector/model/input` contains a dedicated CSV file for each year
-(e.g. `fc_info_2018.csv`) with a default one containing default values in case of processing a year with the
-corresponding file missing (`fc_info.csv`).
+The folder `pollution_v2/src/pollution_connector/model/input` contains a dedicated CSV file and copert55.db (a sqlite database) for each year
+(e.g. `fc_info_2018.csv`)
 
 When processing data for a specific year, the DAG looks for the file `fc_<year>.csv`: if found, the file is used,
-otherwise the system will use the default file `fc.csv` (e.g. with files `fc_2022.csv`, `fc_2023.csv` and `fc.csv`,
-when processing data for the year 2023 the system will use `fc_2023.csv` and when processing data for 2020 and/or 2024
-the system will use `fc.csv`. No configuration needs to be changed, just add the updated file, clean already
-processed records and let the DAGs run.
+otherwise the system look for the most recent year before `<year>` (e.g. if it does not find 2025 it will try 2024, and so on).  
 
-To update the "parco circolante" for a specific year, just add the corresponding file (and update the default file, if
-appropriate) and then [reset the Airflow cache](#Reset-Airflow-Redis-cache) for the previously computed data.
+No configuration needs to be changed, just add the updated file, clean already processed records and let the DAGs run.
 
-Clean previously updated data on ODH and run again the corresponding DAGs.
+To update the "parco circolante" for a specific year, add the corresponding file and then [reset the Airflow cache](#Reset-Airflow-Redis-cache) for the previously computed data.
+
+Clean previously updated data on Open Data Hub and run the corresponding DAGs again.
 
 ## How to use it
 
