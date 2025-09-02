@@ -28,7 +28,7 @@ def find_latest_file(path_format: str, year: int) -> str:
         try_year -=1
     
     if try_year < year:
-        logger.warning(f"File {path_format(str(year))} not found. Using most recent {filename} instead")
+        logger.warning(f"File {path_format.format(str(year))} not found. Using most recent {filename} instead")
         
     if ret == "":
         raise FileNotFoundError(f'Unable to find file {path_format} for year {year} or preceding')
