@@ -1,9 +1,9 @@
-src/data-models
-src/data-predictors
-src/data-raw
-src/graphs
-src/graphs
+src/data-models/**
+src/data-predictors/**
+src/data-raw/**
+src/graphs/**
 src/__pycache__
 src/config.yaml
+src/config.yaml.tmp
 
 .env
