@@ -21,13 +21,7 @@ services:
         RUN conda activate
         COPY ./src/requirements.txt .
         RUN conda create --name tf -y -f requirements.txt
-        RUN conda activate tf
-        
+        RUN echo 'conda activate tf' >> ~/.bashrc
 
-        #RUN python3 -m venv /venv
-        #RUN source /venv/bin/activate
-        #RUN pip install --no-cache-dir -r reqiurements.txt
-        #
-        #RUN apt remove -y build-essential python3-dev
     working_dir: /code
     tty: true

@@ -2,10 +2,10 @@
 
 PSQL="psql -h 127.0.0.1 dwh -U dwh"
 
-# if [ "$CONDA_DEFAULT_ENV" != "tf" ]; then
-#     echo "not in expected conda environment"
-#     exit 1
-# fi
+if [ "$CONDA_DEFAULT_ENV" != "tf" ]; then
+    echo "not in expected conda environment"
+    exit 1
+fi
 
 echo ""
 echo "--------------------------------------------------------------------------------"
