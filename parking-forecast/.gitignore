@@ -1,0 +1,9 @@
+src/data-models
+src/data-predictors
+src/data-raw
+src/graphs
+src/graphs
+src/__pycache__
+src/config.yaml
+
+.env

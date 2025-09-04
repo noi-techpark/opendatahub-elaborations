@@ -19,7 +19,7 @@ echo "-> getting new stations (if there are any)"
 
 echo
 echo "-> getting holidays"
-$PSQL < data-holidays-get.sql
+#$PSQL < data-holidays-get.sql
 
 echo
 echo "-> getting meteo forecasts"
