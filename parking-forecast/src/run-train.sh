@@ -23,7 +23,7 @@ $PSQL < data-holidays-get.sql
 
 echo
 echo "-> getting meteo forecasts"
-$PSQL < data-meteo-get.sql
+./data-meteo-get.sh
 
 echo
 echo "-> creating config.yaml from template"
