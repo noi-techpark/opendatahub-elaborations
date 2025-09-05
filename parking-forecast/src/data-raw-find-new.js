@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+
+// SPDX-FileCopyrightText: 2021-2025 STA AG <info@sta.bz.it>
+// SPDX-FileContributor: Chris Mair <chris@1006.org>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 // ----------------------------------------------------------------------------
 //
 // Parking occupancy prediction
