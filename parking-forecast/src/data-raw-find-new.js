@@ -57,7 +57,7 @@ let zeropad = num => {
 
     // --- get list of active stations from ODH
 
-    let stations_url = "https://mobility.api.opendatahub.bz.it/v2/flat/ParkingStation?limit=-1&distinct=true&where=sactive.eq.true";
+    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation?limit=-1&distinct=true&where=sactive.eq.true";
     let stations;
     try {
         stations = JSON.parse(https_get(stations_url));
@@ -101,7 +101,7 @@ let zeropad = num => {
 
         console.log("info: NEW  scode = " + station.scode + " is a candidate for a new station");
 
-        let data_url = `https://mobility.api.opendatahub.bz.it/v2/flat/ParkingStation/occupied/${from_date.toISOString()}/${to_date.toISOString()}?limit=-1&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
+        let data_url = `https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/${from_date.toISOString()}/${to_date.toISOString()}?limit=-1&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
         let name = station.scode + "__" + String(station.sname).replace(/[.\s\/:]/g, "_") + ".csv";
         let ready = false;
         let data;

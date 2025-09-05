@@ -102,7 +102,7 @@ function min_date(a, b) {
         // debug print
         // console.log(station.scode + " " + from_date.toISOString() + " " + to_date.toISOString());
 
-        let data_url = `https://mobility.api.opendatahub.bz.it/v2/flat/ParkingStation/occupied/${from_date.toISOString()}/${to_date.toISOString()}?limit=-1&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
+        let data_url = `https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/${from_date.toISOString()}/${to_date.toISOString()}?limit=-1&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
         let data;
         try {
             data = JSON.parse(https_get(data_url));

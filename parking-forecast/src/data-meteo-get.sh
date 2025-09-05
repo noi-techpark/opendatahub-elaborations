@@ -19,7 +19,7 @@ fi
 #    We will clean up these duplicates afterwards
 # 2) strip the timestamp component of the date
 # 3) convert the a-z weather code to it's ascii representation, and then subtract 97 to have it 0-based, since that's what the model expects
-curl "https://tourism.api.opendatahub.com/v1/WeatherHistory?rawsort=_Meta.LastUpdate&fields=Weather.en.Stationdata&pagesize=0&datefrom=$datefrom" \
+curl -s "https://tourism.api.opendatahub.com/v1/WeatherHistory?rawsort=_Meta.LastUpdate&fields=Weather.en.Stationdata&pagesize=0&datefrom=$datefrom" \
 | jq -r '.Items[].["Weather.en.Stationdata"][] | select(.Id == 3) | [.date, .WeatherCode] | @csv' \
 | sed 's/T[0-9:]*//g' \
 | awk -F',' 'BEGIN{OFS=","; for(i=0;i<256;i++) ord_map[sprintf("%c",i)]=i-97} {gsub(/"/, "", $2); $2 = sprintf("\"%d\"", ord_map[substr($2,1,1)]); print}' \
