@@ -19,8 +19,25 @@ echo "--------------------------------------------------------------------------
 
 
 echo
-echo "-> getting new stations (if there are any)"
-./data-raw-find-new.js
+echo "-> getting raw data"
+
+# load all the car park data into data-raw-candidate/;
+# if the download succeeds, remove the old data files from data-raw
+# and move the new ones from data-raw-candidate to data-raw,
+# otherwise remove data-raw-candidate and keep everything as is
+
+mkdir -p data-raw-candidate
+./data-raw-get.js
+
+if [ $? -eq 0 ]; then
+    echo "  -> success"
+    rm    -f data-raw/*csv
+    mv    data-raw-candidate/*csv data-raw/
+else
+    echo "  -> failure"
+    rm    -f data-raw-candidate/*csv
+fi
+
 
 echo
 echo "-> getting holidays"
