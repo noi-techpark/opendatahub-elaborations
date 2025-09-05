@@ -29,7 +29,7 @@ let fs = require("fs");
 
 function https_get(url) {
     url = url.replace(/'/g, "%27");
-    return String(child_process.spawnSync("curl", ["-H", "Referer: https://parking-forecast.sta.bz.it", "-L", url], {"timeout": 600000, "maxBuffer": 2*1024*1024*1024}).output[1]);
+    return String(child_process.spawnSync("curl", ["-H", "Referer: el-parking-forecast", "-L", url], {"timeout": 600000, "maxBuffer": 2*1024*1024*1024}).output[1]);
 }
 
 let zeropad = num => {
@@ -78,7 +78,7 @@ let zeropad = num => {
 
     let to_date   = new Date();
     let from_date = new Date(to_date);
-    from_date.setSeconds(from_date.getSeconds() - 86400); // subtract 1 day (will correctly overflow)
+    from_date.setSeconds(from_date.getSeconds() - 86400 * 99); // subtract 1 day (will correctly overflow)
 
     stations.data.sort( (a, b) => (a.scode < b.scode)).forEach( station => {
 
@@ -90,13 +90,6 @@ let zeropad = num => {
              sorigin: 'FAMAS',
              stype: 'ParkingStation'
         */
-
-        // P05 Laurin is blacklisted as it is stuck on 2021-12-26T07:05:04.000Z as of 2024-11-18
-        // P05 Laurin blacklist commented out 2025-03-27
-        //if (station.scode === "105") {
-        //    console.log("warn: SKIP scode = " + station.scode + " is blacklisted (P05 Laurin)");
-        //    return;
-        //}
 
         if (known_scodes.includes(station.scode)) {
             console.log("info: SKIP scode = " + station.scode + " is already known");

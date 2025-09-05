@@ -32,7 +32,7 @@ let fs = require("fs");
 
 function https_get(url) {
     url = url.replace(/'/g, "%27");
-    return String(child_process.spawnSync("curl", ["-H", "Referer: https://parking-forecast.sta.bz.it", "-L", url], {"timeout": 600000, "maxBuffer": 2*1024*1024*1024}).output[1]);
+    return String(child_process.spawnSync("curl", ["-H", "Referer: el-parking-forecast", "-L", url], {"timeout": 600000, "maxBuffer": 2*1024*1024*1024}).output[1]);
 }
 
 function min_date(a, b) {
@@ -92,17 +92,10 @@ function min_date(a, b) {
         let from_date = station.last_ts;
         from_date.setSeconds(from_date.getSeconds() + 1); // add 1 second (will correctly overflow)
 
-        // P05 Laurin is blacklisted as it is stuck on 2021-12-26T07:05:04.000Z as of 2024-11-18
-        // P05 Laurin blacklist commented out 2025-03-28
-        // if (station.scode === "105") {
-        //     console.log("warning: P05 Laurin is blacklisted - skipped");
-        //     return;
-        //}
-
-        // anonymous requests have a limited range of 5 days,
-        // we compute min(NOW, from_date + 4 days) as the upper bound so not to exceed this range
+        // anonymous requests with referer header have a limited range of 100 days,
+        // we compute min(NOW, from_date + 99 days) as the upper bound so not to exceed this range
         let to_date = new Date(from_date);
-        to_date.setSeconds(to_date.getSeconds() + 86400 * 4); // add 4 days (will correctly overflow)
+        to_date.setSeconds(to_date.getSeconds() + 86400 * 99); // add 99 days (will correctly overflow)
         to_date = min_date(NOW, to_date);
 
         // debug print
