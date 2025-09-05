@@ -1,3 +1,10 @@
+<!--
+SPDX-FileCopyrightText: 2021-2025 STA AG <info@sta.bz.it>
+SPDX-FileContributor: Chris Mair <chris@1006.org>
+
+SPDX-License-Identifier: CC0-1.0
+-->
+
 # STA Parking Forecast
 
 ## Overview
