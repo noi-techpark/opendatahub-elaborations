@@ -5,11 +5,11 @@
 
 ## Information for data consumers
 
-NOI Techpark's [Open Data Hub](https://opendatahub.bz.it/) gathers occupancy data
+NOI Techpark's [Open Data Hub](https://opendatahub.com/) gathers occupancy data
 from regional car parks.
 The occupancy time series can be queried using an open API
-( [an open API](https://opendatahub.bz.it/datasets/traffic/parking/) ) or
-[an interactive tool](https://analytics.opendatahub.bz.it/).
+( [an open API](https://opendatahub.com/datasets/traffic/parking/) ) or
+[an interactive tool](https://analytics.opendatahub.com/).
 
 STA takes this data and computes a forecast once an hour.
 New forecast are available ~ 12 minutes past the hour each hour from 3:00
@@ -43,7 +43,7 @@ timeseries                   data points
 `timeseries` is an object with the car park station codes (*scode*) as keys.
 The list and metadata of these station codes can be queried from the Open Data Hub via:
 
-http://mobility.api.opendatahub.bz.it/v2/flat/ParkingStation%2CParkingSensor
+http://mobility.api.opendatahub.com/v2/flat/ParkingStation%2CParkingSensor
 
 In particular, metadata contains name, municipality, geographic coordinates and maximum
 occupancy for each car park.
@@ -78,7 +78,7 @@ https://web01.sta.bz.it/parking-forecast/result.json
 
 are Open Data. They are released under the same licence as the occupancy
 data from the Open Data Hub, from which they are computed
-(see [the Open Data Hub license page](https://docs.opendatahub.bz.it/en/latest/licenses.html#odh-license)).
+(see [the Open Data Hub license page](https://docs.opendatahub.com/en/latest/licenses.html#odh-license)).
 
 The parking forecasts are to be considered experimental. There is absolutely
 no warranty on availability or quality of the data.
