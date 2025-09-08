@@ -17,7 +17,13 @@ echo "--------------------------------------------------------------------------
 echo "*** prediction run on $(date) ***"
 echo "--------------------------------------------------------------------------------"
 
-echo "-> updating raw parking data from the ODH"
+echo "-> getting new auth token"
+export oauth_token=$(./get-oauth-token.sh 2>&1) || {
+    echo "Error: Failed to obtain OAuth token - $oauth_token" >&2
+    exit 1
+}
+
+echo "-> updating raw parking data from the OpenDataHub"
 ./data-raw-get-diff.js
 
 echo

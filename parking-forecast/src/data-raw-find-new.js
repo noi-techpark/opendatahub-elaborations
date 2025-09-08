@@ -29,7 +29,11 @@ let fs = require("fs");
 
 function https_get(url) {
     url = url.replace(/'/g, "%27");
-    return String(child_process.spawnSync("curl", ["-H", "Referer: el-parking-forecast", "-L", url], {"timeout": 600000, "maxBuffer": 2*1024*1024*1024}).output[1]);
+    return String(child_process.spawnSync("curl", 
+        ["-L",
+         "-H", "Referer: el-parking-forecast",
+         "-H", "Authorization: Bearer " + process.env.oauth_token,
+        , url], {"timeout": 600000, "maxBuffer": 2*1024*1024*1024}).output[1]);
 }
 
 let zeropad = num => {

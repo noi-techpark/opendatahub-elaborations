@@ -5,8 +5,6 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-PSQL="psql -h 127.0.0.1 dwh -U dwh"
-
 if [ "$CONDA_DEFAULT_ENV" != "tf" ]; then
     echo "not in expected conda environment"
     exit 1
@@ -17,6 +15,11 @@ echo "--------------------------------------------------------------------------
 echo "*** training run on $(date) ***"
 echo "--------------------------------------------------------------------------------"
 
+echo "-> getting new auth token"
+export oauth_token=$(./get-oauth-token.sh 2>&1) || {
+    echo "Error: Failed to obtain OAuth token - $oauth_token" >&2
+    exit 1
+}
 
 echo
 echo "-> getting raw data"
@@ -41,7 +44,7 @@ fi
 
 echo
 echo "-> getting holidays"
-#$PSQL < data-holidays-get.sql
+# not implemented
 
 echo
 echo "-> getting meteo forecasts"

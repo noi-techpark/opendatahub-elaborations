@@ -15,7 +15,7 @@
 // Fetch all parking occupancy data for the indicated period
 // (refer to from_date, to_date) from
 //
-// https://analytics.opendatahub.bz.it
+// https://analytics.opendatahub.com
 //
 // and store the data into CSV files in dir "data-raw-candidate/"
 // (one for each parking place).
@@ -56,8 +56,12 @@ function https_get(url) {
     console.log("CURL: start download at " + (new Date()));
     let result = child_process.spawnSync("curl",
         ["--silent",
+         "--compressed",
          "-w", "{CURL_STATUS_START_4925}status=%{http_code} size=%{size_download} conn=%{time_connect} ttfb=%{time_starttransfer} total=%{time_total}{CURL_STATUS_END_4925}\n",
-         "-L", url],
+         "-L", 
+         "-H", "Referer: el-parking-forecast",
+         "-H", "Authorization: Bearer " + process.env.oauth_token,
+         url],
         {"timeout": 600000, "maxBuffer": 2*1024*1024*1024}
     );
     console.log("CURL: end   download at " + (new Date()));
@@ -87,7 +91,7 @@ let zeropad = num => {
 // ----------------------------------------------------------------------------
 (function() {
 
-    let stations_url = "https://mobility.api.opendatahub.bz.it/v2/flat/ParkingStation?limit=-1&distinct=true&where=sactive.eq.true";
+    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation?limit=-1&distinct=true&where=sactive.eq.true";
     let stations;
     try {
         stations = JSON.parse(https_get(stations_url));
@@ -100,7 +104,7 @@ let zeropad = num => {
         process.exit(1);
     }
 
-    let from_date = "2020-01-01T00:00:00.000Z";
+    let from_date = "2022-01-01T00:00:00.000Z";
     let to_date   = (new Date()).toISOString();
 
     let ix = 0;
@@ -113,7 +117,7 @@ let zeropad = num => {
              sorigin: 'FAMAS',
              stype: 'ParkingStation'
          */
-        let data_url = `https://mobility.api.opendatahub.bz.it/v2/flat/ParkingStation/occupied/${from_date}/${to_date}?limit=-1&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
+        let data_url = `https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/${from_date}/${to_date}?limit=-1&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
         let name = station.scode + "__" + String(station.sname).replace(/[.\s\/:]/g, "_") + ".csv";
         let ready = false;
         let data;
