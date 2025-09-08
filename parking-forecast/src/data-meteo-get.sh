@@ -28,9 +28,9 @@ curl -s "https://tourism.api.opendatahub.com/v1/WeatherHistory?rawsort=_Meta.Las
 | jq -r '.Items[].["Weather.en.Stationdata"][] | select(.Id == 3) | [.date, .WeatherCode] | @csv' \
 | sed 's/T[0-9:]*//g' \
 | awk -F',' 'BEGIN{OFS=","; for(i=0;i<256;i++) ord_map[sprintf("%c",i)]=i-97} {gsub(/"/, "", $2); $2 = sprintf("\"%d\"", ord_map[substr($2,1,1)]); print}' \
-> $csv.tmp
+> $csv.diff
 
-if [ -s $csv.tmp ]; then
+if [ -s $csv.diff ]; then
     # Note: The braces are there to concatenate the output of all comands inside to a single stream.
     # All the output from within these braces will be part of the csv file
     echo "New weather data found. Adding to csv"
@@ -41,15 +41,16 @@ if [ -s $csv.tmp ]; then
             # cat the old csv, leaving out the header (we created a new one above)
             # splice it together with the newly downloaded data
             cat $csv | tail -n +2; \
-            cat $csv.tmp 
+            cat $csv.diff 
             # Now we need to clean up possible duplicates for the same date. 
             # We take the last one we find, as that's probably a "today" prediction and more accurate than a "tomorrow" one
         } | sort | awk -F',' '{codes[$1] = $2} END {for (date in codes) print date "," codes[date]}' | sort
-    } > $csv
+    } > $csv.new
+    mv $csv.new $csv
 else
     echo "No new weather data has been found :("
 fi
 
-rm $csv.tmp
+rm $csv.diff
 
 echo "Job done"

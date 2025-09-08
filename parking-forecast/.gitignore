@@ -9,5 +9,6 @@ src/graphs/**
 src/__pycache__
 src/config.yaml
 src/config.yaml.tmp
+src/result*
 
 .env

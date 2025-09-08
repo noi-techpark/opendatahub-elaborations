@@ -51,13 +51,9 @@ rm config.yaml
 
 rm -f config.yaml.tmp
 
-echo
-echo "-> upload JSON"
-echo "put result.json /var/www/html/parking-forecast/result.json" | /bin/sftp -b - parking-forecast@web01.sta.bz.it
-
-echo
-echo "-> save JSON"
-psql -U dwh -c "\copy parking_forecast.history(data) from 'result.json'"
+# echo
+# echo "-> save JSON"
+# psql -U dwh -c "\copy parking_forecast.history(data) from 'result.json'"
 
 
 

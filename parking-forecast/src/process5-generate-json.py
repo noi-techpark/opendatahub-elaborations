@@ -32,7 +32,7 @@ import yaml
 import json
 import numpy as np
 from datetime import datetime, timezone, timedelta
-from rmse import compute_rmse
+# from rmse import compute_rmse
 
 
 from builtins import Exception
@@ -154,7 +154,8 @@ for scode_ix in range(0, len(scodes)):
 
     # compute the RMSE
 
-    rmse = compute_rmse(scodes[scode_ix], outdict["forecast_start_timestamp"][11:19], debug=True)
+    # disable rmse calculation
+    # rmse = compute_rmse(scodes[scode_ix], outdict["forecast_start_timestamp"][11:19], debug=True)
 
     # construct dict for JSON;
     # note JSON has no NaN, so we need to convert Numpy NaN to JSON null via Python None
@@ -169,9 +170,11 @@ for scode_ix in range(0, len(scodes)):
         hi = round(val[line,:].max(), 1)
         if np.isnan(hi):
             hi = None
-        r = round(rmse[line], 1)
-        if np.isnan(r):
-            r = None
+        # disable rmse calculation
+        r = None
+        # r = round(rmse[line], 1)
+        # if np.isnan(r):
+        #     r = None
         this_timeseries.append({"ts": ts, "lo": lo, "mean": mean, "hi": hi, "rmse": r})
 
     timeseries[scodes[scode_ix]] = this_timeseries
