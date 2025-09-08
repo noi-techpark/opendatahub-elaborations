@@ -16,6 +16,6 @@ env:
   ODH_CLIENT_ID: el-parking-free
   ODH_CLIENT_SECRET: 
 
-  LOG_LEVEL: INFO
+  LOG_LEVEL: DEBUG
 
   CRON: 0 0/5 * * * *

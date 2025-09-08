@@ -153,6 +153,11 @@ func handler(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
 	}
 
 	for i, m := range ms {
+		value := int(capacity - *m.Value.Num)
+		if value < 0 {
+			slog.Error("zero or negative free value", "stationcode", s.Stationcode, "stationtype", s.Stationtype, "capacity", capacity, "meas", m)
+			value = 0
+		}
 		ret[i] = elab.ElabResult{
 			Timestamp:   m.Timestamp.Time,
 			Period:      elab.Period(m.Period),
