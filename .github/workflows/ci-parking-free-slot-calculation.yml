@@ -3,17 +3,17 @@ name: CI/CD ci-parking-free-slot-calculation
 on:
   push:
     paths:
-      - "ci-parking-free-slot-calculation/**"
-      - ".github/workflows/ci-ci-parking-free-slot-calculation.yml"
+      - "parking-free-slot-calculation/**"
+      - ".github/workflows/ci-parking-free-slot-calculation.yml"
       - "!*.md"
 
 env:
-  PROJECT_NAME: el-ci-parking-free-slot-calculation
-  WORKING_DIRECTORY: ci-parking-free-slot-calculation
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/el-a22-ci-parking-free-slot-calculation
+  PROJECT_NAME: el-parking-free-slot-calculation
+  WORKING_DIRECTORY: parking-free-slot-calculation
+  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/el-parking-free-slot-calculation
   DOCKER_TAG: ${{ github.sha }}
   KUBERNETES_NAMESPACE: collector
-  K8S_NAME: el-ci-parking-free-slot-calculation
+  K8S_NAME: el-parking-free-slot-calculation
 
 jobs:
   build:
