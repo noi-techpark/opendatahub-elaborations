@@ -91,7 +91,7 @@ let zeropad = num => {
 // ----------------------------------------------------------------------------
 (function() {
 
-    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation?limit=-1&distinct=true&where=sactive.eq.true";
+    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation?limit=-1&distinct=true&where=sactive.eq.true&select=scode,sname";
     let stations;
     try {
         stations = JSON.parse(https_get(stations_url));
@@ -117,32 +117,41 @@ let zeropad = num => {
              sorigin: 'FAMAS',
              stype: 'ParkingStation'
          */
-        let data_url = `https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/${from_date}/${to_date}?limit=-1&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
-        let name = station.scode + "__" + String(station.sname).replace(/[.\s\/:]/g, "_") + ".csv";
-        let ready = false;
-        let data;
-        console.log("\n------");
-        try {
-            data = JSON.parse(https_get(data_url));
-        } catch (ex) {
-            console.log("KO - skip " + name + " as I cannot parse the JSON");
-            return;
-        }
-        if (data.data === undefined) {
-            console.log("KO - skip " + name + " as the JSON misses the expected data field");
-            return;
-        }
 
-
+        let limit = 50000
         let lines = [];
-        data.data.forEach( point => {
-            /* interesting point fields:
-                mperiod: 300,
-                mvalidtime: '2021-03-10 08:20:00.358+0000',
-                mvalue: 484
-             */
-            lines.push(`"${point.mvalidtime}","${point.mvalue}"`);
-        });
+        let name = station.scode + "__" + String(station.sname).replace(/[.\s\/:]/g, "_") + ".csv";
+
+        // loop for paging, or we risk bombing the API
+        while(true){
+            let offset = lines.length
+            let data_url = `https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/${from_date}/${to_date}?limit=${limit}&offset=${offset}&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
+            let data;
+            console.log("\n------");
+            try {
+                data = JSON.parse(https_get(data_url));
+            } catch (ex) {
+                console.log("KO - skip " + name + " as I cannot parse the JSON");
+                return;
+            }
+            if (data.data === undefined) {
+                console.log("KO - skip " + name + " as the JSON misses the expected data field");
+                return;
+            }
+
+            data.data.forEach( point => {
+                /* interesting point fields:
+                    mperiod: 300,
+                    mvalidtime: '2021-03-10 08:20:00.358+0000',
+                    mvalue: 484
+                 */
+                lines.push(`"${point.mvalidtime}","${point.mvalue}"`);
+            });
+
+            if (data.data.length < limit) {
+                break;
+            }
+        }
 
         if (lines.length > 10) {
             let csv = zeropad(ix++) + "__" + name;
