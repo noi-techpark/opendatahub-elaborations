@@ -60,7 +60,7 @@ func main() {
 		count := atomic.Int32{}
 		seenPeriods, err := getDistinctPeriods(n)
 		if err != nil {
-			slog.Error("error getting latest records from ninja. aborting...", "err", err)
+			slog.Error("error getting periods from ninja. aborting...", "err", err)
 			panic(err)
 		}
 
