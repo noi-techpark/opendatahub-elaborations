@@ -7,15 +7,25 @@
 source /conda/etc/profile.d/conda.sh
 conda activate tf
 
+# mainly for debugging and testing
 if [ "$RUN_IMMEDIATELY" == "true" ]; then 
     echo "Running jobs immediately:"
     ./run-train.sh
     ./run-predict.sh
 fi
 
-# setup cron jobs
-echo "$CRON_TRAIN /code/run-train.sh > /dev/stdout 2>&1" > /etc/cron.d/train
-echo "$CRON_PREDICT /code/run-predict.sh > /dev/stdout 2>&1" > /etc/cron.d/predict
+# propagate env variables to cron jobs
+env > /etc/environment
 
-# wait forever to keep container alive
-sleep infinity
+# redirect cron job output to PID 1 stdout (the file monitored by docker)
+stdout=/proc/1/fd/1
+# setup cron jobs
+crontab - <<EOF
+$CRON_TRAIN /code/run-train.sh > $stdout 2>&1
+$CRON_PREDICT /code/run-predict.sh > $stdout 2>&1
+EOF
+
+echo "Starting cron with schedule:"
+crontab -l
+echo
+cron -f -L 4

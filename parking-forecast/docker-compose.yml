@@ -5,10 +5,7 @@
 services:
   app:
     build:
-      dockerfile_inline: |
-        from parkingenv as app
-        COPY infrastructure/docker/entrypoint.sh /entrypoint.sh
-        ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+      dockerfile: infrastructure/docker/Dockerfile
     env_file:
       - .env
     volumes:

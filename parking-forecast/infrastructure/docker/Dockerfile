@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
 #
 # SPDX-License-Identifier: CC0-1.0
-FROM debian:trixie-slim AS base
+FROM debian:trixie-slim AS env
 RUN apt update
 RUN apt install -y wget curl nodejs jq cron
 RUN apt clean
@@ -20,5 +20,11 @@ RUN <<EOF bash
     conda create --name tf -y --file requirements.txt
 EOF
 
+COPY infrastructure/docker/entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+
 RUN mkdir /code
 WORKDIR /code
+
+FROM env AS build
+COPY src/ .
