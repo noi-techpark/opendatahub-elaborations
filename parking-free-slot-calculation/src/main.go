@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
-	"sync/atomic"
+	"time"
 
 	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"github.com/noi-techpark/go-timeseries-client/odhts"
@@ -57,7 +57,7 @@ func main() {
 
 	job := func() {
 		slog.Info("Starting elaboration run")
-		count := atomic.Int32{}
+		stationTrack := sync.Map{}
 		seenPeriods, err := getDistinctPeriods(n)
 		if err != nil {
 			slog.Error("error getting periods from ninja. aborting...", "err", err)
@@ -83,15 +83,22 @@ func main() {
 
 				is, err := e.RequestState()
 				ms.FailOnError(context.Background(), err, "failed to get initial state")
-				e.NewStationFollower().Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
-					count.Add(1)
-					return handler(s, ms)
-				})
+				e.NewWideTypeFollower(time.Duration(30*24)*time.Hour).Elaborate(is,
+					func(t elab.BaseDataType, from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+						stationTrack.Store(s.Stationcode, nil)
+						return handler(from, to, s, ms)
+					})
 			}(p)
 		}
 
 		wg.Wait()
-		slog.Info("Elaboration job complete", "stationsCount", count.Load())
+
+		count := 0
+		stationTrack.Range(func(key, value any) bool {
+			count++
+			return true
+		})
+		slog.Info("Elaboration job complete", "stationsCount", count)
 	}
 
 	job()
@@ -130,32 +137,29 @@ func getDistinctPeriods(tsClient odhts.C) (map[int64]any, error) {
 	return seenPeriods, nil
 }
 
-func handler(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
-	slog.Debug("Elaborating station", "station", s, "rec_cnt", len(ms))
+func handler(from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+	slog.Debug("Elaborating station", "from", from, "to", to, "station", s, "rec_cnt", len(ms))
 	ret := make([]elab.ElabResult, len(ms))
 	capacity := float64(1)
 	if s.Stationtype == "ParkingStation" {
 		c, ok := s.Metadata["capacity"]
 		if !ok {
-			slog.Error("missing capacity field", "stationcode", s.Stationcode, "stationtype", s.Stationtype)
 			return nil, fmt.Errorf("missing capacity field")
 		}
 		capacity, ok = c.(float64)
 		if !ok {
-			slog.Error("capacity field has non-number type", "stationcode", s.Stationcode, "stationtype", s.Stationtype, "capacity", c)
 			return nil, fmt.Errorf("capacity field has non-number type")
 		}
 	}
 
 	if capacity <= 0 {
-		slog.Error("zero or negative capacity", "stationcode", s.Stationcode, "stationtype", s.Stationtype, "capacity", capacity)
 		return nil, fmt.Errorf("zero or negative capacity")
 	}
 
 	for i, m := range ms {
 		value := int(capacity - *m.Value.Num)
 		if value < 0 {
-			slog.Error("zero or negative free value", "stationcode", s.Stationcode, "stationtype", s.Stationtype, "capacity", capacity, "meas", m)
+			slog.Warn("zero or negative free value", "stationcode", s.Stationcode, "stationtype", s.Stationtype, "capacity", capacity, "meas", m)
 			value = 0
 		}
 		ret[i] = elab.ElabResult{
@@ -164,7 +168,7 @@ func handler(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
 			StationType: s.Stationtype,
 			StationCode: s.Stationcode,
 			DataType:    FREE,
-			Value:       int(capacity - *m.Value.Num)}
+			Value:       value}
 	}
 	return ret, nil
 }
