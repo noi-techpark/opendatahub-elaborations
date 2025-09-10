@@ -7,6 +7,9 @@
 
 set -e
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+cd $SCRIPT_DIR
+
 if [ "$CONDA_DEFAULT_ENV" != "tf" ]; then
     echo "not in expected conda environment"
     exit 1
