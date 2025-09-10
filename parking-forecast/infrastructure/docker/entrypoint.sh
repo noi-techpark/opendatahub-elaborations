@@ -7,15 +7,15 @@
 source /conda/etc/profile.d/conda.sh
 conda activate tf
 
+# propagate env variables to cron jobs
+env > /etc/environment
+
 # mainly for debugging and testing
 if [ "$RUN_IMMEDIATELY" == "true" ]; then 
     echo "Running jobs immediately:"
     ./run-train.sh
     ./run-predict.sh
 fi
-
-# propagate env variables to cron jobs
-env > /etc/environment
 
 # redirect cron job output to PID 1 stdout (the file monitored by docker)
 stdout=/proc/1/fd/1
