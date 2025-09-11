@@ -1,0 +1,21 @@
+image:
+  repository: 
+  pullPolicy: IfNotPresent
+  tag: "0.2.0" # Set this when upgrading chart with --set-value
+
+env:
+  BDP_BASE_URL: http://bdp-core.core.svc.cluster.local
+  BDP_PROVENANCE_VERSION: 0.1.0
+  BDP_PROVENANCE_NAME: el-air-quality-rating
+  BDP_ORIGIN: el-air-quality-rating
+
+  TS_API_BASE_URL: http://ninja-api.core.svc.cluster.local
+  TS_API_REFERER: el-air-quality-rating
+
+  ODH_TOKEN_URL: https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token
+  ODH_CLIENT_ID: odh-a22-dataprocessor
+  ODH_CLIENT_SECRET: 
+
+  LOG_LEVEL: INFO
+
+  CRON: 0 0 */1 * * *
