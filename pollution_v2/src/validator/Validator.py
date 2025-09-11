@@ -7,12 +7,14 @@ import logging
 
 import pandas as pd
 
+from common.settings import VALIDATOR_CONFIG_FILE
 from validator.Dominio import Dominio
 from validator.Input import Input
 from validator.Parametri import Parametri
 from validator.Station import Station
 
-default_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../config/validator.yaml'))
+# default_config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../config/validator.yaml'))
+default_config_path = os.path.abspath(VALIDATOR_CONFIG_FILE)
 
 logger = logging.getLogger("pollution_v2.validator.Validator")
 
@@ -51,13 +53,10 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
     A22 = Dominio(data)
     for index, row in data.station_list.iterrows():
         station_type = data.station_type[row['station']]
-        if station_type != 'TVCC' or station_type != 'RADAR':
-            # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
-            s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
-                        params.layer1('n'))
-            A22.add_station(s)
-        else:
-            logger.error(f"skipping station_type {station_type}!")
+        # inizializza l'oggetto stazione e aggiungilo all'oggetto dominio
+        s = Station(data.raw_data, data.history, row['station'], row['direction'], data.chilometriche,
+                    params.layer1('n'))
+        A22.add_station(s)
     # -------------------------------------------------------------------------
     # Layer 1
     # -------------------------------------------------------------------------

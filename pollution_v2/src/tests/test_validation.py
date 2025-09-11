@@ -30,7 +30,8 @@ class TestValidation(TestDAGCommon):
     @patch("validator.manager.validation.ValidationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
-    def test_run_computation_date_range_daily(self, download_mock, latest_date_mock, get_start_date_mock,
+    @patch("validator.manager.validation.ValidationManager._download_history_data")
+    def test_run_computation_date_range_daily(self, history_mock, traffic_mock, latest_date_mock, get_start_date_mock,
                                               compute_mock, upload_mock, init_date_range_mock):
         """
         Test that the run_computation method is called with the correct date range.
@@ -61,7 +62,8 @@ class TestValidation(TestDAGCommon):
 
             # Test that the run_computation method is called with the correct daily date range
 
-            download_mock.assert_called_once_with(start_date, self.max_date, [station])
+            history_mock, traffic_mock.assert_called_once_with(start_date, self.max_date, [station])
+            history_mock.assert_called_once_with(start_date, self.max_date)
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()
 
@@ -71,7 +73,8 @@ class TestValidation(TestDAGCommon):
     @patch("validator.manager.validation.ValidationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
-    def test_run_computation_date_range_when_more_data(self, download_mock, latest_date_mock, get_start_date_mock,
+    @patch("validator.manager.validation.ValidationManager._download_history_data")
+    def test_run_computation_date_range_when_more_data(self, history_mock, traffic_mock, latest_date_mock, get_start_date_mock,
                                                        compute_mock, upload_mock, init_date_range_mock):
         """
         Test that the run_computation method is called with the correct date range.
@@ -111,7 +114,8 @@ class TestValidation(TestDAGCommon):
 
             # Test that the run_computation method is called with the correct batch date range
             # A lot of data is available, so the end date is the start date plus the batch size
-            download_mock.assert_called_once_with(start_date, correct_end_date, [station])
+            history_mock, traffic_mock.assert_called_once_with(start_date, correct_end_date, [station])
+            history_mock.assert_called_once_with(start_date, correct_end_date)
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()
 
@@ -121,7 +125,8 @@ class TestValidation(TestDAGCommon):
     @patch("validator.manager.validation.ValidationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
-    def test_run_computation_date_range_when_few_data(self, download_mock, latest_date_mock, get_start_date_mock,
+    @patch("validator.manager.validation.ValidationManager._download_history_data")
+    def test_run_computation_date_range_when_few_data(self, history_mock, traffic_mock, latest_date_mock, get_start_date_mock,
                                                       compute_mock, upload_mock, init_date_range_mock):
         """
         Test that the run_computation method is called with the correct date range.
@@ -160,6 +165,7 @@ class TestValidation(TestDAGCommon):
 
             # Test that the run_computation method is called with the correct batch date range
             # Few data is available, so the end date is the max date
-            download_mock.assert_called_once_with(start_date, end_date, [station])
+            history_mock, traffic_mock.assert_called_once_with(start_date, end_date, [station])
+            history_mock.assert_called_once_with(start_date, end_date)
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()

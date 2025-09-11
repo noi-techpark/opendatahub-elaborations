@@ -30,7 +30,8 @@ class TestPollutionComputation(TestDAGCommon):
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
-    def test_run_computation_date_range_daily(self, download_mock, latest_date_mock, get_start_date_mock,
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._download_validation_data")
+    def test_run_computation_date_range_daily(self, validation_mock, traffic_mock, latest_date_mock, get_start_date_mock,
                                               compute_mock, upload_mock, init_date_range_mock):
         """
         Test that the run_computation method is called with the correct date range.
@@ -61,7 +62,8 @@ class TestPollutionComputation(TestDAGCommon):
 
             # Test that the run_computation method is called with the correct daily date range
 
-            download_mock.assert_called_once_with(start_date, self.max_date, [station])
+            traffic_mock.assert_called_once_with(start_date, self.max_date, [station])
+            validation_mock.assert_called_once_with(start_date, self.max_date, station)
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()
 
@@ -71,7 +73,8 @@ class TestPollutionComputation(TestDAGCommon):
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
-    def test_run_computation_date_range_when_more_data(self, download_mock, latest_date_mock, get_start_date_mock,
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._download_validation_data")
+    def test_run_computation_date_range_when_more_data(self, validation_mock, download_mock, latest_date_mock, get_start_date_mock,
                                                        compute_mock, upload_mock, init_date_range_mock):
         """
         Test that the run_computation method is called with the correct date range.
@@ -112,6 +115,7 @@ class TestPollutionComputation(TestDAGCommon):
             # Test that the run_computation method is called with the correct batch date range
             # A lot of data is available, so the end date is the start date plus the batch size
             download_mock.assert_called_once_with(start_date, correct_end_date, [station])
+            validation_mock.assert_called_once_with(start_date, correct_end_date, station)
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()
 
@@ -121,7 +125,8 @@ class TestPollutionComputation(TestDAGCommon):
     @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager.get_starting_date")
     @patch("common.manager.traffic_station.TrafficStationManager._get_latest_date")
     @patch("common.manager.traffic_station.TrafficStationManager._download_traffic_data")
-    def test_run_computation_date_range_when_few_data(self, download_mock, latest_date_mock, get_start_date_mock,
+    @patch("pollution_connector.manager.pollution_computation.PollutionComputationManager._download_validation_data")
+    def test_run_computation_date_range_when_few_data(self, validation_mock, download_mock, latest_date_mock, get_start_date_mock,
                                                       compute_mock, upload_mock, init_date_range_mock):
         """
         Test that the run_computation method is called with the correct date range.
@@ -158,5 +163,6 @@ class TestPollutionComputation(TestDAGCommon):
             # Test that the run_computation method is called with the correct batch date range
             # Few data is available, so the end date is the max date
             download_mock.assert_called_once_with(start_date, self.max_date, [station])
+            validation_mock.assert_called_once_with(start_date, self.max_date, station)
             compute_mock.assert_called_once()
             upload_mock.assert_called_once()

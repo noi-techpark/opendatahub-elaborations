@@ -8,3 +8,15 @@ path = ["helm/**", ".github/**", ".gitignore", "LICENSE", ".editorconfig", "**/.
 precedence = "aggregate"
 SPDX-FileCopyrightText = "(c) NOI Techpark <digital@noi.bz.it>"
 SPDX-License-Identifier = "CC0-1.0"
+
+[[annotations]]
+path = ["pollution_v2/weather/metro/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "(C) 2006 Environment Canada"
+SPDX-License-Identifier = "GPL-2.0-only"
+
+[[annotations]]
+path = ["pollution_v2/dispersal/RLINE/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "(C) 2013 US EPA"
+SPDX-License-Identifier = "LicenseRef-RLINE"

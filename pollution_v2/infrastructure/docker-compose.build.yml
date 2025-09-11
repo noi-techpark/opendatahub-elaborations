@@ -1,6 +1,16 @@
 services:
-  app:
-    image: ${DOCKER_IMAGE}:${DOCKER_TAG}
+  airflow:
+    image: ${DOCKER_IMAGE_AIRFLOW}:${DOCKER_TAG}
     build:
       context: ../
       dockerfile: infrastructure/docker/Dockerfile
+  dispersal:
+    image: ${DOCKER_IMAGE_DISPERSAL}:${DOCKER_TAG}
+    build:
+      context: ../dispersal/
+      dockerfile: Dockerfile
+  weather:
+    image: ${DOCKER_IMAGE_WEATHER}:${DOCKER_TAG}
+    build:
+      context: ../weather/
+      dockerfile: Dockerfile

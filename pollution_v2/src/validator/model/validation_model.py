@@ -45,17 +45,15 @@ class ValidationModel:
         history_dates = {measure.valid_time.date() for measure in history.measures}
         traffic_dates = {measure.valid_time.date() for measure in traffic.measures}
 
-        diff = {measure.valid_time.date() for measure in traffic.measures
-                if measure.valid_time.date() in history_dates.difference(traffic_dates)}
-        if len(diff) > 0:
-            logger.warning(f"Missing traffic data for the following dates [{sorted(diff)}] "
-                           f"while processing [{_get_station_on_logs(stations)}]: {len(diff)} "
+        traffic_missing_dates = history_dates.difference(traffic_dates)
+        if len(traffic_missing_dates) > 0:
+            logger.warning(f"Missing traffic data for the following dates [{sorted(traffic_missing_dates)}] "
+                           f"while processing [{_get_station_on_logs(stations)}]: {len(traffic_missing_dates)} "
                            f"records will not be processed")
-        diff = {measure.valid_time.date() for measure in traffic.measures
-                if measure.valid_time.date() in traffic_dates.difference(history_dates)}
-        if len(diff) > 0:
-            logger.warning(f"Missing history data for the following dates [{sorted(diff)}] "
-                           f"while processing [{_get_station_on_logs(stations)}]: {len(diff)} "
+        history_missing_dates = traffic_dates.difference(history_dates)
+        if len(history_missing_dates) > 0:
+            logger.warning(f"Missing history data for the following dates [{sorted(history_missing_dates)}] "
+                           f"while processing [{_get_station_on_logs(stations)}]: {len(history_missing_dates)} "
                            f"records will not be processed")
 
         run_on_dates = history_dates.intersection(traffic_dates)
@@ -70,8 +68,8 @@ class ValidationModel:
         if len(traffic_entries) > 0 and len(history_entries) > 0:
             for date in run_on_dates:
                 traffic_df = ModelHelper.get_traffic_dataframe_for_validation(traffic_entries, date)
-                logger.info(f"Starting validation on {len(traffic_df)} traffic records on station [{_get_station_on_logs(stations)}] "
-                            f"on [{date}]")
+                logger.info(f"Starting validation on {len(traffic_df)} traffic records on station "
+                            f"[{_get_station_on_logs(stations)}] on [{date.isoformat()}]")
                 history_df = ModelHelper.get_history_dataframe(history_entries, date)
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,
                                    stations_df[["station_id", "km"]].drop_duplicates().set_index("station_id")["km"].to_dict(),

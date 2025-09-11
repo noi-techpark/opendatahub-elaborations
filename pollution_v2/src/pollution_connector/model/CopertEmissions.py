@@ -16,6 +16,25 @@ import numpy as np
 
 logger = logging.getLogger("pollution_v2.pollution_connector.model.CopertEmission")
 
+def find_latest_file(path_format: str, year: int) -> str:
+    try_year = year
+    ret = ""
+    while try_year > 2017:
+        filename = path_format.format(str(try_year))
+        file = Path(filename)
+        if file.is_file():
+            ret = filename
+            break
+        try_year -=1
+    
+    if try_year < year:
+        logger.warning(f"File {path_format.format(str(year))} not found. Using most recent {filename} instead")
+        
+    if ret == "":
+        raise FileNotFoundError(f'Unable to find file {path_format} for year {year} or preceding')
+
+    return ret
+
 
 # stima delle emissioni con metodo di copert
 def copert_emissions(traffic_df, fc_info_year: str = ""):
@@ -25,21 +44,16 @@ def copert_emissions(traffic_df, fc_info_year: str = ""):
     # ------------------------------------------------------------------------------
     # Percorsi dei file di input e output
     input_data_path = f"{os.path.dirname(os.path.abspath(__file__))}/input/"
+    input_fc_info = find_latest_file(input_data_path + "fc_info_{}.csv", int(fc_info_year))
+    input_copert = find_latest_file(input_data_path + "copert55_{}.db", int(fc_info_year))
 
-    fc_info_filename = f'fc_info_{fc_info_year}.csv'
-    my_file = Path(input_data_path + fc_info_filename)
-    if not my_file.is_file():
-        logger.warning(f"No fc_info file found for year '{fc_info_year}', using default 'fc_info.csv'")
-        fc_info_filename = f'fc_info.csv'
-
-    input_copert = input_data_path + 'copert55.db'
     # Importa tabella dei coefficienti COPERT da DB
     con = sqlite3.connect(input_copert)
     copert = pd.read_sql_query("SELECT * FROM COPERT", con)
     # Importa file csv di input:
     #   1- fleet-composition: distribuzione percentuale parco macchine per categoria,
     #      alimentazione e classe EURO
-    fc = pd.read_csv(input_data_path + fc_info_filename)
+    fc = pd.read_csv(input_fc_info)
     #   2- geometria dell'asse stradale (chilometrica e quote)
     geometry = pd.read_csv(input_data_path + 'geometry.csv')
     #   3- lista delle stazioni da non considerare (blacklist)
