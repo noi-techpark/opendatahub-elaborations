@@ -2,5 +2,11 @@ services:
   app:
     image: ${DOCKER_IMAGE}:${DOCKER_TAG}
     restart: unless-stopped
+    volumes:
+      - ${SHARED_DIR}/data-meteo:/code/data-meteo
+      - ${SHARED_DIR}/data-models:/code/data-models
+      - ${SHARED_DIR}/data-predictors:/code/data-predictors
+      - ${SHARED_DIR}/data-raw:/code/data-raw
+      - ${SHARED_DIR}/result:/code/result
     env_file:
       - .env

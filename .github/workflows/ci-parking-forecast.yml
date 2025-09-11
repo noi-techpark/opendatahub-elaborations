@@ -37,6 +37,7 @@ jobs:
           X_CRON_PREDICT: "0 4-23 * * *"
           X_OAUTH_CLIENT_ID: el-parking-forcast
           X_OAUTH_CLIENT_SECRET: ${{ secrets.PARKING_FORECAST_CLIENT_SECRET}}
+          X_SHARED_DIR: /var/docker/${{ env.PROJECT_NAME }}/shared
 
 
       - name: Build and push images

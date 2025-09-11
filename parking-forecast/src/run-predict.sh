@@ -46,7 +46,7 @@ rm -f config.yaml
 
 echo
 for MODEL_NUM in 1 2 3 4 5; do
-    OUTPUT_FILENAME="result${MODEL_NUM}.csv"
+    OUTPUT_FILENAME="result\/result${MODEL_NUM}.csv"
     echo "-> process4: run prediction to ${OUTPUT_FILENAME}"
     cp config.yaml.tmp config.yaml
     sed -i "s/__OUTPUT__/${OUTPUT_FILENAME}/" config.yaml

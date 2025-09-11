@@ -76,7 +76,7 @@ t0 = time.time()
 # number of result files result{1}.csv, ... result{resN}.csv
 
 resN = 0
-while (os.path.isfile("result%d.csv" % (resN + 1) )):
+while (os.path.isfile("result/result%d.csv" % (resN + 1) )):
     resN += 1
 
 if resN < 1:
@@ -87,7 +87,7 @@ row_expected = HOURS_TO_PREDICT * (60 // 5)
 
 results = [np.ndarray((0, 0))] * resN
 for k in range(0, resN):
-    results[k] = np.loadtxt("result%d.csv" % (k + 1), delimiter=",")
+    results[k] = np.loadtxt("result/result%d.csv" % (k + 1), delimiter=",")
     if (row_expected * parkN, col_expected) != results[k].shape:
         raise Exception("result file %d has wrong shape" % (k + 1))
 
@@ -123,7 +123,7 @@ print("  %d scode values read" % len(scodes) )
 # ----------------------------------------------------------------------------
 # generate output
 
-OUTPUT_FILENAME = "result.json"
+OUTPUT_FILENAME = "result/result.json"
 
 t0 = time.time()
 
