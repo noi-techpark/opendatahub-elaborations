@@ -29,10 +29,10 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/noi-techpark/go-bdp-client v1.3.1 h1:SKUsH2Ah4a5myuLtZhI4g53PHxlavWKKwzBHEPaMmDc=
 github.com/noi-techpark/go-bdp-client v1.3.1/go.mod h1:aooKwED49M7Au+9Y/o8wW/4yggIvaVRHc0JJvPnS10c=
-github.com/noi-techpark/go-timeseries-client v0.0.0-20250901121345-bc4dc5c06bba h1:z5wVREbdhjNPIPntqbPHk7fSWiUyDOYwmXJOo1OnHcU=
-github.com/noi-techpark/go-timeseries-client v0.0.0-20250901121345-bc4dc5c06bba/go.mod h1:HzbXTeKGUegflWeRfgwfQFduX7P7YrZydBfVzeW0D4s=
-github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250901133724-9fd4bf3f8b97 h1:1/jIoCFLmSHQO6z9jlRjIYkr1vTyRLyTBj/3fEDh4wA=
-github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250901133724-9fd4bf3f8b97/go.mod h1:miJR5Y5uX0buiQAWTxmyGyIdBfJw+5+02NWXwuOh7Uk=
+github.com/noi-techpark/go-timeseries-client v0.3.2 h1:WfU3VkueEbSsZzZbmfed2JBz9LBn4nHaDO7k64gwMMk=
+github.com/noi-techpark/go-timeseries-client v0.3.2/go.mod h1:HzbXTeKGUegflWeRfgwfQFduX7P7YrZydBfVzeW0D4s=
+github.com/noi-techpark/opendatahub-go-sdk/elab v0.1.0 h1:uMoc7ygbGSG0pHPCzgbYTh6hKusYX1Uk/j6mQJdvLdk=
+github.com/noi-techpark/opendatahub-go-sdk/elab v0.1.0/go.mod h1:miJR5Y5uX0buiQAWTxmyGyIdBfJw+5+02NWXwuOh7Uk=
 github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3 h1:7RQ9CTRLoM4EGUcFq5ddEucAclwzLOU3WjVdVVPyGng=
 github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3/go.mod h1:nrdL8vMSFYWzkhxCiB1mD0lD3OcnXl9K4FYzFx0M0VY=
 github.com/noi-techpark/opendatahub-go-sdk/tel v1.0.0 h1:qZNcndXyVDNMjm97UUHY83SE/ajxFb3EG8Fy0knYJVA=
