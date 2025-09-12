@@ -69,7 +69,7 @@ class Processor:
             while sensor_end < time:
                 sensor_idx+=1
                 if sensor_history == None or sensor_idx >= len(sensor_history):
-                    log.warn("Sensor history not found for station " + station_id + " at time " + time)
+                    log.warn("Sensor history not found for station " + station_id + " at time " + str(time))
                     # our current record is past the end of sensor history
                     return station_map 
                 sensor_start = datetime.datetime.strptime(sensor_history[sensor_idx]["start"], "%Y-%m-%d").replace(tzinfo=datetime.timezone.utc)
@@ -77,7 +77,7 @@ class Processor:
                 sensor_id = sensor_history[sensor_idx]["id"]
             # If the window starts after our time, or if the window doesn't have a sensor associated, discard the record
             if time < sensor_start or sensor_id == "":
-                log.warn("No sensor associated for " + station_id + " at time " + time)
+                log.warn("No sensor associated for " + station_id + " at time " + str(time))
                 continue
             elabs = self.process_single_dataset(timeseries[timestr], sensor_id, time)
             if elabs != None:
