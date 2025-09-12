@@ -51,11 +51,21 @@ class Processor:
                 state_map = time_map[s_id]['types'][t_id]
                 end = max(parseODHTime(state_map.get('raw')), end)
                 start = min(parseODHTime(state_map.get('processed', DEFAULT_START_CALC)), start)
-            timeseries = fetcher.get_raw_history(s_id, start, end+datetime.timedelta(0, 3), types=TYPES_TO_REQUEST)
             sensor_history = time_map[s_id]['sensor_history']
-            if timeseries:
-                elaborations = self.calc(timeseries,sensor_history,s_id)
-                pusher.send_data("EnvironmentStation", elaborations)
+
+            # Process in 1-year batches to not overload API
+            current_start = start
+            batch_end = end + datetime.timedelta(0, 3)
+            
+            while current_start < batch_end:
+                current_end = min(current_start + datetime.timedelta(days=365), batch_end)
+                timeseries = fetcher.get_raw_history(s_id, current_start, current_end, types=TYPES_TO_REQUEST)
+                
+                if timeseries:
+                    elaborations = self.calc(timeseries, sensor_history, s_id)
+                    pusher.send_data("EnvironmentStation", elaborations)
+                
+                current_start = current_end
 
     def calc(self, timeseries, sensor_history, station_id):
         station_map = {"branch":{ station_id:{"branch":{},"data":[],"name":"default"}}}
