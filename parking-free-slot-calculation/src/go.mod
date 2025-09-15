@@ -10,8 +10,8 @@ go 1.24.0
 
 require (
 	github.com/noi-techpark/go-bdp-client v1.3.1
-	github.com/noi-techpark/go-timeseries-client v0.0.0-20250901121345-bc4dc5c06bba
-	github.com/noi-techpark/opendatahub-go-sdk/elab v0.0.0-20250910065641-e9fbf935d10f
+	github.com/noi-techpark/go-timeseries-client v0.3.2
+	github.com/noi-techpark/opendatahub-go-sdk/elab v0.1.1
 	github.com/noi-techpark/opendatahub-go-sdk/ingest v1.0.3
 	github.com/noi-techpark/opendatahub-go-sdk/tel v1.0.0
 	github.com/robfig/cron/v3 v3.0.1
