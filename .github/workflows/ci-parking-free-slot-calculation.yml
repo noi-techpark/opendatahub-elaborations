@@ -1,4 +1,4 @@
-name: CI/CD parking-free-slot-calculation
+name: CI/CD ci-parking-free-slot-calculation
 
 on:
   push:
@@ -8,121 +8,94 @@ on:
       - "!*.md"
 
 env:
+  PROJECT_NAME: el-parking-free-slot-calculation
   WORKING_DIRECTORY: parking-free-slot-calculation
-  PROJECT_NAME: odh-mobility-el-parking-free-slot-calculation
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-mobility-el-parking-free-slot-calculation
+  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/el-parking-free-slot-calculation
   DOCKER_TAG: ${{ github.sha }}
+  KUBERNETES_NAMESPACE: collector
+  K8S_NAME: el-parking-free-slot-calculation
 
 jobs:
-  test:
-    runs-on: ubuntu-22.04
+  build:
+    runs-on: ubuntu-24.04
+    concurrency: build
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v4
+
+    - name: Build and push images
+      uses: noi-techpark/github-actions/docker-build-and-push@v2
+      with:
+        working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
+        docker-username: ${{ github.actor }}
+        docker-password: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-test:
+    runs-on: ubuntu-24.04
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/parking-free-slot-calculation'
+    concurrency: deploy-test
+    environment: test
+    env:
+      VALUES_YAML: infrastructure/helm/test.yaml
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
-      - name: REUSE Compliance Check
-        uses: fsfe/reuse-action@v5
+        uses: actions/checkout@v4
 
-      - name: Test code
-        uses: noi-techpark/github-actions/pip-test@v2
+      - name: Customize values.yaml
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          yq -i '.image.repository = "${{ env.DOCKER_IMAGE }}"' ${{ env.VALUES_YAML }}
+          yq -i '.image.tag = "${{ env.DOCKER_TAG }}"' ${{ env.VALUES_YAML }}
+          yq -i '.image.pullPolicy = "IfNotPresent"' ${{ env.VALUES_YAML }}
+
+          yq -i '.envSecret.ODH_CLIENT_SECRET = "${{ secrets.EL_PARKING_FREE_CLIENT_SECRET_TEST }}"' ${{ env.VALUES_YAML }}
+          yq -i '.env.BDP_PROVENANCE_VERSION = "${{ github.sha }}"' ${{ env.VALUES_YAML }}
+          yq -i '.env.BDP_PROVENANCE_NAME = "${{ env.PROJECT_NAME }}"' ${{ env.VALUES_YAML }}
+
+      - name: Deploy on cluster  
+        uses: noi-techpark/github-actions/helm-deploy@v2
         with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-          test-command: |
-            echo "WARNING: NO TESTS FOUND!"
-
-  # Deploy Test
-  deploy-test-parking-free-slot-calculation:
-    runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
-    needs: test
-    concurrency: deploy-test-parking-free-slot-calculation
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v2
-
-      - name: Create .env file
-        uses: noi-techpark/github-actions/env-file@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-        env:
-          # General deployment options
-          X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
-          X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
-
-          # Program specific env variables
-          X_AUTHENTICATION_SERVER: https://auth.opendatahub.testingmachine.eu/auth/
-          X_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET_TEST }}
-          X_CLIENT_ID: odh-mobility-datacollector
-          X_ODH_MOBILITY_API_NINJA: https://mobility.api.opendatahub.testingmachine.eu/v2
-          X_ODH_MOBILITY_API_WRITER: https://mobility.share.opendatahub.testingmachine.eu
-          X_PROVENANCE_LINEAGE: NOI
-          X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
-          X_PROVENANCE_VERSION: ${{ github.sha }}
-          # run job every n seconds
-          X_JOB_SCHEDULE_SEC: 300
-
-      - name: Build and push images
-        uses: noi-techpark/github-actions/docker-build-and-push@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
-          docker-username: ${{ github.actor }}
-          docker-password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy application
-        uses: noi-techpark/github-actions/docker-deploy@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
-          hosts: "test"
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          docker-username: "noi-techpark-bot"
-          docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          project-name: ${{ env.PROJECT_NAME }}
-
-  # Deploy Prod
-  deploy-prod-parking-free-slot-calculation:
-    runs-on: ubuntu-22.04
+          k8s-name: ${{ env.K8S_NAME }}
+          k8s-namespace: collector
+          chart-path: helm/generic-collector
+          values-file: ${{ env.WORKING_DIRECTORY}}/${{ env.VALUES_YAML }}
+          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_KEY_SECRET }}
+          aws-eks-cluster-name: aws-main-eu-01
+          aws-region: eu-west-1  
+  
+  deploy-prod:
+    runs-on: ubuntu-24.04
+    needs: build
     if: github.ref == 'refs/heads/prod'
-    needs: test
-    concurrency: deploy-prod-parking-free-slot-calculation
+    concurrency: deploy-prod
+    environment: prod
+    env:
+      VALUES_YAML: infrastructure/helm/prod.yaml
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Create .env file
-        uses: noi-techpark/github-actions/env-file@v2
+      - name: Customize values.yaml
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          yq -i '.image.repository = "${{ env.DOCKER_IMAGE }}"' ${{ env.VALUES_YAML }}
+          yq -i '.image.tag = "${{ env.DOCKER_TAG }}"' ${{ env.VALUES_YAML }}
+          yq -i '.image.pullPolicy = "IfNotPresent"' ${{ env.VALUES_YAML }}
+
+          yq -i '.envSecret.ODH_CLIENT_SECRET = "${{ secrets.EL_PARKING_FREE_CLIENT_SECRET_PROD }}"' ${{ env.VALUES_YAML }}
+          yq -i '.env.BDP_PROVENANCE_VERSION = "${{ github.sha }}"' ${{ env.VALUES_YAML }}
+          yq -i '.env.BDP_PROVENANCE_NAME = "${{ env.PROJECT_NAME }}"' ${{ env.VALUES_YAML }}
+
+      - name: Deploy on cluster  
+        uses: noi-techpark/github-actions/helm-deploy@v2
         with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}
-        env:
-          # General deployment options
-          X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
-          X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
-          X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
-
-          # Program specific env variables
-          X_AUTHENTICATION_SERVER: https://auth.opendatahub.com/auth/
-          X_CLIENT_SECRET: ${{ secrets.CLIENT_SECRET_PROD }}
-          X_CLIENT_ID: odh-mobility-datacollector
-          X_ODH_MOBILITY_API_NINJA: https://mobility.api.opendatahub.com/v2
-          X_ODH_MOBILITY_API_WRITER: 	https://mobility.share.opendatahub.com
-          X_PROVENANCE_LINEAGE: NOI
-          X_PROVENANCE_NAME: ${{ env.PROJECT_NAME }}
-          X_PROVENANCE_VERSION: ${{ github.sha }}
-          # run job every n seconds
-          X_JOB_SCHEDULE_SEC: 300
-
-      - name: Build and push images
-        uses: noi-techpark/github-actions/docker-build-and-push@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure
-          docker-username: ${{ github.actor }}
-          docker-password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy application
-        uses: noi-techpark/github-actions/docker-deploy@v2
-        with:
-          working-directory: ${{ env.WORKING_DIRECTORY }}/infrastructure/ansible
-          hosts: "prod"
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-          docker-username: "noi-techpark-bot"
-          docker-password: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
-          project-name: ${{ env.PROJECT_NAME }}
+          k8s-name: ${{ env.K8S_NAME }}
+          k8s-namespace: collector
+          chart-path: helm/generic-collector
+          values-file: ${{ env.WORKING_DIRECTORY}}/${{ env.VALUES_YAML }}
+          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_KEY_SECRET }}
+          aws-eks-cluster-name: aws-main-eu-01
+          aws-region: eu-west-1  
