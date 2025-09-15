@@ -1,0 +1,21 @@
+image:
+  repository: 
+  pullPolicy: IfNotPresent
+  tag: "0.2.0" # Set this when upgrading chart with --set-value
+
+env:
+  BDP_BASE_URL: http://bdp-core.core.svc.cluster.local
+  BDP_PROVENANCE_VERSION: 0.1.0
+  BDP_PROVENANCE_NAME: el-parking-free-slot-calculation
+  BDP_ORIGIN: el-parking-free-slot-calculation
+
+  TS_API_BASE_URL: http://ninja-api.core.svc.cluster.local
+  TS_API_REFERER: el-parking-free-slot-calculation
+
+  ODH_TOKEN_URL: https://auth.opendatahub.com/auth/realms/noi/protocol/openid-connect/token
+  ODH_CLIENT_ID: el-parking-free
+  ODH_CLIENT_SECRET: 
+
+  LOG_LEVEL: INFO
+
+  CRON: 0 0/5 * * * *
