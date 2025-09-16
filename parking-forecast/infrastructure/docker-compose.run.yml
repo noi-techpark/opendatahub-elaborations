@@ -10,3 +10,7 @@ services:
       - ${SHARED_DIR}/result:/code/result
     env_file:
       - .env
+    deploy:
+      resources:
+        limits:
+          memory: 25GB
