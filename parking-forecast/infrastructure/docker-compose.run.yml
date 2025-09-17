@@ -10,7 +10,9 @@ services:
       - ${SHARED_DIR}/result:/code/result
     env_file:
       - .env
+    mem_limit: 25G
+    oom_kill_disable: true
     deploy:
       resources:
         limits:
-          memory: 25GB
+          memory: 25G
