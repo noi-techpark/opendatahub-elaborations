@@ -67,7 +67,7 @@ let zeropad = num => {
 
     // --- get list of active stations from ODH
 
-    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation?limit=-1&distinct=true&where=sactive.eq.true";
+    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/latest?limit=-1&distinct=true&where=sactive.eq.true";
     let stations;
     try {
         stations = JSON.parse(https_get(stations_url));
