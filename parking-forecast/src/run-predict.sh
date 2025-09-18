@@ -17,6 +17,8 @@ echo "--------------------------------------------------------------------------
 echo "*** prediction run on $(date) ***"
 echo "--------------------------------------------------------------------------------"
 
+RUN_START_HOUR=$(date +%Y%m%d.%H)
+
 echo "-> getting new auth token"
 export oauth_token=$(./get-oauth-token.sh 2>&1) || {
     echo "Error: Failed to obtain OAuth token - $oauth_token" >&2
@@ -62,5 +64,5 @@ rm -f config.yaml.tmp
 # psql -U dwh -c "\copy parking_forecast.history(data) from 'result.json'"
 # 
 
-cp result/result.json result/result.$(date +%Y%m%d.%H%M).json
+cp result/result.json result/result.$RUN_START_HOUR.json
 

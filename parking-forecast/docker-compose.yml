@@ -11,3 +11,10 @@ services:
     volumes:
       - ./src:/code
     tty: true
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - ${NGINX_PORT}:80
+    volumes:
+      - ./src/result:/var/www/html:ro

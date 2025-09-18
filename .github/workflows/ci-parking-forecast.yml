@@ -38,6 +38,7 @@ jobs:
           X_OAUTH_CLIENT_ID: el-parking-forcast
           X_OAUTH_CLIENT_SECRET: ${{ secrets.PARKING_FORECAST_CLIENT_SECRET}}
           X_SHARED_DIR: /var/docker/${{ env.PROJECT_NAME }}/shared
+          X_NGINX_PORT: 1006
 
 
       - name: Build and push images

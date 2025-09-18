@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
+# source python environment
 source /conda/etc/profile.d/conda.sh
 conda activate tf
 

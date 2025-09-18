@@ -10,3 +10,10 @@ services:
       - ${SHARED_DIR}/result:/code/result
     env_file:
       - .env
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - ${NGINX_PORT}:80
+    volumes:
+      - ${SHARED_DIR}/result:/var/www/html:ro
