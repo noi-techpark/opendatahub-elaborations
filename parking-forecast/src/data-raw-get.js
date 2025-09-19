@@ -118,7 +118,7 @@ let zeropad = num => {
              stype: 'ParkingStation'
          */
 
-        let limit = 30000
+        let limit = 50000
         let lines = [];
         let name = station.scode + "__" + String(station.sname).replace(/[.\s\/:]/g, "_") + ".csv";
 
