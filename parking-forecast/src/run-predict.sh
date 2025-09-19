@@ -64,5 +64,6 @@ rm -f config.yaml.tmp
 # psql -U dwh -c "\copy parking_forecast.history(data) from 'result.json'"
 # 
 
+echo "Saving result to result.$RUN_START_HOUR.json"
 cp result/result.json result/result.$RUN_START_HOUR.json
 
