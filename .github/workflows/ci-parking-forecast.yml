@@ -32,6 +32,7 @@ jobs:
           X_COMPOSE_PROJECT_NAME: ${{ env.PROJECT_NAME }}
           X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
+          # Model trains and predicts immediately after deployment/restart
           X_RUN_IMMEDIATELY: true
           X_CRON_TRAIN: "0 1 * * *"
           X_CRON_PREDICT: "0 4-23 * * *"
