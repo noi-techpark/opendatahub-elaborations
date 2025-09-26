@@ -5,6 +5,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+set -e
+
 if [ "$CONDA_DEFAULT_ENV" != "tf" ]; then
     echo "not in expected conda environment"
     exit 1
