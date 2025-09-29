@@ -33,9 +33,9 @@ jobs:
           X_DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
           # Model trains and predicts immediately after deployment/restart
-          X_RUN_IMMEDIATELY: true
+          X_RUN_IMMEDIATELY: false
           X_CRON_TRAIN: "0 1 * * *"
-          X_CRON_PREDICT: "0 4-23 * * *"
+          X_CRON_PREDICT: "3 4-23 * * *"
           X_OAUTH_CLIENT_ID: el-parking-forcast
           X_OAUTH_CLIENT_SECRET: ${{ secrets.PARKING_FORECAST_CLIENT_SECRET}}
           X_SHARED_DIR: /var/docker/${{ env.PROJECT_NAME }}/shared

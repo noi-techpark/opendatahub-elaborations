@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-# src/data-models/**
-# src/data-predictors/**
-# src/data-raw/**
+src/data-models/*/
+src/data-predictors/*.csv
+src/data-raw/**
+src/result
 # src/graphs/**
 src/__pycache__
 src/config.yaml
