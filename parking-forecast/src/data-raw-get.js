@@ -132,7 +132,8 @@ let zeropad = num => {
                 data = JSON.parse(https_get(data_url));
             } catch (ex) {
                 console.log("KO - skip " + name + " as I cannot parse the JSON");
-                return;
+                // likely some form of API error
+                process.exit(1);
             }
             if (data.data === undefined) {
                 console.log("KO - skip " + name + " as the JSON misses the expected data field");
