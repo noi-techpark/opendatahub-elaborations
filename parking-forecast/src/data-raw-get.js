@@ -56,13 +56,13 @@ function https_get(url) {
     console.log("CURL: start download at " + (new Date()));
     let result = child_process.spawnSync("curl",
         ["--silent",
-         "--compressed",
-         "-w", "{CURL_STATUS_START_4925}status=%{http_code} size=%{size_download} conn=%{time_connect} ttfb=%{time_starttransfer} total=%{time_total}{CURL_STATUS_END_4925}\n",
-         "-L", 
-         "-H", "Referer: el-parking-forecast",
-         "-H", "Authorization: Bearer " + process.env.oauth_token,
-         url],
-        {"timeout": 600000, "maxBuffer": 2*1024*1024*1024}
+            "--compressed",
+            "-w", "{CURL_STATUS_START_4925}status=%{http_code} size=%{size_download} conn=%{time_connect} ttfb=%{time_starttransfer} total=%{time_total}{CURL_STATUS_END_4925}\n",
+            "-L",
+            "-H", "Referer: el-parking-forecast",
+            "-H", "Authorization: Bearer " + process.env.oauth_token,
+            url],
+        { "timeout": 600000, "maxBuffer": 2 * 1024 * 1024 * 1024 }
     );
     console.log("CURL: end   download at " + (new Date()));
     let stdout = String(result.output[1]);
@@ -70,12 +70,12 @@ function https_get(url) {
     let match = stdout.match(/{CURL_STATUS_START_4925}(.+?){CURL_STATUS_END_4925}/);
     if (match) { // old curl doesn't support writing -w to stderr, so we need a workaround with regexp
         console.log("CURL: metrics: " + match[1]);
-        stdout = stdout.replace(/(.+?){CURL_STATUS_START_4925}(.+?){CURL_STATUS_END_4925}(.+?)/s,'$1$3');
+        stdout = stdout.replace(/(.+?){CURL_STATUS_START_4925}(.+?){CURL_STATUS_END_4925}(.+?)/s, '$1$3');
     } else {
         console.log("CURL: cannot regexp metrics (?)");
     }
     console.log("CURL: start first 200 chars of response");
-    console.log(stdout.substring(0,200) + "\n");
+    console.log(stdout.substring(0, 200) + "\n");
     console.log("CURL: end first 200 chars of response");
     return stdout;
 }
@@ -89,9 +89,8 @@ let zeropad = num => {
 };
 
 // ----------------------------------------------------------------------------
-(function() {
-
-    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/latest?limit=-1&distinct=true&where=sactive.eq.true&select=scode,sname";
+(function () {
+    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/latest?limit=-1&distinct=true&where=sactive.eq.true&select=scode,sname,mvalidtime";
     let stations;
     try {
         stations = JSON.parse(https_get(stations_url));
@@ -104,35 +103,40 @@ let zeropad = num => {
         process.exit(1);
     }
 
-    let from_date = "2022-01-01T00:00:00.000Z";
-    let to_date   = (new Date()).toISOString();
-
+    let from_date = new Date("2022-01-01T00:00:00.000Z");
+    let one_week_ago = new Date((new Date).getTime() - 7 * 24 * 60 * 60 * 1000);
     let ix = 0;
-    stations.data.sort( (a, b) => (a.scode < b.scode)).forEach( station => {
-        /* interesting station fields:
-             scode: '103',
-             scoordinate: [Object],
-             smetadata: [Object],
-             sname: 'P03 - Piazza Walther',
-             sorigin: 'FAMAS',
-             stype: 'ParkingStation'
-         */
 
-        let limit = 50000
+    stations.data.sort((a, b) => (a.scode < b.scode)).forEach(station => {
         let lines = [];
         let name = station.scode + "__" + String(station.sname).replace(/[.\s\/:]/g, "_") + ".csv";
+        let to_date = new Date(new Date(station.mvalidtime).getTime() + 1000);
 
-        // loop for paging, or we risk bombing the API
-        while(true){
-            let offset = lines.length
-            let data_url = `https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/${from_date}/${to_date}?limit=${limit}&offset=${offset}&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`
+        // Skip if station has no up to date data, we can't predict on it anyway
+        if (to_date < one_week_ago) {
+          console.log("SKIP - " + name + " - last update more than 1 week old (" + station.mvalidtime + ")");
+          return;
+        }
+
+        // Loop through 3-month batches
+        let current_start = new Date(from_date);
+        while (current_start < to_date) {
+            let current_end = new Date(current_start);
+            current_end.setMonth(current_end.getMonth() + 3);
+            if (current_end > to_date) {
+                current_end = new Date(to_date);
+            }
+
+            let start_iso = current_start.toISOString();
+            let end_iso = current_end.toISOString();
+            let data_url = `https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/${start_iso}/${end_iso}?limit=-1&distinct=true&select=mvalue,mvalidtime,mperiod&where=and%28scode.eq.%22${station.scode}%22%2Csactive.eq.true%29`;
+
             let data;
             console.log("\n------");
             try {
                 data = JSON.parse(https_get(data_url));
             } catch (ex) {
                 console.log("KO - skip " + name + " as I cannot parse the JSON");
-                // likely some form of API error
                 process.exit(1);
             }
             if (data.data === undefined) {
@@ -140,18 +144,12 @@ let zeropad = num => {
                 return;
             }
 
-            data.data.forEach( point => {
-                /* interesting point fields:
-                    mperiod: 300,
-                    mvalidtime: '2021-03-10 08:20:00.358+0000',
-                    mvalue: 484
-                 */
+            data.data.forEach(point => {
                 lines.push(`"${point.mvalidtime}","${point.mvalue}"`);
             });
 
-            if (data.data.length < limit) {
-                break;
-            }
+            // Move to next 3-month period
+            current_start = new Date(current_end);
         }
 
         if (lines.length > 10) {
@@ -170,5 +168,4 @@ let zeropad = num => {
     }
     console.log(ix + " stations saved. This is too few, I will return an error");
     process.exit(1);
-
 })();
