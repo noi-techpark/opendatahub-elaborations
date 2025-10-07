@@ -25,8 +25,13 @@ export oauth_token=$(./get-oauth-token.sh 2>&1) || {
     exit 1
 }
 
+echo
+echo "-> getting meteo forecasts"
+./data-meteo-get.sh
+
 echo "-> updating raw parking data from the OpenDataHub"
 ./data-raw-get-diff.js
+
 
 echo
 echo "-> creating config.yaml.tmp from template"
