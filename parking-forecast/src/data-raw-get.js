@@ -90,7 +90,7 @@ let zeropad = num => {
 
 // ----------------------------------------------------------------------------
 (function () {
-    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/latest?limit=-1&distinct=true&where=sactive.eq.true&select=scode,sname,mvalidtime";
+    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/latest?limit=-1&distinct=true&where=sactive.eq.true,scode.eq.parking-sta-marlengo&select=scode,sname,mvalidtime";
     let stations;
     try {
         stations = JSON.parse(https_get(stations_url));
@@ -106,6 +106,7 @@ let zeropad = num => {
     let from_date = new Date("2022-01-01T00:00:00.000Z");
     let one_week_ago = new Date((new Date).getTime() - 7 * 24 * 60 * 60 * 1000);
     let ix = 0;
+    let batch_interval = 60 * 24 * 60 * 60 * 1000; // 2 months
 
     stations.data.sort((a, b) => (a.scode < b.scode)).forEach(station => {
         let lines = [];
@@ -121,8 +122,7 @@ let zeropad = num => {
         // Loop through 3-month batches
         let current_start = new Date(from_date);
         while (current_start < to_date) {
-            let current_end = new Date(current_start);
-            current_end.setMonth(current_end.getMonth() + 3);
+            let current_end = new Date(current_start.getTime() + batch_interval);
             if (current_end > to_date) {
                 current_end = new Date(to_date);
             }
