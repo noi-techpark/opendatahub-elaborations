@@ -90,7 +90,7 @@ let zeropad = num => {
 
 // ----------------------------------------------------------------------------
 (function () {
-    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/latest?limit=-1&distinct=true&where=sactive.eq.true,scode.eq.parking-sta-marlengo&select=scode,sname,mvalidtime";
+    let stations_url = "https://mobility.api.opendatahub.com/v2/flat/ParkingStation/occupied/latest?limit=-1&distinct=true&where=sactive.eq.true&select=scode,sname,mvalidtime";
     let stations;
     try {
         stations = JSON.parse(https_get(stations_url));
