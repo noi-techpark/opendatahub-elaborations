@@ -71,4 +71,5 @@ rm -f config.yaml.tmp
 
 echo "Saving result to result.$RUN_START_HOUR.json"
 cp result/result.json result/result.$RUN_START_HOUR.json
+find result -mtime +3 -name "result.*.json" -exec rm {} \;
 
