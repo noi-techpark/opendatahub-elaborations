@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+src/data-models/*/
+src/data-predictors/*.csv
+src/result
+# src/graphs/**
+src/__pycache__
+src/config.yaml
+src/config.yaml.tmp
+src/result*
+
+.env

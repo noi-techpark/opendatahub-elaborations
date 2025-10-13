@@ -1,0 +1,101 @@
+<!--
+SPDX-FileCopyrightText: 2021-2025 STA AG <info@sta.bz.it>
+SPDX-FileContributor: Chris Mair <chris@1006.org>
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Plots</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="uPlot.min.css">
+    <style type="text/css">
+        body {
+            font-family: sans-serif;
+            min-width: 800px;
+            margin-left: 20px;
+            margin-right: 20px;
+            font-size: 14px;
+        }
+        .spacer {
+            height: 80px;
+        }
+    </style>
+    <script src="uPlot.iife.min.js"></script>
+</head>
+<body>
+
+<h1>Parking forecast</h1>
+
+<div id="summary"></div>
+
+<div class="spacer"></div>
+
+<script type="text/javascript">
+    'use strict';
+    let opts = {
+        title: "My Chart",
+        width: 800,
+        height: 200,
+        series: [
+            {},
+            {
+                show: true,
+                label: "low",
+                stroke: "blue",
+                width: 1
+            },
+            {
+                show: true,
+                label: "high",
+                stroke: "red",
+                width: 1
+            }
+        ]
+    };
+
+    async function main() {
+        const response = await fetch("result.json");
+        if (!response.ok) {
+            alert("failed to fetch the data");
+            return;
+        }
+        const p = await response.json();
+
+        document.getElementById("summary").innerHTML =
+            "published: " + p.publish_timestamp + "<br>" +
+            "forecast starting at: " + p.forecast_start_timestamp + "<br>" +
+            "period [s]: " + p.forecast_period_seconds + "<br>" +
+            "duration [h]: " + p.forecast_duration_hours + "<br><br>" +
+            "all times are UTC";
+
+
+
+        let c = "red";
+        Object.keys(p.timeseries).forEach((key) => {
+                opts.title = "parking scode: " + key;
+                let data = [
+                    [], // x (timestamps)
+                    [], // y low
+                    []  // y high
+                ];
+                p.timeseries[key].forEach((point) => {
+                    data[0].push(Number(new Date(point.ts + "Z"))/ 1000);
+                    data[1].push(Number(point.lo));
+                    data[2].push(Number(point.hi));
+                });
+                let uplot = new uPlot(opts, data, document.body);
+                const spacer = document.createElement("div");
+                spacer.setAttribute("class", "spacer");
+                document.body.append(spacer)
+
+            }
+        );
+    }
+    main();
+</script>
+
+</body>
+</html>
