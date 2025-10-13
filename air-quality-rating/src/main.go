@@ -6,16 +6,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
-	"maps"
-	"slices"
-	"strconv"
-	"strings"
-	"time"
+	"sync/atomic"
 
 	"github.com/noi-techpark/go-bdp-client/bdplib"
 	"github.com/noi-techpark/go-timeseries-client/odhts"
 	"github.com/noi-techpark/go-timeseries-client/where"
+	"github.com/noi-techpark/opendatahub-go-sdk/elab"
 	"github.com/noi-techpark/opendatahub-go-sdk/ingest/ms"
 	"github.com/noi-techpark/opendatahub-go-sdk/tel"
 	"github.com/robfig/cron/v3"
@@ -24,271 +22,90 @@ import (
 var env struct {
 	LOG_LEVEL         string
 	CRON              string
-	NINJA_BASEURL     string
-	NINJA_REFERER     string
+	TS_API_BASE_URL   string
+	TS_API_REFERER    string
 	ODH_TOKEN_URL     string
 	ODH_CLIENT_ID     string
 	ODH_CLIENT_SECRET string
 }
+
+var EIAQ_NO2 = elab.ElaboratedDataType{Name: "EAQI-NO2", Description: "European Air Quality Index - NO2", Period: 3600, Rtype: "rating"}
 
 func main() {
 	ms.InitWithEnv(context.Background(), "", &env)
 	slog.Info("Starting air-quality-rating elaboration...")
 	defer tel.FlushOnPanic()
 
-	// b := bdplib.FromEnv()
+	b := bdplib.FromEnv()
 
-	n := odhts.NewCustomClient(env.NINJA_BASEURL, env.ODH_TOKEN_URL, "el-air-quality-rating")
+	n := odhts.NewCustomClient(env.TS_API_BASE_URL, env.ODH_TOKEN_URL, env.TS_API_REFERER)
 	n.UseAuth(env.ODH_CLIENT_ID, env.ODH_CLIENT_SECRET)
 
-	c := cron.New(cron.WithSeconds())
-	c.AddFunc(env.CRON, func() {
-
-	})
-}
-
-type Elaboration struct {
-	StationTypes        []string
-	Filter              string
-	OnlyActiveStations  bool
-	BaseTypes           []BaseDataType
-	DerivedTypes        []DerivedDataType
-	b                   *bdplib.Bdp
-	c                   *odhts.C
-	timeBatchAdder      historyTimeBatcher
-	HistoryRequestLimit int
-}
-
-type historyTimeBatcher = func(time.Time) time.Time
-
-func NewElaboration(ts *odhts.C, bdp *bdplib.Bdp) Elaboration {
-	return Elaboration{b: bdp, c: ts, timeBatchAdder: oneMonth, HistoryRequestLimit: 1000}
-}
-
-type BaseDataType struct {
-	Name   string
-	Period Period
-}
-
-type DerivedDataType struct {
-	Name        string
-	Unit        string
-	Description string
-	Rtype       string
-	Period      Period
-	MetaData    map[string]any
-	DontSync    bool
-}
-
-func (e Elaboration) SyncDataTypes() []bdplib.DataTypeList {
-	return []bdplib.DataTypeList{}
-}
-
-type Station odhts.StationDto[map[string]any]
-type Measurement odhts.LatestDto
-type Period = uint64
-
-func (e Elaboration) GetInitialState() (ElaborationState, error) {
-	req := e.buildInitialStateRequest()
-
-	var res odhts.Response[DtoTreeData]
-	err := odhts.Latest(*e.c, req, &res)
-	if err != nil {
-		slog.Error("error getting latest records from ninja. aborting...", "err", err)
-		return ElaborationState{}, err
+	e := elab.NewElaboration(&n, &b)
+	e.StationTypes = []string{"EnvironmentStation"}
+	e.BaseTypes = []elab.BaseDataType{
+		{Name: "NO2-Alphasense_processed", Period: 3600},
+		{Name: "NO2 - Ossidi di azoto", Period: 3600},
+		{Name: "nitrogen-dioxide", Period: 3600},
 	}
+	e.ElaboratedTypes = []elab.ElaboratedDataType{EIAQ_NO2}
+	e.Filter = where.In("sorigin", "a22-algorab", "APPABZ", "APPATN-open")
+	ms.FailOnError(context.Background(), e.SyncDataTypes(), "error syncing data types")
 
-	return mapNinja2ElabTree(res), nil
-}
-
-func (e Elaboration) buildInitialStateRequest() *odhts.Request {
-	req := odhts.DefaultRequest()
-	req.Repr = odhts.TreeNode
-	req.StationTypes = e.StationTypes
-
-	datatypes := map[string]struct{}{}
-	periods := map[string]struct{}{}
-	for _, t := range e.BaseTypes {
-		datatypes[t.Name] = struct{}{}
-		periods[strconv.FormatUint(t.Period, 10)] = struct{}{}
-	}
-	for _, t := range e.DerivedTypes {
-		datatypes[t.Name] = struct{}{}
-		periods[strconv.FormatUint(t.Period, 10)] = struct{}{}
-	}
-
-	req.DataTypes = slices.Collect(maps.Keys(datatypes))
-	periodsStr := strings.Join(slices.Collect(maps.Keys(periods)), ",")
-
-	filters := []string{}
-	if e.OnlyActiveStations {
-		filters = append(filters, where.Eq("scode", "true"))
-	}
-	if periodsStr != "" {
-		filters = append(filters, where.In("mperiod", periodsStr))
-	}
-	if e.Filter != "" {
-		filters = append(filters, e.Filter)
-	}
-	if len(filters) > 0 {
-		req.Where = where.And(filters...)
-	}
-
-	req.Limit = -1
-	return req
-}
-
-func mapNinja2ElabTree(o odhts.Response[DtoTreeData]) ElaborationState {
-	// Tree is the same stationtype / stationcode / datatype structure
-	e := ElaborationState{}
-	for k, v := range o.Data {
-		stype := ESStationType{}
-		stype.Stations = map[string]ESStation{}
-		for k, v := range v.Stations {
-			st := ESStation{}
-			st.Station = v.Station
-			st.Datatypes = map[string]ESDataType{}
-			for k, v := range v.Datatypes {
-				dt := ESDataType{}
-				dt.Periods = map[Period]time.Time{}
-				for _, m := range v.Measurements {
-					// since this is supposed to be a /latest request, periods are assumed to be unique
-					dt.Periods[Period(m.Period)] = m.Time.Time
+	job := func() {
+		slog.Info("Starting elaboration run")
+		is, err := e.RequestState()
+		ms.FailOnError(context.Background(), err, "failed to get initial state")
+		count := atomic.Int32{}
+		e.NewStationFollower().Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+			count.Add(1)
+			slog.Debug("Elaborating station", "station", s, "rec_cnt", len(ms))
+			ret := make([]elab.ElabResult, len(ms))
+			for i, m := range ms {
+				no2_um := *m.Value.Num
+				no2_rating, err := rateNo2(no2_um)
+				if err != nil {
+					slog.Error("could not elaborate measurement. skipping", "measurement", m)
+					continue
 				}
-				st.Datatypes[k] = dt
+
+				ret[i] = elab.ElabResult{
+					Timestamp:   m.Timestamp.Time,
+					Period:      elab.Period(m.Period),
+					StationType: s.Stationtype,
+					StationCode: s.Stationcode,
+					DataType:    EIAQ_NO2.Name,
+					Value:       no2_rating}
 			}
-			stype.Stations[k] = st
-		}
-		e[k] = stype
+			return ret, nil
+		})
+		slog.Info("Elaboration job complete", "stationsCount", count.Load())
 	}
 
-	return e
+	job()
+	c := cron.New(cron.WithSeconds())
+	c.AddFunc(env.CRON, job)
+	c.Start()
+	select {}
 }
 
-type ESStationType struct {
-	Stations map[string]ESStation
-}
-
-type ESStation struct {
-	Station   Station
-	Datatypes map[string]ESDataType
-}
-
-type ESDataType struct {
-	Periods map[Period]time.Time
-}
-
-type ElaborationState = map[string]ESStationType
-
-func oneMonth(t time.Time) time.Time {
-	return t.AddDate(0, 1, 0)
-}
-
-func (e Elaboration) GetHistory(stationtypes []string, stationcodes []string, datatypes []string, periods []Period, from time.Time, to time.Time) ([]Measurement, error) {
-	var ret []Measurement
-
-	// Ninja cannot handle too large time period requests, so we do it one month at a time
-	for start, end := from, to; start.Before(end); start = e.timeBatchAdder(start) {
-		windowEnd := e.timeBatchAdder(start)
-		if windowEnd.After(end) {
-			windowEnd = end
-		}
-		for page := 0; ; page += 1 {
-			req := e.buildHistoryRequest(stationtypes, stationcodes, datatypes, periods, from, to)
-
-			req.Select = "mvalue,mperiod,mvalidtime,scode,stype,tname"
-			req.Limit = e.HistoryRequestLimit
-			req.Offset = uint(page * req.Limit)
-
-			res := &odhts.Response[[]Measurement]{}
-
-			err := odhts.History(*e.c, req, res)
-			if err != nil {
-				return nil, err
-			}
-
-			ret = append(ret, res.Data...)
-
-			// only if limit = length, there might be more data
-			if res.Limit != int64(len(res.Data)) {
-				break
-			} else {
-				slog.Debug("Using pagination to request more data: ", "limit", res.Limit, "data.length", len(res.Data), "offset", req.Offset, "firstDate", res.Data[0].MValidTime.Time)
-			}
-		}
+func rateNo2(rating float64) (string, error) {
+	concentration := ""
+	switch {
+	case rating >= 340:
+		concentration = "extremely poor"
+	case rating >= 230:
+		concentration = "very poor"
+	case rating >= 120:
+		concentration = "poor"
+	case rating >= 90:
+		concentration = "moderate"
+	case rating >= 40:
+		concentration = "fair"
+	case rating >= 0:
+		concentration = "good"
+	default:
+		return "", fmt.Errorf("invalid no2 value %f", rating)
 	}
-	return ret, nil
-}
-func (e Elaboration) buildHistoryRequest(stationtypes []string, stationcodes []string, datatypes []string, periods []Period, from time.Time, to time.Time) *odhts.Request {
-	req := odhts.DefaultRequest()
-	req.Repr = odhts.FlatNode
-	req.StationTypes = stationtypes
-	req.From = from
-	req.To = to
-
-	req.DataTypes = datatypes
-
-	periodsStr := []string{}
-	for _, period := range periods {
-		periodsStr = append(periodsStr, strconv.FormatUint(period, 10))
-	}
-
-	filters := []string{}
-	if e.OnlyActiveStations {
-		filters = append(filters, where.Eq("sactive", "true"))
-	}
-	if len(periodsStr) > 0 {
-		filters = append(filters, where.In("mperiod", periodsStr...))
-	}
-	if len(stationcodes) > 0 {
-		filters = append(filters, where.In("scode", where.EscapeList(stationcodes...)...))
-	}
-	if e.Filter != "" {
-		filters = append(filters, e.Filter)
-	}
-	if len(filters) > 0 {
-		req.Where = where.And(filters...)
-	}
-
-	req.Limit = -1
-	return req
-}
-
-// arbitraty starting point where there should be no data yet
-var minTime = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
-
-func (e Elaboration) FollowStation(es ElaborationState, handle func(Station, []Measurement) ([]ElabResult, error)) {
-	for _, stp := range es {
-		for _, st := range stp.Stations {
-			handle(st.Station, []Measurement{})
-		}
-	}
-}
-
-func (e Elaboration) PushResults(results []ElabResult) error {
-	return nil
-}
-
-type ElabResult struct {
-	Timestamp   int64
-	Period      Period
-	StationType string
-	StationCode string
-	DataType    string
-	Value       interface{}
-}
-
-type DtoMeasurement struct {
-	Period uint64       `json:"mperiod"`
-	Time   odhts.TsTime `json:"mvalidtime"`
-	Since  odhts.TsTime `json:"mtransactiontime"`
-}
-
-type DtoTreeData = map[string]struct {
-	Stations map[string]struct {
-		Station
-		Datatypes map[string]struct {
-			Measurements []DtoMeasurement `json:"tmeasurements"`
-		} `json:"sdatatypes"`
-	} `json:"stations"`
+	return concentration, nil
 }
