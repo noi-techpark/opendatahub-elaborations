@@ -17,10 +17,3 @@
             remote: docker-compose.yml
           - local: ../../.env
             remote: .env
-        docker_deployment_shared_files:
-          - local: ../../src/graphs/render.html
-            remote: result/render.html
-          - local: ../../src/graphs/uPlot.iife.min.js
-            remote: result/uPlot.iife.min.js
-          - local: ../../src/graphs/render.html
-            remote: result/render.html
