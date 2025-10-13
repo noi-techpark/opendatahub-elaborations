@@ -2,17 +2,32 @@
 SPDX-FileCopyrightText: 2021-2025 STA AG <info@sta.bz.it>
 SPDX-FileContributor: Chris Mair <chris@1006.org>
 
+SPDX-FileCopyrightText: 2025 NOI AG <digital@noi.bz.it>
+
 SPDX-License-Identifier: CC0-1.0
 -->
 
 # STA Parking Forecast
+This project was initially commissioned by STA and implemented by Chris Mair, but migrated to NOI in late 2025.  
+
+The machine learning part has stayed the same, but the data collection has been reworked in places.  
+
+Some features like rmse calculation have been disabled.
 
 ## Overview
-
 This projects gathers parking occupation data from the [Open Data
 Hub](https://opendatahub.com/datasets) and uses that data together with weather forecast data
 and information about holidays and school days. From this data,
 it trains a simple, shallow neural network that can forecast occupation.
+
+## Architecture
+This application was originally running on a VM and has been dockerized when migrating from STA servers to the Open Data Hub.
+
+The main container installs two cron jobs, one for training and one for prediction.
+- training runs once every night at midnight, downloads all historical data and trains a new model. This requires around 30GB RAM and up to an hour
+- prediction runs once every hour, has similar RAM requirements, but takes around 5 minutes 
+
+A separate nginx container hosts the result, to be downloaded by the parking-forecast data collector (`/result.json`)
 
 ## Part 1/2: run-train.sh - Data Gathering and Training
 
