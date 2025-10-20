@@ -27,7 +27,7 @@ domains:
       station_type: 'Weather'
       station_id: '37100MS'
     traffic:
-      station_id: '678'
+      station_id: '6119'
     POI: # ID, dist_from_source, x, y
       - [101, 200, 684409, 5196731] # ospedale Vipiteno
       - [102, 100, 684509, 5196737]
@@ -45,7 +45,7 @@ domains:
       station_type: 'Weather'
       station_id: '37100MS'
     traffic:
-      station_id: '677'
+      station_id: '6120'
     POI:
       - [201, 200, 696260, 5186647] # Mezzaselva
       - [202, 100, 696294, 5186740]
@@ -63,7 +63,7 @@ domains:
       station_type: 'Weather'
       station_id: '39100MS'
     traffic:
-      station_id: '666'
+      station_id: '6121'
     POI:
       - [301, 200, 702104, 5176997] # Bressanone
       - [302, 100, 702202, 5177009]
@@ -81,7 +81,7 @@ domains:
       station_type: 'Weather'
       station_id: '39100MS'
     traffic:
-      station_id: '666'
+      station_id: '6121'
     POI:
       - [401, 200, 698594, 5170199] # Bressanone ZI
       - [402, 100, 698649, 5170114]
@@ -99,7 +99,7 @@ domains:
       station_type: 'Weather'
       station_id: '74900MS'
     traffic:
-      station_id: '676'
+      station_id: '6122'
     POI:
       - [501, 200, 693836, 5163629] # Ponte Gardena
       - [502, 100, 693938, 5163624]
@@ -117,7 +117,7 @@ domains:
       station_type: 'Weather'
       station_id: '83200MS'
     traffic:
-      station_id: '684'
+      station_id: '6123'
     POI:
       - [601, 200, 679141, 5150977] # Bolzano
       - [602, 100, 679172, 5150881]
@@ -135,7 +135,7 @@ domains:
       station_type: 'Weather'
       station_id: '86600MS'
     traffic:
-      station_id: '679'
+      station_id: '6124'
     POI:
       - [701, 200, 677154, 5142597] # Vadena
       - [702, 100, 677247, 5142573]
@@ -153,7 +153,7 @@ domains:
       station_type: 'Weather'
       station_id: '88820MS'
     traffic:
-      station_id: '680'
+      station_id: '6126'
     POI:
       - [801, 200, 671642, 5126140] # Cortina sldv
       - [802, 100, 671735, 5126111]
@@ -171,7 +171,7 @@ domains:
       station_type: 'Weather'
       station_id: 'T0135'
     traffic:
-      station_id: '668'
+      station_id: '6127'
     POI:
       - [901, 200, 661339, 5113364] # Zambana
       - [902, 100, 661436, 5113343]
@@ -189,7 +189,7 @@ domains:
       station_type: 'Weather'
       station_id: 'T0135'
     traffic:
-      station_id: '5807'
+      station_id: '6153'
     POI:
       - [1001, 200, 662190, 5106283] # Trento Nord
       - [1002, 100, 662279, 5106333]
@@ -207,7 +207,7 @@ domains:
       station_type: 'Weather'
       station_id: 'T0129'
     traffic:
-      station_id: '674'
+      station_id: '6128'
     POI:
       - [1101, 200, 663000, 5103069] # Trento Centro
       - [1102, 100, 663104, 5103060]
@@ -225,7 +225,7 @@ domains:
       station_type: 'Weather'
       station_id: 'T0146'
     traffic:
-      station_id: '1886'
+      station_id: '6129'
     POI:
       - [1201, 200, 664018, 5097305] # Mattarello
       - [1202, 100, 664119, 5097304]
@@ -243,7 +243,7 @@ domains:
       station_type: 'Weather'
       station_id: 'T0147'
     traffic:
-      station_id: '5553'
+      station_id: '6130'
     POI:
       - [1301, 200, 655872, 5083267] # Isera
       - [1302, 100, 655969, 5083243]
@@ -261,7 +261,7 @@ domains:
       station_type: 'RoadWeather'
       station_id: '2026'
     traffic:
-      station_id: '686'
+      station_id: '6132'
     POI:
       - [1401, 200, 655720, 5070254] # Ala
       - [1402, 100, 655778, 5070173]
@@ -279,7 +279,7 @@ domains:
       station_type: 'RoadWeather'
       station_id: '5508'
     traffic:
-      station_id: '683'
+      station_id: '6135'
     POI:
       - [1501, 200, 652060, 5066881] # Avio
       - [1502, 100, 652112, 5066795]
