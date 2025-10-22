@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC0-1.0
 -->
 
 # STA Parking Forecast
-This project was initially commissioned by STA and implemented by Chris Mair, but migrated to NOI in late 2025.  
+This project was initially commissioned by STA and implemented by Thomas Auckenthaler and Chris Mair, but migrated to NOI in late 2025.  
 
 The machine learning part has stayed the same, but the data collection has been reworked in places.  
 
@@ -133,16 +133,6 @@ five times we end up with:
 > Note 3: These trained models are currently retrained (overwritten) once a day. However,
 > they are certainly valid some time. For example, retraining could be happening
 > also just once a week.
-
-> Note 4: the model architecture is partially autoregressive, recent "holes"
-> in the occupancy data cause NaN forecasts.
-> It used to be that the training run downloaded **all data** starting
-> from the dawn of time (2022-01-01) for each station. This was a good means
-> to protect against scenario where a station doesn't send data for some time,
-> but then suddenly old data becomes available. Currently, that is not possible
-> due to limits imposed by the Open Data Hub. The training run only looks for
-> new stations, but cannot fill holes in old data.
-
 
 ## Part 2/2: run-predict.sh - Do Forecasting and Publish Results
 
