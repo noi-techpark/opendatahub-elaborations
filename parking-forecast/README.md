@@ -142,13 +142,13 @@ The main script of this part is:
 |----------------|------------------------------------------------------------|
 | run-predict.sh | run model inference to do forecasting and publish results  |  
 
-> Note 5: `run-predict.sh` contains a hardcoded path.
+> Note 4: `run-predict.sh` contains a hardcoded path.
 
-> Note 6: `run-predict.sh` calls among other things the `psql` executable to insert
+> Note 5: `run-predict.sh` calls among other things the `psql` executable to insert
 > data into a PostgreSQL database.  The connection information is in hardcoded
 > in the script. Use `.pgpass` for the password.
 
-> Note 7: `run-predict.sh` calls `sftp` to upload the forecast data to a server.
+> Note 6: `run-predict.sh` calls `sftp` to upload the forecast data to a server.
 > User and hostname is hardcoded. Authentication is key based.
 
 `run-predict.sh` first copies the configuration file
