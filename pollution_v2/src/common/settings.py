@@ -32,8 +32,8 @@ POLLUTION_TASK_SCHEDULING_HOUR = os.getenv("POLLUTION_TASK_SCHEDULING_HOUR", "*"
 SENTRY_SAMPLE_RATE = float(os.getenv("SENTRY_SAMPLE_RATE", 1.0))
 
 # Logging
-LOG_LEVEL = Variable.get("LOG_LEVEL", default="INFO")
-LOG_LEVEL_LIBS = Variable.get("LOG_LEVEL_LIBS", default="DEBUG")
+LOG_LEVEL = Variable.get("LOG_LEVEL", default_var="INFO")
+LOG_LEVEL_LIBS = Variable.get("LOG_LEVEL_LIBS", default_var="DEBUG")
 LOGS_DIR = os.getenv("LOGS_DIR", "")
 
 # General
