@@ -53,6 +53,7 @@ class ValidationManager(TrafficStationManager):
 
         # set time to midnight otherwise you'll miss today's value
         from_date = DEFAULT_TIMEZONE.localize(datetime.combine(from_date, datetime.min.time()))
+        logger.info(f"Download history data from date [{from_date.isoformat()}]")
 
         measures = []
         from_date_on_month = from_date.replace(day=1)
@@ -63,6 +64,7 @@ class ValidationManager(TrafficStationManager):
         for i in range(0, 4):
             from_date_to_use = from_date_on_month.replace(year=from_date_on_month.year-i)
             to_date_to_use = min(to_date_on_month.replace(year=to_date_on_month.year-i), to_date)
+            logger.info(f"Getting measures for interval [{from_date_to_use.isoformat()}] - [{to_date_to_use.isoformat()}]")
             measures.extend(self._connector_collector.history.get_measures(from_date=from_date_to_use,
                                                                            to_date=to_date_to_use))
 
