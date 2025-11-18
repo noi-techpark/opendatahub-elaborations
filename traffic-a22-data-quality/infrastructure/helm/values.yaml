@@ -17,4 +17,4 @@ env:
   LOG_LEVEL: DEBUG
 
   # run once per day, calculates the previous day's sums
-  SCHEDULER_CRON: "0 10 2 * * *"
+  SCHEDULER_CRON: "0 20 0 * * *"
