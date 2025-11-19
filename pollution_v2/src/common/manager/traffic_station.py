@@ -289,7 +289,7 @@ class TrafficStationManager(StationManager, ABC):
         :param data_types: The data types to filter the measures.
         :return: The latest measure for a given station.
         """
-        latest_measures = connector.get_latest_measures(station, data_types=data_types)
+        latest_measures = connector.get_latest_measures(station, data_types=data_types, period_to_include=connector._period)
         if latest_measures:
             if update_create_data_types:
                 self._create_data_types = False
