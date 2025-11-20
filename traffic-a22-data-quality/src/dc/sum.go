@@ -101,7 +101,7 @@ func sumJob() {
 				totals[t.dt] += t.v
 			}
 			for date, total := range totals {
-				recs <- rec{scode, TotalType.Name, bdplib.CreateRecord(startOfNextDay(date).UnixMilli(), total, periodAgg)}
+				recs <- rec{scode, TotalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAgg)}
 			}
 		}()
 
@@ -128,14 +128,14 @@ func sumHistory(win window, scode string, tname string, total chan tv, recs chan
 
 	sums := make(map[time.Time]float64)
 	for _, m := range history {
-		date := startOfDay(m.Timestamp.Time)
+		date := startOfNextDay(m.Timestamp.Time)
 		sums[date] = sums[date] + m.Value
 		if _, ok := totalDataTypes[tname]; ok {
 			total <- tv{date, m.Value}
 		}
 	}
 	for date, sum := range sums {
-		recs <- rec{scode, tname, bdplib.CreateRecord(startOfNextDay(date).UnixMilli(), sum, periodAgg)}
+		recs <- rec{scode, tname, bdplib.CreateRecord(date.UnixMilli(), sum, periodAgg)}
 	}
 	return nil
 }
