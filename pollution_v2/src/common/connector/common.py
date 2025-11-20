@@ -320,8 +320,6 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         :param data_types: If set, uses this custom list of data types to retrieve data
         :return: The list of measures
         """
-        if period_to_include is None:
-            period_to_include = self._period
 
         where_conds = self._build_where_conds(station, period_to_include)
         query_params = {}
