@@ -128,7 +128,7 @@ func sumHistory(win window, scode string, tname string, total chan tv, recs chan
 
 	sums := make(map[time.Time]float64)
 	for _, m := range history {
-		date := startOfNextDay(m.Timestamp.Time)
+		date := startOfDay(m.Timestamp.Time)
 		sums[date] = sums[date] + m.Value
 		if _, ok := totalDataTypes[tname]; ok {
 			total <- tv{date, m.Value}
