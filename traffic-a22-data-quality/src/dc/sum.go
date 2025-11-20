@@ -101,7 +101,7 @@ func sumJob() {
 				totals[t.dt] += t.v
 			}
 			for date, total := range totals {
-				recs <- rec{scode, TotalType.Name, bdplib.CreateRecord(date.UnixMilli(), total, periodAgg)}
+				recs <- rec{scode, TotalType.Name, bdplib.CreateRecord(startOfNextDay(date).UnixMilli(), total, periodAgg)}
 			}
 		}()
 
@@ -128,14 +128,14 @@ func sumHistory(win window, scode string, tname string, total chan tv, recs chan
 
 	sums := make(map[time.Time]float64)
 	for _, m := range history {
-		date := stripToDay(m.Timestamp.Time)
+		date := startOfNextDay(m.Timestamp.Time)
 		sums[date] = sums[date] + m.Value
 		if _, ok := totalDataTypes[tname]; ok {
 			total <- tv{date, m.Value}
 		}
 	}
 	for date, sum := range sums {
-		recs <- rec{scode, tname, bdplib.CreateRecord(date.UnixMilli(), sum, periodAgg)}
+		recs <- rec{scode, tname, bdplib.CreateRecord(startOfNextDay(date).UnixMilli(), sum, periodAgg)}
 	}
 	return nil
 }
@@ -208,7 +208,11 @@ func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 	return todos
 }
 
-func stripToDay(t time.Time) time.Time {
+// the daily sum record is inserted on 0:00 of the next day, as it aggregates the previous 24h
+func startOfNextDay(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, t.Location())
+}
+func startOfDay(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 }
 
@@ -224,8 +228,7 @@ func getRequestDates(todo window) (time.Time, time.Time) {
 		start = todo.firstBase
 	}
 
-	start = stripToDay(start).AddDate(0, 0, 1)
-	end := stripToDay(todo.lastBase)
+	end := startOfDay(todo.lastBase)
 	return start, end
 }
 
