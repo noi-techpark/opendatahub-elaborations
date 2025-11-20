@@ -42,7 +42,8 @@ class ValidationModel:
         :return: A list of the new computed validation measures
         """
 
-        history_dates = {measure.valid_time.date() for measure in history.measures}
+        # since the daily history dates are inserted at start of next day, consider them for the day before
+        history_dates = {measure.valid_time.date()-timedelta(days=1) for measure in history.measures}
         traffic_dates = {measure.valid_time.date() for measure in traffic.measures}
 
         traffic_missing_dates = history_dates.difference(traffic_dates)
