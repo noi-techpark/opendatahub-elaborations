@@ -77,7 +77,8 @@ class ValidationManager(TrafficStationManager):
         traffic_data = []
         try:
             # no station as for history every station is needed
-            history_data = self._download_history_data(start_date, to_date)
+            # add one day because the sum of any day is inserted with timestamp = day after
+            history_data = self._download_history_data(start_date, (to_date + timedelta(days=1)))
             # no station as parameter as validation needs data from all stations
             traffic_data = self._download_traffic_data(start_date, to_date, stations)
         except Exception as e:
