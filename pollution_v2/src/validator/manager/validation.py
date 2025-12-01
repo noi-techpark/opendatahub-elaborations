@@ -19,7 +19,7 @@ from common.data_model.traffic import TrafficMeasureCollection
 from common.data_model.validation import ValidationMeasure, ValidationMeasureCollection, ValidationEntry
 from common.manager.traffic_station import TrafficStationManager
 from common.data_model.common import DataType, MeasureCollection
-from common.settings import DEFAULT_TIMEZONE
+from common.settings import DEFAULT_TIMEZONE, HISTORY_TIMEZONE
 from validator.model.validation_model import ValidationModel
 
 logger = logging.getLogger("pollution_v2.validator.manager.validation")
@@ -51,15 +51,16 @@ class ValidationManager(TrafficStationManager):
         :return: The resulting HistoryMeasureCollection containing the traffic data.
         """
 
-        # set time to midnight otherwise you'll miss today's value
-        from_date = DEFAULT_TIMEZONE.localize(datetime.combine(from_date, datetime.min.time()))
+        # The daily sums are at (default) 00:00 UTC of the following day, so we have to convert timezone and look ahead 1 day
+        from_date = HISTORY_TIMEZONE.localize(datetime.combine(from_date.astimezone(HISTORY_TIMEZONE), datetime.max.time()))
+        to_date = HISTORY_TIMEZONE.localize(datetime.combine((to_date.astimezone(HISTORY_TIMEZONE) + timedelta(days=1)), datetime.max.time()))
         logger.info(f"Download history data from date [{from_date.isoformat()}]")
 
         measures = []
         from_date_on_month = from_date.replace(day=1)
-        to_date_on_month = from_date_on_month + relativedelta(months=1)
+        to_date_on_month = from_date_on_month + relativedelta(months=1, days=1)
         if to_date_on_month.tzinfo is None:
-            to_date_on_month = DEFAULT_TIMEZONE.localize(to_date_on_month)
+            to_date_on_month = HISTORY_TIMEZONE.localize(to_date_on_month)
 
         for i in range(0, 4):
             from_date_to_use = from_date_on_month.replace(year=from_date_on_month.year-i)
@@ -77,8 +78,7 @@ class ValidationManager(TrafficStationManager):
         traffic_data = []
         try:
             # no station as for history every station is needed
-            # add one day because the sum of any day is inserted with timestamp = day after
-            history_data = self._download_history_data(start_date, (to_date + timedelta(days=1)))
+            history_data = self._download_history_data(start_date, to_date)
             # no station as parameter as validation needs data from all stations
             traffic_data = self._download_traffic_data(start_date, to_date, stations)
         except Exception as e:
@@ -98,4 +98,4 @@ class ValidationManager(TrafficStationManager):
         return ValidationMeasure.get_data_types()
 
     def _build_from_entries(self, input_entries: List[ValidationEntry]) -> MeasureCollection:
-        return ValidationMeasureCollection.build_from_entries(input_entries, self._provenance)
+        return ValidationMeasureCollection.build_from_entries(input_entries, self._provenance)#

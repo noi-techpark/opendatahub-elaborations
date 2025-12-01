@@ -38,6 +38,7 @@ LOGS_DIR = os.getenv("LOGS_DIR", "")
 
 # General
 DEFAULT_TIMEZONE = pytz.timezone(os.getenv("DEFAULT_TIMEZONE", "Europe/Rome"))
+HISTORY_TIMEZONE = pytz.timezone(os.getenv("HISTORY_TIMEZONE", "UTC"))
 
 # Open Data Hub
 ODH_BASE_READER_URL = Variable.get("ODH_BASE_READER_URL")
