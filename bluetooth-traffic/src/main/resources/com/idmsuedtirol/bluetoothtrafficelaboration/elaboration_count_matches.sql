@@ -45,22 +45,25 @@ min_max as
           p.input_type_id,
           (select min(timestamp)
             from measurementhistory eh
-           where eh.period = 1
-             and eh.station_id = p.station_id
-             and eh.type_id = p.input_type_id
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = 1
+             and ts.station_id = p.station_id
+             and ts.type_id = p.input_type_id
           ) min_timestamp, 
           (select max(timestamp)
             from measurementhistory eh
-           where eh.period = 1
-             and eh.station_id = p.station_id
-             and eh.type_id = p.input_type_id
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = 1
+             and ts.station_id = p.station_id
+             and ts.type_id = p.input_type_id
           ) max_timestamp,
           (
           select max(timestamp)::date - 1
             from measurementhistory eh
-           where eh.period = p.period
-             and eh.station_id = p.station_id
-             and eh.type_id = p.output_type_id
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = p.period
+             and ts.station_id = p.station_id
+             and ts.type_id = p.output_type_id
           ) elaboration_timestamp
      from params p
 )
@@ -101,9 +104,10 @@ select null::bigint id,
        (
           select count(*)
             from measurementhistory eh
-           where eh.period = 1
-             and eh.station_id = range.station_id
-             and eh.type_id = range.input_type_id
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = 1
+             and ts.station_id = range.station_id
+             and ts.type_id = range.input_type_id
              and time_window_start <= eh.timestamp 
              and eh.timestamp < time_window_end
        ) as value,
@@ -112,7 +116,7 @@ select null::bigint id,
        output_type_id as type_id
   from range
 )
-select deltart((select array_agg(result::intimev2.measurementhistory) from result where value is not null),
+select deltart((select array_agg(result::deltart_input) from result where value is not null),
                start_calc    + period/2 * '1 second'::interval,
                max_timestamp + period/2 * '1 second'::interval,
                station_id,
