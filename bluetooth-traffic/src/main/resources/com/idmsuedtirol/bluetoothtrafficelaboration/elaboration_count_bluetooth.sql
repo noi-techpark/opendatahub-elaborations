@@ -42,22 +42,25 @@ stations_min_max as
           (
           select min(timestamp)
             from measurementstringhistory h
-           where type_id = 15 -- bluetooth measure
-             and h.station_id = p.station_id
+            join timeseries ts on ts.id = h.timeseries_id and ts.partition_id = h.partition_id
+           where ts.type_id = 15 -- bluetooth measure
+             and ts.station_id = p.station_id
           ) min_timestamp
           ,
           (
           select max(timestamp)
             from measurementstringhistory h
-           where type_id = 15
-             and h.station_id = p.station_id
+            join timeseries ts on ts.id = h.timeseries_id and ts.partition_id = h.partition_id
+           where ts.type_id = 15 -- bluetooth measure
+             and ts.station_id = p.station_id
           ) max_timestamp,
           (
           select max(timestamp)::date - 1
-            from measurementhistory eh
-           where eh.period = p.period
-             and eh.station_id = p.station_id
-             and eh.type_id = p.type_id
+            from measurementhistory h
+            join timeseries ts on ts.id = h.timeseries_id and ts.partition_id = h.partition_id
+           where ts.period = p.period
+             and ts.station_id = p.station_id
+             and ts.type_id = p.type_id
           ) elaboration_timestamp
           from params p
 )
@@ -98,8 +101,9 @@ result as
           time_window_center as timestamp,
           ( select count(m.id)
               from measurementstringhistory m
-             where m.station_id = r.station_id
-               and m.type_id = 15
+              join timeseries t on ts.id = m.timeseries_id and t.partition_id = m.partition_id
+             where t.station_id = r.station_id
+               and t.type_id = 15
                and time_window_start <= m.timestamp 
                and m.timestamp < time_window_end
           ) as value,
