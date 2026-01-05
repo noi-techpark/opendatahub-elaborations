@@ -63,7 +63,7 @@ $$
         where station_id = p_station_id 
           and type_id = p_type_id 
           and period = p_period
-          and value_table = 'measurementhistory';
+          and value_table = 'measurement';
 
 
         create temporary table tt (
@@ -78,7 +78,7 @@ $$
             -- Create missing timeseries record if we have data to insert
             if (v_timeseries_id is null) then
                 insert into intimev2.timeseries (station_id, type_id, period, value_table, partition_id)
-                values (p_station_id, p_type_id, p_period, 'measurementhistory', 1)
+                values (p_station_id, p_type_id, p_period, 'measurement', 1)
                 returning id, partition_id into v_timeseries_id, v_partition_id;
             end if;
             -- loop over array for insert and copy the array into a temporary table
