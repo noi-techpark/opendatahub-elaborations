@@ -156,7 +156,7 @@ select null::bigint id,
     -- 2019-06-19 d@vide.bz: remove identical rows with group by
  group by 1,2,3,4,5,6,7,8
 )
-select deltart((select array_agg(result::intimev2.measurementhistory) from result where value is not null),
+select deltart((select array_agg(result::deltart_input) from result where value is not null),
                start_calc,
                max_timestamp,
                link_station_id,

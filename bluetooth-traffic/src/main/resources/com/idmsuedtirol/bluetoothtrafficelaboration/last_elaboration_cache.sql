@@ -103,10 +103,11 @@ upd as (
 )
 ,
 ins as (
-   insert into measurement(created_on, station_id, type_id, period, timestamp, double_value)
-   select current_timestamp, station_id, type_id, period, new_timestamp as timestamp, new_value
-     from diff
-    where old_timestamp is null
+   insert into measurement(created_on, timeseries_id, timestamp, double_value)
+   select d.current_timestamp, ts.id, d.new_timestamp as timestamp, d.new_value
+     from diff d
+     join timeseries ts on ts.station_id = d.station_id and ts.type_id = d.type_id and ts.period = d.period and ts.value_table = 'measurement'
+    where d.old_timestamp is null
    returning *
 )
 select (select count(*) from ins) nr_insert,
