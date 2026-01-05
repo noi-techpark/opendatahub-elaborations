@@ -37,7 +37,8 @@ jobs:
   # Deploy Test
   deploy-test-bluetooth-traffic:
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/bluetooth-partition'
+
     needs: test
     concurrency: deploy-test-bluetooth-traffic
     env:
