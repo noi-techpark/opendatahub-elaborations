@@ -104,7 +104,7 @@ upd as (
 ,
 ins as (
    insert into measurement(created_on, timeseries_id, timestamp, double_value)
-   select d.current_timestamp, ts.id, d.new_timestamp as timestamp, d.new_value
+   select current_timestamp, ts.id, d.new_timestamp as timestamp, d.new_value
      from diff d
      join timeseries ts on ts.station_id = d.station_id and ts.type_id = d.type_id and ts.period = d.period and ts.value_table = 'measurement'
     where d.old_timestamp is null
