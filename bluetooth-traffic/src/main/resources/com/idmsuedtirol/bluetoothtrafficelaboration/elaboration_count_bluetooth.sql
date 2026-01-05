@@ -101,7 +101,7 @@ result as
           time_window_center as timestamp,
           ( select count(m.id)
               from measurementstringhistory m
-              join timeseries t on ts.id = m.timeseries_id and t.partition_id = m.partition_id
+              join timeseries t on t.id = m.timeseries_id and t.partition_id = m.partition_id
              where t.station_id = r.station_id
                and t.type_id = 15
                and time_window_start <= m.timestamp 
