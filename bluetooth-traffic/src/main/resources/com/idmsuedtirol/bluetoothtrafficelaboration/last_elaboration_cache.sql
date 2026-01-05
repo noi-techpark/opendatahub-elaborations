@@ -94,16 +94,16 @@ upd as (
             where old_timestamp is not null
               and new_timestamp is not null
               and (old_timestamp != new_timestamp or old_value is distinct from new_value) -- values can be null
-          ) s
-      join timeseries ts on ts.id = e.timeseries_id
+          ) s, timeseries ts
     where ts.station_id = s.station_id
       and ts.type_id = s.type_id
       and ts.period = s.period
+      and ts.id = e.timeseries_id
    returning *
 )
 ,
 ins as (
-   insert into measurement(created_on, timeseries_id, timestamp, double_value)
+   insert into measurement(created_on, ts.id, timestamp, double_value)
    select d.current_timestamp, ts.id, d.new_timestamp as timestamp, d.new_value
      from diff d
      join timeseries ts on ts.station_id = d.station_id and ts.type_id = d.type_id and ts.period = d.period and ts.value_table = 'measurement'
