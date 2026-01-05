@@ -123,7 +123,7 @@ public class TaskThread extends Thread {
 					// System.out.println("analyze: " + (System.currentTimeMillis() - start));
 				}
 			} catch (Exception exxx) {
-				LOG.error("Elaboration execution failed", exxx.getMessage());
+				LOG.error("Elaboration execution failed", exxx);
 				someTaskFail = true;
 				status = "FAIL";
 				StringWriter sw = new StringWriter();
