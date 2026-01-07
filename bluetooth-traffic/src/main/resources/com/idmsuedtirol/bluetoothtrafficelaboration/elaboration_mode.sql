@@ -54,9 +54,9 @@ min_max as
           (select min(timestamp)
             from measurementhistory eh
             join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
-           where eh.period = 1
-             and eh.station_id = p.station_id
-             and eh.type_id = p.input_type_id
+           where ts.period = 1
+             and ts.station_id = p.station_id
+             and ts.type_id = p.input_type_id
           ) min_timestamp, 
           (select max(timestamp)
             from measurementhistory eh
