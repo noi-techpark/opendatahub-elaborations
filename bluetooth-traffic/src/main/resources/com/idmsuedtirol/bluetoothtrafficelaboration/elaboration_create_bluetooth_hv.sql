@@ -109,7 +109,7 @@ result as
           time_window_center as timestamp,
           ( select floor(double_value * heavy_perc / 100)
               from measurementhistory m
-              join timeseries ts on ts.id = m.timeseries_id and eh.partition_id = m.partition_id
+              join timeseries ts on ts.id = m.timeseries_id and ts.partition_id = m.partition_id
              where ts.station_id = r.station_id
                and ts.period = r.period
                and ts.type_id = 19
