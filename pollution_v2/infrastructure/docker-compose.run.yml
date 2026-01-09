@@ -286,6 +286,18 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  log-cleanup:
+    image: alpine:latest
+    volumes:
+      -  pollution-logs:/logs
+    entrypoint: /bin/sh
+    command: >
+      -c "
+      echo '0 2 * * * find /logs -name \"*.log\" -mtime +30 -delete' > /etc/crontabs/root &&
+      crond -f -l 2
+      "
+    restart: unless-stopped
+
 volumes:
   postgres-db-volume:
   pollution-logs:
