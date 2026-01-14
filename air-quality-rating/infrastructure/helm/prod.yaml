@@ -18,4 +18,4 @@ env:
 
   LOG_LEVEL: INFO
 
-  CRON: 0 0 */1 * * *
+  CRON: 0 */5 * * * *
