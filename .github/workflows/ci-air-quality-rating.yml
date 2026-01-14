@@ -49,7 +49,7 @@ jobs:
           yq -i '.image.tag = "${{ env.DOCKER_TAG }}"' ${{ env.VALUES_YAML }}
           yq -i '.image.pullPolicy = "IfNotPresent"' ${{ env.VALUES_YAML }}
 
-          yq -i '.envSecret.ODH_CLIENT_SECRET = "${{ secrets.COMBINED_CLIENT_SECRET_TEST }}"' ${{ env.VALUES_YAML }}
+          yq -i '.envSecret.BDP_CLIENT_SECRET = "${{ secrets.COMBINED_CLIENT_SECRET_TEST }}"' ${{ env.VALUES_YAML }}
           yq -i '.env.BDP_PROVENANCE_VERSION = "${{ github.sha }}"' ${{ env.VALUES_YAML }}
           yq -i '.env.BDP_PROVENANCE_NAME = "${{ env.PROJECT_NAME }}"' ${{ env.VALUES_YAML }}
 
@@ -84,7 +84,7 @@ jobs:
           yq -i '.image.tag = "${{ env.DOCKER_TAG }}"' ${{ env.VALUES_YAML }}
           yq -i '.image.pullPolicy = "IfNotPresent"' ${{ env.VALUES_YAML }}
 
-          yq -i '.envSecret.ODH_CLIENT_SECRET = "${{ secrets.COMBINED_CLIENT_SECRET_PROD }}"' ${{ env.VALUES_YAML }}
+          yq -i '.envSecret.BDP_CLIENT_SECRET = "${{ secrets.COMBINED_CLIENT_SECRET_PROD }}"' ${{ env.VALUES_YAML }}
           yq -i '.env.BDP_PROVENANCE_VERSION = "${{ github.sha }}"' ${{ env.VALUES_YAML }}
           yq -i '.env.BDP_PROVENANCE_NAME = "${{ env.PROJECT_NAME }}"' ${{ env.VALUES_YAML }}
 

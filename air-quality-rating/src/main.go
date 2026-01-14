@@ -20,13 +20,11 @@ import (
 )
 
 var env struct {
-	LOG_LEVEL         string
-	CRON              string
-	TS_API_BASE_URL   string
-	TS_API_REFERER    string
-	ODH_TOKEN_URL     string
-	ODH_CLIENT_ID     string
-	ODH_CLIENT_SECRET string
+	bdplib.BdpEnv
+	LOG_LEVEL       string
+	CRON            string
+	TS_API_BASE_URL string
+	TS_API_REFERER  string
 }
 
 var EIAQ_NO2 = elab.ElaboratedDataType{Name: "EAQI-NO2", Description: "European Air Quality Index - NO2", Period: 3600, Rtype: "rating"}
@@ -36,10 +34,10 @@ func main() {
 	slog.Info("Starting air-quality-rating elaboration...")
 	defer tel.FlushOnPanic()
 
-	b := bdplib.FromEnv()
+	b := bdplib.FromEnv(env.BdpEnv)
 
-	n := odhts.NewCustomClient(env.TS_API_BASE_URL, env.ODH_TOKEN_URL, env.TS_API_REFERER)
-	n.UseAuth(env.ODH_CLIENT_ID, env.ODH_CLIENT_SECRET)
+	n := odhts.NewCustomClient(env.TS_API_BASE_URL, env.BDP_TOKEN_URL, env.TS_API_REFERER)
+	n.UseAuth(env.BDP_CLIENT_ID, env.BDP_CLIENT_SECRET)
 
 	e := elab.NewElaboration(&n, &b)
 	e.StationTypes = []string{"EnvironmentStation"}

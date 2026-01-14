@@ -12,10 +12,10 @@ env:
   TS_API_BASE_URL: http://ninja-api.core.svc.cluster.local
   TS_API_REFERER: el-air-quality-rating
 
-  ODH_TOKEN_URL: https://auth.opendatahub.com/auth/realms/noi/protocol/openid-connect/token
-  ODH_CLIENT_ID: odh-a22-dataprocessor
-  ODH_CLIENT_SECRET: 
+  BDP_TOKEN_URL: https://auth.opendatahub.com/auth/realms/noi/protocol/openid-connect/token
+  BDP_CLIENT_ID: odh-a22-dataprocessor
+  BDP_CLIENT_SECRET: 
 
   LOG_LEVEL: INFO
 
-  CRON: 0 0 */1 * * *
+  CRON: 0 */5 * * * *

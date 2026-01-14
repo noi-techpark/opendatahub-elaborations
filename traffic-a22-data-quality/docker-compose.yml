@@ -6,7 +6,7 @@
 
 services:
   app:
-    image: golang:1.21.5-alpine
+    image: golang:1.25-alpine
     env_file:
       - .env
     entrypoint: >
