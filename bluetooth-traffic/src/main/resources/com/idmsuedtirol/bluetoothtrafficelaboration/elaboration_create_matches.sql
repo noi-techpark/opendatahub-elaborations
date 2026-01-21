@@ -67,22 +67,25 @@ stations_min_max as
           (
           select min(timestamp)
             from measurementstringhistory h
-           where type_id = 15
-             and h.station_id = ses.origin_id
+            join timeseries ts on ts.id = h.timeseries_id and h.partition_id = ts.partition_id
+           where ts.type_id = 15
+             and ts.station_id = ses.origin_id
           ) min_timestamp
           ,
           (
           select max(timestamp)
             from measurementstringhistory h
-           where type_id = 15
-             and h.station_id = ses.origin_id
+            join timeseries ts on ts.id = h.timeseries_id and h.partition_id = ts.partition_id
+           where ts.type_id = 15
+             and ts.station_id = ses.origin_id
           ) max_timestamp,
           (
           select max(timestamp)::date - 1
-            from measurementhistory eh
-           where eh.period = ses.p_period
-             and eh.station_id = ses.link_station_id
-             and eh.type_id = ses.elaboration_type_id
+            from measurementhistory h
+            join timeseries ts on ts.id = h.timeseries_id and h.partition_id = ts.partition_id
+           where ts.period = ses.p_period
+             and ts.station_id = ses.link_station_id
+             and ts.type_id = ses.elaboration_type_id
           ) elaboration_timestamp
           from start_end_station ses
 )
@@ -102,9 +105,10 @@ start_point as
 (
 	select *
 	  from calc_min_max mm
-	 inner join measurementstringhistory h 
-	    on h.type_id = 15
-	   and h.station_id = mm.origin_id
+	  join measurementstringhistory h 
+    join timeseries ts on ts.id = h.timeseries_id and h.partition_id = ts.partition_id
+	    on ts.type_id = 15
+	   and ts.station_id = mm.origin_id
 	   and mm.start_calc <= h.timestamp
 	   and h.timestamp <= mm.max_timestamp
 	 order by timestamp
@@ -116,8 +120,9 @@ matches as
           (
               select min(timestamp)
                 from measurementstringhistory finish
-               where finish.type_id = 15
-                 and finish.station_id = start.destination_id
+                join timeseries ts on ts.id = finish.timeseries_id and finish.partition_id = ts.partition_id
+               where ts.type_id = 15
+                 and ts.station_id = start.destination_id
                  and start.timestamp < finish.timestamp
                  and start.string_value = finish.string_value -- same mac address
                  and finish.timestamp < start.timestamp + '3600 seconds'::interval
@@ -125,8 +130,9 @@ matches as
           (
               select min(timestamp)
                 from measurementstringhistory finish
-               where finish.type_id = 15
-                 and station_id = start.origin_id
+                join timeseries ts on ts.id = finish.timeseries_id and finish.partition_id = ts.partition_id
+               where ts.type_id = 15
+                 and ts.station_id = start.origin_id
                  and start.timestamp < finish.timestamp
                  and start.string_value = finish.string_value -- same mac address
                  and finish.timestamp < start.timestamp + '3600 seconds'::interval
@@ -150,7 +156,7 @@ select null::bigint id,
     -- 2019-06-19 d@vide.bz: remove identical rows with group by
  group by 1,2,3,4,5,6,7,8
 )
-select deltart((select array_agg(result::intimev2.measurementhistory) from result where value is not null),
+select deltart((select array_agg(result::deltart_input) from result where value is not null),
                start_calc,
                max_timestamp,
                link_station_id,

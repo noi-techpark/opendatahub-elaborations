@@ -45,18 +45,19 @@ old_values as
 (
    select station_id, type_id, period,
           timestamp, double_value
-     from measurement
-     join bluetoot_types
-       on measurement.type_id = bluetoot_types.b_type_id
+     from measurement m
+     join timeseries ts on ts.id = m.timeseries_id
+     join bluetoot_types on ts.type_id = bluetoot_types.b_type_id
 )
 ,
 pre_new_values as
 (
    select *,
        row_number() over (partition by station_id, type_id, period order by timestamp desc, double_value) rownr
-  from measurementhistory
+  from measurementhistory mh 
+  join timeseries ts on ts.id = mh.timeseries_id and mh.partition_id = ts.partition_id
   -- optimization to enable index usage
-  where type_id in (19, 13, 14, 21, 20, 918, 54, 5968, 5969)
+  where ts.type_id in (19, 13, 14, 21, 20, 918, 54, 5968, 5969)
    and timestamp >= now()::date - '1 day'::interval -- search last values between now and the day before only
 )
 ,
@@ -88,23 +89,25 @@ upd as (
    update measurement e
       set timestamp = s.new_timestamp,
           double_value = s.new_value
-     from (select * 
+      from (select * 
              from diff 
             where old_timestamp is not null
               and new_timestamp is not null
               and (old_timestamp != new_timestamp or old_value is distinct from new_value) -- values can be null
-          ) s
-    where e.station_id = s.station_id
-      and e.type_id = s.type_id
-      and e.period = s.period
+          ) s, timeseries ts
+    where ts.station_id = s.station_id
+      and ts.type_id = s.type_id
+      and ts.period = s.period
+      and ts.id = e.timeseries_id
    returning *
 )
 ,
 ins as (
-   insert into measurement(created_on, station_id, type_id, period, timestamp, double_value)
-   select current_timestamp, station_id, type_id, period, new_timestamp as timestamp, new_value
-     from diff
-    where old_timestamp is null
+   insert into measurement(created_on, timeseries_id, timestamp, double_value)
+   select current_timestamp, ts.id, d.new_timestamp as timestamp, d.new_value
+     from diff d
+     join timeseries ts on ts.station_id = d.station_id and ts.type_id = d.type_id and ts.period = d.period and ts.value_table = 'measurement'
+    where d.old_timestamp is null
    returning *
 )
 select (select count(*) from ins) nr_insert,

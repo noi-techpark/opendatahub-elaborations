@@ -54,22 +54,25 @@ min_max as
           ST_LENGTH(linegeometry)::numeric link_length,
           (select min(timestamp)
             from measurementhistory eh
-           where eh.period = 1
-             and eh.station_id = p.station_id
-             and eh.type_id = p.input_type_id
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = 1
+             and ts.station_id = p.station_id
+             and ts.type_id = p.input_type_id
           ) min_timestamp, 
           (select max(timestamp)
             from measurementhistory eh
-           where eh.period = 1
-             and eh.station_id = p.station_id
-             and eh.type_id = p.input_type_id
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = 1
+             and ts.station_id = p.station_id
+             and ts.type_id = p.input_type_id
           ) max_timestamp,
           (
           select max(timestamp)::date - 1
             from measurementhistory eh
-           where eh.period = p.period
-             and eh.station_id = p.station_id
-             and eh.type_id = p.output_type_id
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = p.period
+             and ts.station_id = p.station_id
+             and ts.type_id = p.output_type_id
           ) elaboration_timestamp
      from params p
      join intimev2.edge link
@@ -112,10 +115,10 @@ samples as
 select (link_length / double_value) * 3.6 as kmh,
        *
   from range
-  join measurementhistory eh
-    on eh.type_id = input_type_id
-   and eh.station_id = range.station_id
-   and eh.period = 1
+  join timeseries ts on ts.type_id = input_type_id
+  join measurementhistory eh on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+   and ts.station_id = range.station_id
+   and ts.period = 1
    and time_window_start <= eh.timestamp
    and eh.timestamp < time_window_end
  where eh.timestamp >= '2017-01-01'::date
@@ -193,7 +196,7 @@ select null::bigint id,
        output_type_id as type_id
   from mode
 )
-select deltart((select array_agg(result::intimev2.measurementhistory) from result where value is not null),
+select deltart((select array_agg(result::deltart_input) from result where value is not null),
                start_calc    + period/2 * '1 second'::interval,
                max_timestamp + period/2 * '1 second'::interval,
                station_id,

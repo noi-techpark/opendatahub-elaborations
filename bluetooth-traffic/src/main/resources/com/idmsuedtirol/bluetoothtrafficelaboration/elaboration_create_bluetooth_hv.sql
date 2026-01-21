@@ -49,22 +49,25 @@ min_max as
           ),0) heavy_perc,
           (select min(timestamp)
             from measurementhistory eh
-           where eh.period = p.period
-             and eh.station_id = p.station_id
-             and eh.type_id = 19
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = p.period
+             and ts.station_id = p.station_id
+             and ts.type_id = 19
           ) min_timestamp, 
           (select max(timestamp)
             from measurementhistory eh
-           where eh.period = p.period
-             and eh.station_id = p.station_id
-             and eh.type_id = 19
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = p.period
+             and ts.station_id = p.station_id
+             and ts.type_id = 19
           ) max_timestamp,
           (
           select max(timestamp)::date - 1
             from measurementhistory eh
-           where eh.period = p.period
-             and eh.station_id = p.station_id
-             and eh.type_id = p.type_id
+            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+           where ts.period = p.period
+             and ts.station_id = p.station_id
+             and ts.type_id = p.type_id
           ) elaboration_timestamp
      from params p
 )
@@ -106,9 +109,10 @@ result as
           time_window_center as timestamp,
           ( select floor(double_value * heavy_perc / 100)
               from measurementhistory m
-             where m.station_id = r.station_id
-               and m.period = r.period
-               and m.type_id = 19
+              join timeseries ts on ts.id = m.timeseries_id and ts.partition_id = m.partition_id
+             where ts.station_id = r.station_id
+               and ts.period = r.period
+               and ts.type_id = 19
                and m.timestamp = r.time_window_center
           ) as value,
           -1 as provenience_id,
@@ -116,7 +120,7 @@ result as
           type_id
      from range r
 )
-select deltart((select array_agg(result::measurementhistory) from result where value is not null),
+select deltart((select array_agg(result::deltart_input) from result where value is not null),
                start_calc    + period/2 * '1 second'::interval,
                max_timestamp + period/2 * '1 second'::interval,
                station_id,

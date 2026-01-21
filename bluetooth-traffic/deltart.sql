@@ -12,15 +12,25 @@
 --
 --     set search_path = intimev2, public;
 --
--- This makes it possible to keep a copy of part of that table in another schema
--- for testing purposes, simply by setting the search path to that debug schema.
---
 -- -----------------------------------------------------------------------------------
 
+-- Create a type that matches the old measurementhistory structure for compatibility
+drop type if exists intimev2.deltart_input cascade;
+create type intimev2.deltart_input as (
+    id bigint,
+    created_on timestamp,
+    period integer,
+    timestamp timestamp,
+    double_value double precision,
+    provenance_id bigint,
+    station_id bigint,
+    type_id bigint
+);
 
-create or replace function intimev2.deltart
+drop function if exists intimev2.deltart;
+create function intimev2.deltart
 (
-    p_arr         intimev2.measurementhistory[],
+    p_arr         intimev2.deltart_input[],
     p_mints       timestamp without time zone,
     p_maxts       timestamp without time zone,
     p_station_id  bigint,
@@ -34,201 +44,107 @@ returns
 as
 $$
     declare
-
-        ele intimev2.measurementhistory;
-        rec intimev2.measurementhistory;
+        ele intimev2.deltart_input;
+        rec record;
         val double precision;
         cnt bigint;
         ret int[4];
-
+        v_timeseries_id int4;
+        v_partition_id int2;
     begin
-
         ret[1] := 0;  -- DELete count
         ret[2] := 0;  -- upDAte count
         ret[3] := 0;  -- inseRT count
-        ret[4] := coalesce(array_length(p_arr, 1),0); -- input element count, zero when null or zero length array
+        ret[4] := coalesce(array_length(p_arr, 1),0); -- input element count
 
-        if (p_extkey) then
+        -- Check if timeseries record exists
+        select id, partition_id into v_timeseries_id, v_partition_id
+        from intimev2.timeseries 
+        where station_id = p_station_id 
+          and type_id = p_type_id 
+          and period = p_period
+          and value_table = 'measurement';
 
-            -- ----------------------------------------------------------------------------------------- --
-            -- case 1/2: key = (station_id, type_id, period, double_value) -> insert or delete                  --
-            -- ----------------------------------------------------------------------------------------- --
 
-            create temporary table tt (
-                timestamp  timestamp without time zone,
-                double_value      double precision,
-                station_id bigint,
-                type_id    bigint,
-                period     integer
-            );
+        create temporary table tt (
+            timestamp    timestamp without time zone,
+            double_value double precision,
+            station_id   bigint,
+            type_id      bigint,
+            period       integer
+        );
 
-            if (array_length(p_arr, 1) > 0) then
-
-                -- loop over array for insert and copy the array into a temporary table
-
-                foreach ele in array p_arr loop
-
-                    insert into tt
-                        (timestamp, double_value, station_id, type_id, period)
-                        values (ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
-
-                    if (ele.station_id != p_station_id or ele.type_id != p_type_id or ele.period != p_period) then
-                        drop table tt;
-                        raise exception 'parameter inconsistency';
-                    end if;
-
-                    if (ele.timestamp not between p_mints - '1 minute'::interval and p_maxts + '1 minute'::interval) then
-                        drop table tt;
-                        raise exception 'timestamp inconsistency';
-                    end if;
-
-                    select count(*) into cnt from measurementhistory t1
-                    where t1.timestamp  = ele.timestamp  and
-                          t1.type_id    = ele.type_id    and
-                          t1.period     = ele.period     and
-                          t1.station_id = ele.station_id and
-                          abs(t1.double_value - ele.double_value) <= p_epsilon;
-
-                    if (cnt = 0) then
-
-                        insert into measurementhistory
-                        (created_on, timestamp, double_value, station_id, type_id, period)
-                        values (ele.created_on, ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
-                        ret[3] := ret[3] + 1;
-
-                    end if;
-
-                end loop;
-
+        if (array_length(p_arr, 1) > 0) then
+            -- Create missing timeseries record if we have data to insert
+            if (v_timeseries_id is null) then
+                insert into intimev2.timeseries (station_id, type_id, period, value_table, partition_id)
+                values (p_station_id, p_type_id, p_period, 'measurement', 1)
+                returning id, partition_id into v_timeseries_id, v_partition_id;
             end if;
+            -- loop over array for insert and copy the array into a temporary table
+            foreach ele in array p_arr loop
+                insert into tt
+                    (timestamp, double_value, station_id, type_id, period)
+                    values (ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
 
-            -- loop over measurementhistory for delete
+                if (ele.station_id != p_station_id or ele.type_id != p_type_id or ele.period != p_period) then
+                    drop table tt;
+                    raise exception 'parameter inconsistency';
+                end if;
 
-            for rec in select * from measurementhistory t1
-                where t1.type_id    = p_type_id    and
-                      t1.period     = p_period     and
-                      t1.station_id = p_station_id and
-                      t1.timestamp between p_mints and p_maxts
-            loop
+                if (ele.timestamp not between p_mints - '1 minute'::interval and p_maxts + '1 minute'::interval) then
+                    drop table tt;
+                    raise exception 'timestamp inconsistency';
+                end if;
 
-                select count(*) into cnt from tt t1
-                where t1.timestamp  = rec.timestamp  and
-                      t1.type_id    = rec.type_id    and
-                      t1.period     = rec.period     and
-                      t1.station_id = rec.station_id and
-                      abs(t1.double_value - rec.double_value) <= p_epsilon;
+                select count(*) into cnt from measurementhistory t1
+                where t1.timestamp = ele.timestamp and
+                      t1.timeseries_id = v_timeseries_id and
+                      t1.partition_id = v_partition_id and
+                      (p_extkey = false or abs(t1.double_value - ele.double_value) <= p_epsilon);
 
                 if (cnt = 0) then
-
-                    delete from measurementhistory t1
-                    where t1.timestamp  = rec.timestamp  and
-                          t1.type_id    = rec.type_id    and
-                          t1.period     = rec.period     and
-                          t1.station_id = rec.station_id;
-
-                    ret[1] := ret[1] + 1;
-
-                end if;
-
-            end loop;
-
-        else
-
-            -- ----------------------------------------------------------------------------------------- --
-            -- case 2/2: key = (station_id, type_id, period) -> insert, update or delete                 --
-            -- ----------------------------------------------------------------------------------------- --
-
-            create temporary table tt (
-                timestamp  timestamp without time zone,
-                double_value      double precision,
-                station_id bigint,
-                type_id    bigint,
-                period     integer
-            );
-
-            if (array_length(p_arr, 1) > 0) then
-
-                -- loop over array for insert/update and copy the array into a temporary table
-
-                foreach ele in array p_arr loop
-
-                    insert into tt
-                        (timestamp, double_value, station_id, type_id, period)
-                        values (ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
-
-                    if (ele.station_id != p_station_id or ele.type_id != p_type_id or ele.period != p_period) then
-                        drop table tt;
-                        raise exception 'parameter inconsistency';
-                    end if;
-
-                    if (ele.timestamp not between p_mints - '1 minute'::interval and p_maxts + '1 minute'::interval) then
-                        drop table tt;
-                        raise exception 'timestamp inconsistency';
-                    end if;
-
-                    select double_value into val from measurementhistory t1
+                    insert into measurementhistory
+                    (created_on, timestamp, double_value, timeseries_id, partition_id)
+                    values (ele.created_on, ele.timestamp, ele.double_value, v_timeseries_id, v_partition_id);
+                    ret[3] := ret[3] + 1;
+                elsif p_extkey = false and (abs(val - ele.double_value) > p_epsilon) then
+                    update measurementhistory t1 set double_value = ele.double_value
                     where t1.timestamp  = ele.timestamp  and
-                          t1.type_id    = ele.type_id    and
-                          t1.period     = ele.period     and
-                          t1.station_id = ele.station_id;
+                          t1.timeseries_id = v_timeseries_id and
+                          t1.partition_id = v_partition_id;
 
-                    if (not found) then
-
-                        insert into measurementhistory
-                        (created_on, timestamp, double_value, station_id, type_id, period)
-                        values (ele.created_on, ele.timestamp, ele.double_value, ele.station_id, ele.type_id, ele.period);
-                        ret[3] := ret[3] + 1;
-
-                    elsif (abs(val - ele.double_value) > p_epsilon) then
-
-                        update measurementhistory t1 set double_value = ele.double_value
-                        where t1.timestamp  = ele.timestamp  and
-                              t1.type_id    = ele.type_id    and
-                              t1.period     = ele.period     and
-                              t1.station_id = ele.station_id;
-
-                        ret[2] := ret[2] + 1;
-
-                    end if;
-
-                end loop;
-
-            end if;
-
-            -- loop over measurementhistory for delete
-
-            for rec in select * from measurementhistory t1
-                where t1.type_id    = p_type_id    and
-                      t1.period     = p_period     and
-                      t1.station_id = p_station_id and
-                      t1.timestamp between p_mints and p_maxts
-            loop
-
-                select double_value into val from tt t1
-                where t1.timestamp  = rec.timestamp  and
-                      t1.type_id    = rec.type_id    and
-                      t1.period     = rec.period     and
-                      t1.station_id = rec.station_id;
-
-                if (not found) then
-
-                    delete from measurementhistory t1
-                    where t1.timestamp  = rec.timestamp  and
-                          t1.type_id    = rec.type_id    and
-                          t1.period     = rec.period     and
-                          t1.station_id = rec.station_id;
-
-                    ret[1] := ret[1] + 1;
-
+                    ret[2] := ret[2] + 1;
                 end if;
-
             end loop;
-
         end if;
+
+        -- loop over measurementhistory for delete
+
+        for rec in select * from measurementhistory t1
+            where t1.timeseries_id = v_timeseries_id and
+                  t1.partition_id = v_partition_id and
+                  t1.timestamp between p_mints and p_maxts
+        loop
+            select count(*) into cnt from tt t1
+            where t1.timestamp = rec.timestamp and
+                  t1.station_id = p_station_id and
+                  t1.type_id = p_type_id and
+                  t1.period = p_period and
+                  (p_extkey = false or abs(t1.double_value - rec.double_value) <= p_epsilon);
+
+            if (cnt = 0) then
+                delete from measurementhistory t1
+                where t1.timestamp = rec.timestamp and
+                      t1.timeseries_id = v_timeseries_id and
+                      t1.partition_id = v_partition_id;
+
+                ret[1] := ret[1] + 1;
+            end if;
+        end loop;
 
         drop table tt;
 
         return ret;
-
     end;
 $$ language 'plpgsql';
