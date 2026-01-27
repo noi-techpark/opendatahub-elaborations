@@ -102,7 +102,7 @@ class Processor:
     def process_single_dataset(self, data, sensor_id, time):
         T_INT = "temperature-internal"
         if T_INT in data:
-            temparature_key = "hightemp" if (data[T_INT] >= 20) else "lowtemp"
+            temparature_key = "hightemp" if (data[T_INT] >= 35) else "lowtemp"
             data_point_map = {}
             for type_id in (value for value in data if value in TYPES_TO_ELABORATE): #Intersection
                 # ignore stations/types missing parameters #32
