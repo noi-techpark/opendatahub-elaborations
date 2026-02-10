@@ -52,7 +52,7 @@ jobs:
           X_CONTENT_API_URL: https://tourism.api.opendatahub.testingmachine.eu/v1/
           X_AUTH_BASE: https://auth.opendatahub.testingmachine.eu
           X_REALM : noi
-          X_CLIENT_ID : odh-api-metadata
+          X_CLIENT_ID : #missing
           X_CLIENT_SECRET : #missing
           X_LAST_SYNC_DATE : ""
           # run job every n seconds
@@ -100,7 +100,7 @@ jobs:
           CONTENT_API_URL: https://tourism.api.opendatahub.com/v1/
           AUTH_BASE: https://auth.opendatahub.com
           REALM : noi
-          CLIENT_ID : odh-api-metadata
+          CLIENT_ID : #missing
           CLIENT_SECRET : #missing
           LAST_SYNC_DATE : ""
           # run job every n seconds
