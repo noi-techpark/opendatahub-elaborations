@@ -9,8 +9,8 @@ on:
 
 env:
   WORKING_DIRECTORY: metadata-api-sync
-  PROJECT_NAME:  #missing
-  DOCKER_IMAGE: #missing
+  PROJECT_NAME: odh-content-el-metadata-update-script
+  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/odh-content-el-metadata-update-script
   DOCKER_TAG: ${{ github.sha }}
 
 jobs:
@@ -52,8 +52,8 @@ jobs:
           X_CONTENT_API_URL: https://tourism.api.opendatahub.testingmachine.eu/v1/
           X_AUTH_BASE: https://auth.opendatahub.testingmachine.eu
           X_REALM : noi
-          X_CLIENT_ID : #missing
-          X_CLIENT_SECRET : #missing
+          X_CLIENT_ID: odh-api-metadata
+          X_CLIENT_SECRET: ${{ secrets.EL_METADATA_CLIENT_SECRET_TEST }}
           X_LAST_SYNC_DATE : ""
           # run job every n seconds
           X_JOB_SCHEDULE_SEC: 6048000
@@ -100,8 +100,8 @@ jobs:
           CONTENT_API_URL: https://tourism.api.opendatahub.com/v1/
           AUTH_BASE: https://auth.opendatahub.com
           REALM : noi
-          CLIENT_ID : #missing
-          CLIENT_SECRET : #missing
+          X_CLIENT_ID: odh-api-metadata
+          X_CLIENT_SECRET: ${{ secrets.EL_METADATA_CLIENT_SECRET_PROD }}
           LAST_SYNC_DATE : ""
           # run job every n seconds
           X_JOB_SCHEDULE_SEC: 6048000
