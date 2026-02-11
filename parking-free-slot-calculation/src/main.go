@@ -227,7 +227,7 @@ func handlerFreeToOccupied(from time.Time, to time.Time, s elab.Station, ms []el
 			Period:      elab.Period(m.Period),
 			StationType: s.Stationtype,
 			StationCode: s.Stationcode,
-			DataType:    FREE,
+			DataType:    OCCUPIED,
 			Value:       value}
 	}
 	return ret, nil
