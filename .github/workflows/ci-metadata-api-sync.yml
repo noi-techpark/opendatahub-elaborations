@@ -55,7 +55,7 @@ jobs:
           X_CLIENT_ID: odh-api-metadata
           X_CLIENT_SECRET: ${{ secrets.EL_METADATA_CLIENT_SECRET_TEST }}
           # run job every n seconds
-          X_JOB_SCHEDULE_SEC: 6048000
+          X_JOB_SCHEDULE_SEC: 604800
           X_LOG_LEVEL: INFO
 
       - name: Build and push images
@@ -102,7 +102,7 @@ jobs:
           X_CLIENT_ID: odh-api-metadata
           X_CLIENT_SECRET: ${{ secrets.EL_METADATA_CLIENT_SECRET_PROD }}
           # run job every n seconds
-          X_JOB_SCHEDULE_SEC: 6048000
+          X_JOB_SCHEDULE_SEC: 604800
           X_LOG_LEVEL: INFO
 
       - name: Build and push images
