@@ -54,7 +54,6 @@ jobs:
           X_REALM : noi
           X_CLIENT_ID: odh-api-metadata
           X_CLIENT_SECRET: ${{ secrets.EL_METADATA_CLIENT_SECRET_TEST }}
-          X_LAST_SYNC_DATE : ""
           # run job every n seconds
           X_JOB_SCHEDULE_SEC: 6048000
           X_LOG_LEVEL: INFO
@@ -102,7 +101,6 @@ jobs:
           REALM : noi
           X_CLIENT_ID: odh-api-metadata
           X_CLIENT_SECRET: ${{ secrets.EL_METADATA_CLIENT_SECRET_PROD }}
-          LAST_SYNC_DATE : ""
           # run job every n seconds
           X_JOB_SCHEDULE_SEC: 6048000
           X_LOG_LEVEL: INFO

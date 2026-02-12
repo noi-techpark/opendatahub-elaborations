@@ -17,6 +17,9 @@ REALM = os.getenv("REALM")
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SYNC_FILE = os.path.join(BASE_DIR, "last_sync.txt")
+
 # check if a datset has been updated since the last time the script was executed
 def isUpdated(url):
 
@@ -46,17 +49,20 @@ def isUpdated(url):
           last_update = datetime.strptime(last_update, '%Y-%m-%dT%H:%M:%S')
 
           # check the last time the script was run and compare
-          last_sync = os.getenv("LAST_SYNC_DATE")
-          if(last_sync):
-            last_sync = datetime.fromisoformat(last_sync)
-            return last_sync < last_update
+          if os.path.exists(SYNC_FILE):
+            with open(SYNC_FILE, "r") as f:
+              last_sync_str = f.read().strip()
+              if last_sync_str:
+                last_sync = datetime.fromisoformat(last_sync_str)
+                return last_sync < last_update
   return True
     
 # Updates the timestamp variable that states when the script was last executed
 def updateLastSync():
     timestamp = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-    set_key(".env", "LAST_SYNC_DATE", timestamp)
-    print(f"Updated LAST_SYNC_DATE to {timestamp}")
+    with open(SYNC_FILE, "w") as f:
+      f.write(timestamp)
+    print(f"Updated sync timestamp in {SYNC_FILE} to {timestamp}")
 
 # Returns a list of all ids of the datasets in the Metadata API
 def getAllDatasetIds():

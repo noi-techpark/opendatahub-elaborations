@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC0-1.0
 
 ## Datasets Metadata Script Summary
 
-A script that runs regularly to extract information from the Open Data Hub APIs (at the moment only Content APIs) and put it in the MetaData API. 
+A script that runs regularly to extract the latest information from the Open Data Hub APIs (at the moment only Content APIs) and put it in the MetaData API. 
 
 The fields in the Metadata API that are updated by the script are:
 
