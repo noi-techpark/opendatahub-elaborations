@@ -11,6 +11,7 @@ from ParameterImporter import getParameters
 import json
 import numpy as np
 import logging
+import math
 
 DEFAULT_START_CALC = "2016-01-01 00:00:00.000+0000"
 NO2 = "NO2-Alphasense"
