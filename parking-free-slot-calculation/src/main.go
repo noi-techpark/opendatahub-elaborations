@@ -68,6 +68,7 @@ func main() {
 		wg := sync.WaitGroup{}
 
 		for p := range seenPeriods {
+			// // Occupied -> Free
 			wg.Add(1)
 			go func(period int64) {
 				defer func() { wg.Done() }()
@@ -86,7 +87,30 @@ func main() {
 				e.NewWideTypeFollower(time.Duration(30*24)*time.Hour).Elaborate(is,
 					func(t elab.BaseDataType, from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
 						stationTrack.Store(s.Stationcode, nil)
-						return handler(from, to, s, ms)
+						return handlerOccupiedToFree(from, to, s, ms)
+					})
+			}(p)
+
+			// Free -> Occupied
+			wg.Add(1)
+			go func(period int64) {
+				defer func() { wg.Done() }()
+
+				e := elab.NewElaboration(&n, &b)
+				e.StationTypes = STATIONTYPES
+				e.BaseTypes = []elab.BaseDataType{
+					{Name: FREE, Period: elab.Period(period)},
+				}
+				e.ElaboratedTypes = []elab.ElaboratedDataType{
+					{Name: OCCUPIED, Period: elab.Period(period), DontSync: true},
+				}
+
+				is, err := e.RequestState()
+				ms.FailOnError(context.Background(), err, "failed to get initial state")
+				e.NewWideTypeFollower(time.Duration(30*24)*time.Hour).Elaborate(is,
+					func(t elab.BaseDataType, from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+						stationTrack.Store(s.Stationcode, nil)
+						return handlerFreeToOccupied(from, to, s, ms)
 					})
 			}(p)
 		}
@@ -118,7 +142,7 @@ func getDistinctPeriods(tsClient odhts.C) (map[int64]any, error) {
 	req := odhts.DefaultRequest()
 	req.Repr = odhts.FlatNode
 	req.Distinct = true
-	req.DataTypes = []string{OCCUPIED}
+	req.DataTypes = []string{OCCUPIED, FREE}
 	req.StationTypes = STATIONTYPES
 	req.Where = where.Eq("sactive", "true")
 	req.Select = "mperiod"
@@ -137,8 +161,8 @@ func getDistinctPeriods(tsClient odhts.C) (map[int64]any, error) {
 	return seenPeriods, nil
 }
 
-func handler(from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
-	slog.Debug("Elaborating station", "from", from, "to", to, "station", s, "rec_cnt", len(ms))
+func handlerOccupiedToFree(from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+	slog.Debug("<occupied-free> Elaborating station", "from", from, "to", to, "station", s, "rec_cnt", len(ms))
 	ret := make([]elab.ElabResult, len(ms))
 	capacity := float64(1)
 	if s.Stationtype == "ParkingStation" {
@@ -159,7 +183,7 @@ func handler(from time.Time, to time.Time, s elab.Station, ms []elab.Measurement
 	for i, m := range ms {
 		value := int(capacity - *m.Value.Num)
 		if value < 0 {
-			slog.Warn("zero or negative free value", "stationcode", s.Stationcode, "stationtype", s.Stationtype, "capacity", capacity, "meas", m)
+			slog.Warn("<occupied-free> zero or negative free value", "stationcode", s.Stationcode, "stationtype", s.Stationtype, "capacity", capacity, "meas", m)
 			value = 0
 		}
 		ret[i] = elab.ElabResult{
@@ -168,6 +192,42 @@ func handler(from time.Time, to time.Time, s elab.Station, ms []elab.Measurement
 			StationType: s.Stationtype,
 			StationCode: s.Stationcode,
 			DataType:    FREE,
+			Value:       value}
+	}
+	return ret, nil
+}
+
+func handlerFreeToOccupied(from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+	slog.Debug("<free-occupied> Elaborating station", "from", from, "to", to, "station", s, "rec_cnt", len(ms))
+	ret := make([]elab.ElabResult, len(ms))
+	capacity := float64(1)
+	if s.Stationtype == "ParkingStation" {
+		c, ok := s.Metadata["capacity"]
+		if !ok {
+			return nil, fmt.Errorf("missing capacity field")
+		}
+		capacity, ok = c.(float64)
+		if !ok {
+			return nil, fmt.Errorf("capacity field has non-number type")
+		}
+	}
+
+	if capacity <= 0 {
+		return nil, fmt.Errorf("zero or negative capacity")
+	}
+
+	for i, m := range ms {
+		value := int(capacity - *m.Value.Num)
+		if value < 0 {
+			slog.Warn("<free-occupied> zero or negative free value", "stationcode", s.Stationcode, "stationtype", s.Stationtype, "capacity", capacity, "meas", m)
+			value = 0
+		}
+		ret[i] = elab.ElabResult{
+			Timestamp:   m.Timestamp.Time,
+			Period:      elab.Period(m.Period),
+			StationType: s.Stationtype,
+			StationCode: s.Stationcode,
+			DataType:    OCCUPIED,
 			Value:       value}
 	}
 	return ret, nil
