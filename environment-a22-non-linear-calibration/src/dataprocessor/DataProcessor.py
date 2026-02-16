@@ -11,6 +11,7 @@ from ParameterImporter import getParameters
 import json
 import numpy as np
 import logging
+import math
 
 DEFAULT_START_CALC = "2016-01-01 00:00:00.000+0000"
 NO2 = "NO2-Alphasense"
@@ -63,7 +64,11 @@ class Processor:
                 
                 if timeseries:
                     elaborations = self.calc(timeseries, sensor_history, s_id)
-                    pusher.send_data("EnvironmentStation", elaborations)
+                    try:
+                        pusher.send_data("EnvironmentStation", elaborations)
+                    except Exception as e:
+                        log.error("Failed to send data for station: " + s_id)
+                        raise
                 
                 current_start = current_end
 
@@ -156,7 +161,7 @@ class Processor:
                     log.warn("Conditions were not met to do calculation for sensor: " 
                     + sensor_id + " type:" + type_id + " at " + time.ctime() + " on this dataset:")
                     log.warn(data)
-                if processed_value != None:
+                if processed_value != None and not math.isnan(processed_value) and not math.isinf(processed_value):
                     if processed_value < 0:
                         processed_value = 0
                     odhtimestamp = time.timestamp() * 1000
