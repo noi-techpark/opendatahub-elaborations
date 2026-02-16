@@ -15,6 +15,22 @@ class DataPusher:
         self.provenance_id = None
         self.token = KeycloakClient.getDefaultInstance().token("", "","client_credentials")
 
+    def send_data(self, station_type, data_map):
+        if not self.provenance_id:
+            self.upsert_provenance()
+        data_map["provenance"] = self.provenance_id
+        endpoint = os.getenv("ODH_MOBILITY_API_WRITER") + "/json/pushRecords/" + station_type
+        log.debug("Data send to writer: " + str(data_map))
+        try:
+            r = requests.post(endpoint, json=data_map, headers={"Authorization": "Bearer " + self.token['access_token']})
+            if r.status_code != 201:
+                log.warn("Status code not 201 but " + str(r.status_code))
+                log.warn(data_map)
+        except Exception as e:
+            log.error("Failed to POST data: " + str(e))
+            log.error("data_map: " + str(data_map))
+            raise
+
     def send_data(self,station_type, data_map):
         if not self.provenance_id:
             self.upsert_provenance()
