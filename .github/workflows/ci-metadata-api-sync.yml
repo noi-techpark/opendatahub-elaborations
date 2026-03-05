@@ -29,11 +29,11 @@ jobs:
 #          test-command: python -m unittest discover test -t src -p Test*.py
 
   # Deploy Test
-  deploy-test-environment-a22-non-linear-calibration:
+  deploy-test-metadata-api-sync:
     runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/main'
     needs: test
-    concurrency: deploy-test-environment-a22-non-linear-calibration
+    concurrency: deploy-test-metadata-api-sync
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -76,11 +76,11 @@ jobs:
           project-name: ${{ env.PROJECT_NAME }}
 
   # Deploy Prod
-  deploy-prod-environment-a22-non-linear-calibration:
+  deploy-prod-metadata-api-sync:
     runs-on: ubuntu-22.04
     if: github.ref == 'refs/heads/prod'
     needs: test
-    concurrency: deploy-prod-environment-a22-non-linear-calibration
+    concurrency: deploy-prod-metadata-api-sync
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
