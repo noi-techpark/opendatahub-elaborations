@@ -96,9 +96,9 @@ jobs:
           X_DOCKER_TAG: ${{ env.DOCKER_TAG }}
 
           # Program specific env variables
-          CONTENT_API_URL: https://tourism.api.opendatahub.com/v1/
-          AUTH_BASE: https://auth.opendatahub.com
-          REALM : noi
+          X_CONTENT_API_URL: https://tourism.api.opendatahub.com/v1/
+          X_AUTH_BASE: https://auth.opendatahub.com
+          X_REALM : noi
           X_CLIENT_ID: odh-api-metadata
           X_CLIENT_SECRET: ${{ secrets.EL_METADATA_CLIENT_SECRET_PROD }}
           # run job every n seconds
