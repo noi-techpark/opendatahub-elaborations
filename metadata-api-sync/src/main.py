@@ -126,7 +126,7 @@ def getDatasetInfo(datasetId):
   query_params.extend([
       ("type", category),
       ("fields", "Source"),
-      ("fields", "LicenseInfo"),
+      ("fields", "LicenseInfo.License"),
   ])
 
   #check if the dataset has any updates
