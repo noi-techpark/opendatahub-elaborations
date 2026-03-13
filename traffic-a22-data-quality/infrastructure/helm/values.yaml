@@ -11,6 +11,7 @@ env:
 
   EL_STATION_TYPE: TrafficSensor
   EL_PARENT_STATION_TYPE: TrafficDirection
+  EL_LOCATION_STATION_TYPE: TrafficStation
   EL_BASE_PERIOD: 600
 
   NINJA_QUERY_LIMIT: 50000
