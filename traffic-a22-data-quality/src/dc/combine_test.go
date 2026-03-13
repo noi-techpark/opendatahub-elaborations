@@ -46,6 +46,9 @@ func TestCombineLocations(t *testing.T) {
 }
 
 func TestCombine(t *testing.T) {
+	s1871_nord.ParentStation = "A22:1871"
+	s1872_sud.ParentStation = "A22:1872"
+
 	directionStationType = "TrafficDirection"
 	r := combineDirections([]bdplib.Station{s1871_1, s1871_2})
 	if !reflect.DeepEqual(r[0], s1871_nord) {
