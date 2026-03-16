@@ -8,12 +8,12 @@ on:
       - "!*.md"
 
 env:
-  PROJECT_NAME: el-a22-traffic-emissions-sum
+  PROJECT_NAME: el-traffic-a22-emissions-sum
   WORKING_DIRECTORY: traffic-a22-emissions-sum
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/el-a22-traffic-emissions-sum
+  DOCKER_IMAGE: ghcr.io/${{ github.repository }}/el-traffic-a22-emissions-sum
   DOCKER_TAG: ${{ github.sha }}
   KUBERNETES_NAMESPACE: collector
-  K8S_NAME: el-a22-traffic-emissions-sum
+  K8S_NAME: el-traffic-a22-emissions-sum
 
 jobs:
   test:
@@ -52,7 +52,7 @@ jobs:
   deploy-test:
     runs-on: ubuntu-24.04
     needs: build
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev/a22-traffic-emissions-sum'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev/traffic-a22-emissions-sum'
     concurrency: deploy-test
     environment: test
     env:
