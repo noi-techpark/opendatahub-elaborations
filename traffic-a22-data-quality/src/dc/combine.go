@@ -20,9 +20,9 @@ func combineJob() error {
 	}
 
 	directions := combineDirections(children)
-	locations := combineLocations(directions)
+	// locations := combineLocations(directions)
 
-	bdp.SyncStations(locationStationType, locations, true, false)
+	// bdp.SyncStations(locationStationType, locations, true, false)
 	bdp.SyncStations(directionStationType, directions, true, false)
 	bdp.SyncStations(baseStationType, children, false, false)
 
@@ -41,7 +41,7 @@ func combineDirections(lanes []bdplib.Station) []bdplib.Station {
 
 			d = bdplib.CreateStation(dId, name, directionStationType, lane.Latitude, lane.Longitude, lane.Origin)
 			// asign location as parent
-			d.ParentStation = locId
+			// d.ParentStation = locId
 			// merge metadata
 			d.MetaData = makeDirectionMeta(lane)
 
