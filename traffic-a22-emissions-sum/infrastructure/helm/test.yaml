@@ -14,8 +14,10 @@ env:
 
   BDP_TOKEN_URL: https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token
   BDP_CLIENT_ID: odh-a22-dataprocessor
-  BDP_CLIENT_SECRET: 
 
   LOG_LEVEL: INFO
 
   CRON: 0 */10 * * * *
+
+envSecret:
+  BDP_CLIENT_SECRET: 
