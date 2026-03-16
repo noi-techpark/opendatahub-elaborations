@@ -29,10 +29,9 @@ var env struct {
 }
 
 const (
-	TRAFFIC_SENSOR  = "TrafficSensor"
-	TRAFFIC_STATION = "TrafficStation"
-	origin          = "A22"
-	emissionPeriod  = uint64(600)
+	TRAFFIC_SENSOR = "TrafficSensor"
+	origin         = "A22"
+	emissionPeriod = uint64(600)
 )
 
 var POLLUTANTS = []string{"NOx", "CO2"}
@@ -45,8 +44,7 @@ var impactThresholds = map[string][2]float64{
 	"CO2": {5000, 15000},
 }
 
-func emissionsType(pollutant string) string       { return pollutant + "-emissions" }
-func emissionsImpactType(pollutant string) string { return pollutant + "-emissions-impact" }
+func emissionsType(pollutant string) string { return pollutant + "-emissions" }
 
 func main() {
 	ms.InitWithEnv(context.Background(), "", &env)
@@ -76,10 +74,17 @@ func main() {
 			Rtype:       "total",
 			Unit:        "g/km",
 		})
+		targetTypes = append(targetTypes, elab.ElaboratedDataType{
+			Name:        emissionsType(p) + "-impact",
+			Description: "Impact of " + p + " emissions",
+			Period:      emissionPeriod,
+			Rtype:       "rating",
+			Unit:        "",
+		})
 	}
 
 	e := elab.NewElaboration(&n, &b)
-	e.StationTypes = []string{TRAFFIC_SENSOR, TRAFFIC_STATION}
+	e.StationTypes = []string{TRAFFIC_SENSOR}
 	e.BaseTypes = baseTypes
 	e.ElaboratedTypes = targetTypes
 	e.Filter = where.In("sorigin", origin)
@@ -89,34 +94,42 @@ func main() {
 	job := func() {
 		slog.Info("Starting elaboration run")
 
-		es, err := e.RequestState()
+		is, err := e.RequestState()
 		ms.FailOnError(context.Background(), err, "failed to get sensor elaboration state")
-		sensorsByLoc := map[string][]elab.ESStation{}
-		for scode, sensor := range es[TRAFFIC_SENSOR].Stations {
-			par := sensorParentCode(scode)
-			sensorsByLoc[par] = append(sensorsByLoc[par], sensor)
-		}
-		for locId, loc := range es[TRAFFIC_STATION].Stations {
-			for _, p := range POLLUTANTS {
-				start := loc.Datatypes[emissionsType(p)].Periods[emissionPeriod]
-				if start.Before(e.StartingPoint) {
-					start = e.StartingPoint
+		e.NewStationFollower().Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+			sums := map[time.Time]map[string]elab.ElabResult{}
+			for _, m := range ms {
+				pollutant := strings.Split(m.TypeName, "-")[1]
+
+				if sums[m.Timestamp.Time] == nil {
+					sums[m.Timestamp.Time] = map[string]elab.ElabResult{}
 				}
-				end := time.Time{}
-				scodes := map[string]any{}
-				for _, s := range sensorsByLoc[locId] {
-					for tname, dt := range s.Datatypes {
-						if strings.HasSuffix(tname, p+"-emissions") {
-							scodes[s.Station.Stationcode] = struct{}{}
-							dtEnd := dt.Periods[emissionPeriod]
-							if dtEnd.After(end) {
-								end = dtEnd
-							}
-						}
-					}
+				sums[m.Timestamp.Time][m.TypeName] = elab.ElabResult{
+					Timestamp:   m.Timestamp.Time,
+					Period:      emissionPeriod,
+					StationType: s.Stationtype,
+					StationCode: s.Stationcode,
+					DataType:    emissionsType(pollutant),
+					Value:       sums[m.Timestamp.Time][m.TypeName].Value.(float64) + *m.Value.Num,
 				}
 			}
-		}
+			results := []elab.ElabResult{}
+			for _, tps := range sums {
+				for _, r := range tps {
+					pollutant := strings.Split(r.DataType, "-")[0]
+					results = append(results, r)
+					results = append(results, elab.ElabResult{
+						Timestamp:   r.Timestamp,
+						Period:      r.Period,
+						StationType: r.StationType,
+						StationCode: r.StationCode,
+						Value:       rateEmissions(pollutant, r.Value.(float64)),
+						DataType:    r.DataType + "-impact",
+					})
+				}
+			}
+			return results, nil
+		})
 		slog.Info("Elaboration run complete")
 	}
 
@@ -127,20 +140,17 @@ func main() {
 	select {}
 }
 
-type ElabPkg struct {
-	pollutant string
-	loc       elab.Station
-	stations  []string
-	start     time.Time
-	end       time.Time
-}
-
-// sensorParentCode derives the TrafficStation code from a TrafficSensor code.
-// Sensor format: "A22:<location>:<lane>" → Station format: "A22:<location>"
-func sensorParentCode(sensorCode string) string {
-	parts := strings.Split(sensorCode, ":")
-	if len(parts) < 3 {
-		return ""
+func rateEmissions(pollutant string, value float64) string {
+	t, ok := impactThresholds[pollutant]
+	if !ok {
+		return "undefined"
 	}
-	return strings.Join(parts[:2], ":")
+	switch {
+	case value >= t[1]:
+		return "high"
+	case value >= t[0]:
+		return "medium"
+	default:
+		return "low"
+	}
 }
