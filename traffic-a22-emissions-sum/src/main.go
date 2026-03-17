@@ -105,10 +105,10 @@ func main() {
 					sums[m.Timestamp.Time] = map[string]elab.ElabResult{}
 				}
 				var value float64 = 0
-				if sums[m.Timestamp.Time][m.TypeName].Value != nil {
-					value = sums[m.Timestamp.Time][m.TypeName].Value.(float64)
+				if sums[m.Timestamp.Time][pollutant].Value != nil {
+					value = sums[m.Timestamp.Time][pollutant].Value.(float64)
 				}
-				sums[m.Timestamp.Time][m.TypeName] = elab.ElabResult{
+				sums[m.Timestamp.Time][pollutant] = elab.ElabResult{
 					Timestamp:   m.Timestamp.Time,
 					Period:      emissionPeriod,
 					StationType: s.Stationtype,
