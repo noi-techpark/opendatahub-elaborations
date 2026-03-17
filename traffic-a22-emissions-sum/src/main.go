@@ -35,7 +35,7 @@ const (
 )
 
 var POLLUTANTS = []string{"NOx", "CO2"}
-var vehicleTypes = []string{"LIGHT_VEHICLE", "HEAVY_VEHICLE", "BUSES"}
+var vehicleTypes = []string{"LIGHT_VEHICLES", "HEAVY_VEHICLES", "BUSES"}
 
 // impactThresholds maps pollutant → [medium, high] threshold in g/km.
 // These are placeholder values and should be calibrated against real data.
