@@ -52,7 +52,7 @@ jobs:
   deploy-test:
     runs-on: ubuntu-24.04
     needs: build
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/traffic-a22-emissions-sum'
+    if: github.ref == 'refs/heads/main'
     concurrency: deploy-test
     environment: test
     env:
