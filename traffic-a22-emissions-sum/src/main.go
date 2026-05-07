@@ -40,8 +40,8 @@ var vehicleTypes = []string{"LIGHT_VEHICLES", "HEAVY_VEHICLES", "BUSES"}
 // impactThresholds maps pollutant → [medium, high] threshold in g/km.
 // These are placeholder values and should be calibrated against real data.
 var impactThresholds = map[string][2]float64{
-	"NOx": {500, 1500},
-	"CO2": {5000, 15000},
+	"NOx": {60, 120},
+	"CO2": {35000, 70000},
 }
 
 func emissionsType(pollutant string) string { return pollutant + "-emissions" }
@@ -150,9 +150,9 @@ func rateEmissions(pollutant string, value float64) string {
 		return "undefined"
 	}
 	switch {
-	case value >= t[1]:
+	case value > t[1]:
 		return "high"
-	case value >= t[0]:
+	case value > t[0]:
 		return "medium"
 	default:
 		return "low"
