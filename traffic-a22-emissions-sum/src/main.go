@@ -96,7 +96,9 @@ func main() {
 
 		is, err := e.RequestState()
 		ms.FailOnError(context.Background(), err, "failed to get sensor elaboration state")
-		e.NewStationFollower().Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
+		follower := e.NewStationFollower()
+		follower.WorkerPool = 1
+		follower.Elaborate(is, func(s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
 			sums := map[time.Time]map[string]elab.ElabResult{}
 			for _, m := range ms {
 				pollutant := strings.Split(m.TypeName, "-")[1]
