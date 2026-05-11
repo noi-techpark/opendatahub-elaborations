@@ -48,7 +48,7 @@ func sumParentJob() {
 	for _, m := range res.Data {
 		parentStationCode := m.Parent
 		// type is parent station, the code we are targeting is m.stationcode
-		if m.Stype == parentStationType {
+		if m.Stype == directionStationType {
 			parentStationCode = m.Station
 		}
 
@@ -58,7 +58,7 @@ func sumParentJob() {
 
 		t := parents[parentStationCode][m.DType]
 		// There is only one parent record per data type
-		if m.Stype == parentStationType {
+		if m.Stype == directionStationType {
 			t.from = m.Tstamp.Time
 		} else {
 			if m.Tstamp.Time.After(t.to) {
@@ -119,6 +119,6 @@ func sumParentJob() {
 				recs.AddRecord(parId, dType, bdplib.CreateRecord(timestamp.UnixMilli(), value, periodAgg))
 			}
 		}
-		bdp.PushData(parentStationType, recs)
+		bdp.PushData(directionStationType, recs)
 	}
 }

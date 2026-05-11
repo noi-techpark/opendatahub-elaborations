@@ -13,7 +13,8 @@ import (
 )
 
 var sumRequestLimit, _ = strconv.Atoi(os.Getenv("NINJA_QUERY_LIMIT"))
-var parentStationType = os.Getenv("EL_PARENT_STATION_TYPE")
+var locationStationType = os.Getenv("EL_LOCATION_STATION_TYPE")
+var directionStationType = os.Getenv("EL_PARENT_STATION_TYPE")
 var baseStationType = os.Getenv("EL_STATION_TYPE")
 
 // Base data types to aggregate by day
@@ -32,7 +33,7 @@ var TotalType = bdplib.CreateDataType("Nr. Vehicles", "", "Number of vehicles", 
 var bdp bdplib.Bdp
 
 func syncDataTypes() {
-	bdp.SyncDataTypes(baseStationType, []bdplib.DataType{TotalType})
+	bdp.SyncDataTypes("", []bdplib.DataType{TotalType})
 }
 
 func Job() {
