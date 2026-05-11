@@ -20,6 +20,9 @@ func combineJob() error {
 	}
 
 	directions := combineDirections(children)
+
+	// This feature of combining directions into top level locations was implemented for an elaboration, but then not used.
+	// Leaving it in here in case it's needed at a later point
 	// locations := combineLocations(directions)
 
 	// bdp.SyncStations(locationStationType, locations, true, false)
