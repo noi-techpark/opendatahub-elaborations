@@ -32,6 +32,8 @@ var env struct {
 
 var OCCUPIED = "occupied"
 var FREE = "free"
+
+const ELAB_WINDOW = 5 //days
 var STATIONTYPES = []string{"ParkingStation", "ParkingSensor"}
 
 func main() {
@@ -84,7 +86,7 @@ func main() {
 
 				is, err := e.RequestState()
 				ms.FailOnError(context.Background(), err, "failed to get initial state")
-				e.NewWideTypeFollower(time.Duration(30*24)*time.Hour).Elaborate(is,
+				e.NewWideTypeFollower(time.Duration(ELAB_WINDOW*24)*time.Hour).Elaborate(is,
 					func(t elab.BaseDataType, from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
 						stationTrack.Store(s.Stationcode, nil)
 						return handlerOccupiedToFree(from, to, s, ms)
@@ -107,7 +109,7 @@ func main() {
 
 				is, err := e.RequestState()
 				ms.FailOnError(context.Background(), err, "failed to get initial state")
-				e.NewWideTypeFollower(time.Duration(30*24)*time.Hour).Elaborate(is,
+				e.NewWideTypeFollower(time.Duration(ELAB_WINDOW*24)*time.Hour).Elaborate(is,
 					func(t elab.BaseDataType, from time.Time, to time.Time, s elab.Station, ms []elab.Measurement) ([]elab.ElabResult, error) {
 						stationTrack.Store(s.Stationcode, nil)
 						return handlerFreeToOccupied(from, to, s, ms)
