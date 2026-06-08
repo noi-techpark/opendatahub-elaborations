@@ -16,9 +16,9 @@ from common.data_model.validation import ValidationMeasureCollection
 from common.manager.traffic_station import TrafficStationManager
 from common.data_model.common import DataType, MeasureCollection
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
-from pollution_connector.model.pollution_computation_model import PollutionComputationModel
+from pollution_computer.model.pollution_computation_model import PollutionComputationModel
 
-logger = logging.getLogger("pollution_v2.pollution_connector.manager.pollution_computation")
+logger = logging.getLogger("pollution_v2.pollution_computer.manager.pollution_computation")
 
 
 class PollutionComputationManager(TrafficStationManager):
@@ -33,35 +33,23 @@ class PollutionComputationManager(TrafficStationManager):
         return self._connector_collector.pollution
 
     def get_input_connector(self) -> ODHBaseConnector:
-        # on v1 it would have been self._connector_collector.traffic
         return self._connector_collector.validation
 
-    def _download_validation_data(self,
-                                  from_date: datetime,
-                                  to_date: datetime,
-                                  traffic_station: TrafficSensorStation
-                                  ) -> ValidationMeasureCollection:
-        """
-        Download validation data measures in the given interval.
-
-        :param from_date: Measures before this date are discarded if there isn't any latest measure available.
-        :param to_date: Measures after this date are discarded.
-        :return: The resulting ValidationMeasureCollection containing the validated traffic data.
-        """
-
+    def _download_validation_data(self, from_date: datetime, to_date: datetime,
+                                  traffic_station: TrafficSensorStation) -> ValidationMeasureCollection:
         return ValidationMeasureCollection(
-            measures=self._connector_collector.validation.get_measures(from_date=from_date, to_date=to_date,
-                                                                       station=traffic_station))
+            measures=self._connector_collector.validation.get_measures(
+                from_date=from_date, to_date=to_date, station=traffic_station
+            )
+        )
 
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime,
                                    stations: List[TrafficSensorStation]) -> List[GenericEntry]:
-
         if len(stations) != 1:
             logger.error(f"Cannot compute pollution on more than one station ({len(stations)} passed)")
             return []
 
         traffic_station = stations[0]
-
         validation_data = []
         traffic_data = []
         try:
@@ -71,7 +59,8 @@ class PollutionComputationManager(TrafficStationManager):
             logger.exception(
                 f"Unable to download validation and traffic data for station [{traffic_station.code}] "
                 f"in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]",
-                exc_info=e)
+                exc_info=e,
+            )
 
         if validation_data and traffic_data:
             model = PollutionComputationModel()

@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+image:
+  repository: ""  # injected by CI
+  tag: ""         # injected by CI
+
+envSecret:
+  ODH_CLIENT_SECRET: ""  # injected by CI
+
+env:
+  ODH_AUTHENTICATION_URL: "https://auth.opendatahub.com/auth/"
+  ODH_BASE_READER_URL: "https://mobility.api.opendatahub.com"
+  ODH_BASE_WRITER_URL: "https://mobility.share.opendatahub.com"
+  ODH_CLIENT_ID: "odh-a22-dataprocessor"
+  PROVENANCE_VERSION: ""  # injected by CI

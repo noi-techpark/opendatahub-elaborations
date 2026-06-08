@@ -8,9 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Union
 
-import redis
-
-from common.cache.common import CacheData, RedisCache
+from common.cache.common import CacheData, LocalCache
 from common.data_model.common import Station
 
 
@@ -50,7 +48,7 @@ class ComputationCheckpoint(CacheData):
         )
 
 
-class ComputationCheckpointCache(RedisCache[ComputationCheckpoint]):
+class ComputationCheckpointCache(LocalCache[ComputationCheckpoint]):
 
-    def __init__(self, r: redis.Redis) -> None:
-        super().__init__(r, ComputationCheckpoint)
+    def __init__(self, db_path: str) -> None:
+        super().__init__(db_path, ComputationCheckpoint)

@@ -1,0 +1,104 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Checkpoint cache — SQLite file on a PersistentVolumeClaim.
+# The PVC is created by the chart. Delete the db file to reset all checkpoints:
+#   kubectl exec -it <any-pod> -- rm /app/data/checkpoint_cache.db
+checkpointCache:
+  storage: 100Mi
+  mountPath: /app/data
+  # storageClassName: ""  # uncomment to override the cluster default
+
+# Sensitive env vars — rendered into a K8s Secret and injected per-container.
+# Set in test.yaml / prod.yaml (or injected by CI via yq).
+envSecret: {}
+  # ODH_CLIENT_SECRET: ""
+  # ODH_PASSWORD: ""        # only needed for grant_type=password
+
+# Shared environment variables injected into every job.
+# Environment-specific values (URLs, credentials) are overridden in test.yaml / prod.yaml.
+env:
+  ODH_GRANT_TYPE: "client_credentials"
+  ODH_PAGINATION_SIZE: "10000"
+  ODH_MAX_POST_BATCH_SIZE: "10000"
+  ODH_STATIONS_FILTER_ORIGIN: "A22"
+  ODH_MINIMUM_STARTING_DATE: "2023-01-01"
+  ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION: "30"
+  ODH_COMPUTATION_BATCH_SIZE_VALIDATION: "1"
+  ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL: "30"
+  COMPUTATION_CHECKPOINT_CACHE_PATH: "data/checkpoint_cache.db"
+  PROVENANCE_LINEAGE: "u-hopper"
+  PROVENANCE_NAME: "a22-pollutant-elaboration"
+  PROVENANCE_VERSION: ""
+  VALIDATOR_CONFIG_FILE: "config/validator.yaml"
+  ROAD_WEATHER_CONFIG_FILE: "config/road_weather.yaml"
+  ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS: "60"
+  ROAD_WEATHER_NUM_FORECASTS: "45"
+  POLLUTION_DISPERSAL_STARTING_DATE: "2020-12-01 02:00"
+  POLLUTION_DISPERSAL_PREDICTION_ENDPOINT: "http://rline:80/process/?dt="
+  POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT: "http://rline:80/get_capabilities/"
+  POLLUTION_DISPERSAL_COMPUTATION_HOURS_SPAN: "1"
+  LOG_LEVEL: "INFO"
+  LOG_LEVEL_LIBS: "WARNING"
+  DEFAULT_TIMEZONE: "Europe/Rome"
+  DATATYPE_PREFIX: ""
+
+# CronJob definitions — one per processing job.
+jobs:
+  validator:
+    schedule: "0 2 * * *"
+    command: ["python", "-m", "validator.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "512Mi"
+      limits:
+        memory: "1Gi"
+
+  pollution-computer:
+    schedule: "0 4 * * *"
+    command: ["python", "-m", "pollution_computer.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "512Mi"
+      limits:
+        memory: "1Gi"
+
+  road-weather:
+    schedule: "0 */3 * * *"
+    command: ["python", "-m", "road_weather.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "256Mi"
+      limits:
+        memory: "512Mi"
+
+  pollution-dispersal:
+    schedule: "0 * * * *"
+    command: ["python", "-m", "pollution_dispersal.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "512Mi"
+      limits:
+        memory: "2Gi"

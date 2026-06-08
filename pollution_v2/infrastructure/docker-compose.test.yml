@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 services:
-  app:
-    image: ${DOCKER_IMAGE}:${DOCKER_TAG}
+  test:
     build:
       context: ../
       dockerfile: infrastructure/docker/Dockerfile
-      target: build
+      target: test

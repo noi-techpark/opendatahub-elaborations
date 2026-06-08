@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-checkpoint-cache
+  labels:
+    {{- include "pollution-v2.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.checkpointCache.storage }}
+  {{- if .Values.checkpointCache.storageClassName }}
+  storageClassName: {{ .Values.checkpointCache.storageClassName }}
+  {{- end }}

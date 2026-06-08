@@ -2,71 +2,39 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-import os
+import logging
+import logging.config
 
-from common.settings import LOGS_DIR, LOG_LEVEL, LOG_LEVEL_LIBS
-
-log_level = LOG_LEVEL
-log_level_libraries = LOG_LEVEL_LIBS
-
-log_handlers = ["console"]
-if "LOG_TO_FILE" in os.environ:
-    log_handlers.append("file")
+from common.settings import LOG_LEVEL, LOG_LEVEL_LIBS
 
 
-def get_logging_configuration(service_name: str):
-    """
-    Get the logging configuration to be associated to a particular service.
-
-    :param service_name: The name of the service (e.g. ws, backend, rule-engine, ..)
-    :return: The logging configuration
-    """
-    file_name = f"{service_name}.log"
-
-    log_config = {
+def setup_logging(service_name: str) -> None:
+    """Configure JSON structured logging for the given service."""
+    logging.config.dictConfig({
         "version": 1,
+        "disable_existing_loggers": False,
         "formatters": {
-            "simple": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                "datefmt": ""
+            "json": {
+                "()": "pythonjsonlogger.json.JsonFormatter",
+                "fmt": "%(asctime)s %(name)s %(levelname)s %(message)s",
+                "rename_fields": {"asctime": "timestamp", "levelname": "level"},
+                "static_fields": {"service": service_name},
             }
         },
         "handlers": {
-            "console": {
+            "stdout": {
                 "class": "logging.StreamHandler",
-                "formatter": "simple",
-                "level": "DEBUG",
+                "formatter": "json",
                 "stream": "ext://sys.stdout",
-            },
-            "file": {
-                "class": "logging.handlers.RotatingFileHandler",
-                "formatter": "simple",
-                "filename": os.path.join(LOGS_DIR, file_name),
-                "maxBytes": 10485760,
-                "backupCount": 3
             }
         },
         "root": {
-            "level": log_level,
-            "handlers": log_handlers,
+            "level": LOG_LEVEL,
+            "handlers": ["stdout"],
         },
         "loggers": {
-            "werkzeug": {
-                "level": log_level_libraries,
-                "handlers": log_handlers,
-                "propagate": 0
-            },
-            "uhopper": {
-                "level": log_level,
-                "handlers": log_handlers,
-                "propagate": 0
-            },
-            "pollution_v2": {
-                "level": log_level,
-                "handlers": log_handlers,
-                "propagate": 0
-            },
-        }
-    }
-
-    return log_config
+            "urllib3": {"level": LOG_LEVEL_LIBS, "propagate": True},
+            "requests": {"level": LOG_LEVEL_LIBS, "propagate": True},
+            "keycloak": {"level": LOG_LEVEL_LIBS, "propagate": True},
+        },
+    })
