@@ -453,24 +453,23 @@ class TrafficStationManager(StationManager, ABC):
                         f"as maximum end date for data request")
                 max_to_date = min(max_to_date, latest_measurement_date)
 
-            to_date = start_date
+            while start_date < max_to_date:
+                if use_hours_for_batch_size:
+                    to_date = start_date + timedelta(hours=batch_size)
+                else:
+                    to_date = start_date + timedelta(days=batch_size)
+                if to_date > max_to_date:
+                    to_date = max_to_date
 
-            if use_hours_for_batch_size:
-                to_date = to_date + timedelta(hours=batch_size)
-            else:
-                to_date = to_date + timedelta(days=batch_size)
-            if to_date > max_to_date:
-                to_date = max_to_date
+                if to_date.tzinfo is None:
+                    to_date = DEFAULT_TIMEZONE.localize(to_date)
 
-            if to_date is not None and to_date.tzinfo is None:
-                to_date = DEFAULT_TIMEZONE.localize(to_date)
+                logger.info(f"Computing data for stations {_get_stations_on_logs(stations)} in interval "
+                            f"[{start_date.isoformat()} - {to_date.isoformat()}]")
 
-            logger.info(f"Computing data for stations {_get_stations_on_logs(stations)} in interval "
-                        f"[{start_date.isoformat()} - {to_date.isoformat()}]")
-
-            self._compute_and_upload_data(start_date, to_date, stations)
-
-            self._update_cache(to_date, stations)
+                self._compute_and_upload_data(start_date, to_date, stations)
+                self._update_cache(to_date, stations)
+                start_date = to_date
         else:
             logger.info(f"Nothing to process for stations {_get_stations_on_logs(stations)} in interval "
                         f"[{start_date.isoformat()} - no-date]")
