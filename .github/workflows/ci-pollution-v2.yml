@@ -12,7 +12,7 @@ env:
   WORKING_DIRECTORY: pollution_v2
   DOCKER_IMAGE: ghcr.io/${{ github.repository }}/el-pollution-v2
   DOCKER_TAG: ${{ github.sha }}
-  KUBERNETES_NAMESPACE: elaborations
+  KUBERNETES_NAMESPACE: collector
   K8S_NAME: el-pollution-v2
 
 jobs:
