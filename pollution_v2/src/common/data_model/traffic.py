@@ -11,10 +11,14 @@ from typing import Optional, Dict, Iterator, List
 
 import dateutil.parser
 
+import logging
+
 from common.data_model.common import VehicleClass, Measure, MeasureCollection, DataType, \
     Provenance
 from common.data_model.entry import GenericEntry
 from common.data_model.station import TrafficSensorStation
+
+logger = logging.getLogger("pollution_v2.common.data_model.traffic")
 
 
 class TrafficMeasureType(Enum):
@@ -115,16 +119,18 @@ class TrafficMeasureCollection(MeasureCollection[TrafficMeasure, TrafficSensorSt
 
             if measure.is_vehicle_counting_measure:
                 if entry.nr_of_vehicles is not None:
-                    raise ValueError(
-                        f"Duplicated measure for type [{measure.data_type.name}] "
-                        f"on station [{measure.station.code}] for date [{measure.valid_time}]")
-                entry.nr_of_vehicles = measure.value
+                    logger.warning(
+                        f"Duplicate measure [{measure.data_type.name}] on [{measure.station.code}] "
+                        f"at [{measure.valid_time}]; keeping first value")
+                else:
+                    entry.nr_of_vehicles = measure.value
             elif measure.is_average_speed_measure:
                 if entry.average_speed is not None:
-                    raise ValueError(
-                        f"Duplicated measure for type [{measure.data_type.name}] "
-                        f"on station [{measure.station.code}] for date [{measure.valid_time}]")
-                entry.average_speed = measure.value
+                    logger.warning(
+                        f"Duplicate measure [{measure.data_type.name}] on [{measure.station.code}] "
+                        f"at [{measure.valid_time}]; keeping first value")
+                else:
+                    entry.average_speed = measure.value
 
         return result
 
