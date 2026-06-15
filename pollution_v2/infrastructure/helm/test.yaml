@@ -15,3 +15,17 @@ env:
   ODH_BASE_WRITER_URL: "https://mobility.share.opendatahub.testingmachine.eu"
   ODH_CLIENT_ID: "odh-a22-dataprocessor"
   PROVENANCE_VERSION: ""  # injected by CI
+
+jobs:
+  validator:
+    schedule: "0 2 * * *"
+    command: ["python", "-m", "validator.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "512Mi"
+      limits:
+        memory: "1Gi"

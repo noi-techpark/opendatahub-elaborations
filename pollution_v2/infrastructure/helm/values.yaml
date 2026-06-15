@@ -47,58 +47,7 @@ env:
   LOG_LEVEL: "INFO"
   LOG_LEVEL_LIBS: "WARNING"
   DEFAULT_TIMEZONE: "Europe/Rome"
-  DATATYPE_PREFIX: ""
+  DATATYPE_PREFIX: "mig-"
 
-# CronJob definitions — one per processing job.
-jobs:
-  validator:
-    schedule: "0 2 * * *"
-    command: ["python", "-m", "validator.main"]
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    resources:
-      requests:
-        cpu: "100m"
-        memory: "512Mi"
-      limits:
-        memory: "1Gi"
-
-  pollution-computer:
-    schedule: "0 4 * * *"
-    command: ["python", "-m", "pollution_computer.main"]
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    resources:
-      requests:
-        cpu: "100m"
-        memory: "512Mi"
-      limits:
-        memory: "1Gi"
-
-  road-weather:
-    schedule: "0 */3 * * *"
-    command: ["python", "-m", "road_weather.main"]
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    resources:
-      requests:
-        cpu: "50m"
-        memory: "256Mi"
-      limits:
-        memory: "512Mi"
-
-  pollution-dispersal:
-    schedule: "0 * * * *"
-    command: ["python", "-m", "pollution_dispersal.main"]
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    resources:
-      requests:
-        cpu: "200m"
-        memory: "512Mi"
-      limits:
-        memory: "2Gi"
+# CronJob definitions — defined per environment in test.yaml / prod.yaml.
+jobs: {}

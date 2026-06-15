@@ -65,9 +65,6 @@ PROVENANCE_VERSION = os.getenv("PROVENANCE_VERSION", "0.1.0")
 # Checkpoint cache (SQLite file — delete to reset, or set to empty string to disable)
 COMPUTATION_CHECKPOINT_CACHE_PATH = os.getenv("COMPUTATION_CHECKPOINT_CACHE_PATH", "data/checkpoint_cache.db")
 
-# Dry-run mode — log writes instead of sending them to ODH. Safe for local testing.
-ODH_DRY_RUN = os.getenv("ODH_DRY_RUN", "false").lower() == "true"
-
 # Optional prefix for data type names (e.g. for test environments)
 DATATYPE_PREFIX = os.getenv("DATATYPE_PREFIX", "")
 

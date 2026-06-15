@@ -102,7 +102,7 @@ class PollutionMeasureCollection(MeasureCollection[PollutionMeasure, TrafficSens
                     station=measure.station,
                     valid_time=measure.valid_time,
                     vehicle_class=VehicleClass(measure.data_type.name[len(DATATYPE_PREFIX)::].split("-")[0]),
-                    entry_class=PollutantClass(measure.data_type.name.split("-")[1]),
+                    entry_class=PollutantClass(measure.data_type.name[len(DATATYPE_PREFIX):].split("-")[1]),
                     entry_value=measure.value,
                     period=measure.period
                 )

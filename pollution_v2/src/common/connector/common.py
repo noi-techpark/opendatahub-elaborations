@@ -15,7 +15,7 @@ import requests
 from keycloak import KeycloakOpenID
 
 from common.data_model.common import MeasureType, StationType, Station, Provenance, DataType
-from common.settings import get_now, ODH_DRY_RUN, ODH_STATIONS_FILTER_ORIGIN
+from common.settings import get_now, ODH_STATIONS_FILTER_ORIGIN
 
 logger = logging.getLogger("pollution_v2.common.connector.common")
 
@@ -409,11 +409,6 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         :raise: APIException if the server responds with a code different from 201
         :raise: MaximumRetryExceeded if the maximum re-tries are exceeded
         """
-        if ODH_DRY_RUN:
-            n = len(raw_data) if isinstance(raw_data, list) else 1
-            logger.info(f"[DRY RUN] Skipping POST {path} ({n} item(s))")
-            return "dry-run"
-
         token = self._get_token()
 
         if not query_params:
