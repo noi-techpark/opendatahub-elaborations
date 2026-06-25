@@ -4,6 +4,7 @@
 
 import logging
 import sys
+from datetime import timedelta
 
 import sentry_sdk
 
@@ -15,6 +16,7 @@ from common.settings import (
     COMPUTATION_CHECKPOINT_CACHE_PATH,
     DEFAULT_TIMEZONE,
     ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
+    POLLUTION_DISPERSAL_COMPUTATION_HOURS_SPAN,
     POLLUTION_DISPERSAL_STARTING_DATE,
     PROVENANCE_ID,
     PROVENANCE_LINEAGE,
@@ -76,14 +78,38 @@ def main() -> None:
         logger.info("No stations to process")
         return
 
-    try:
-        manager.run_computation(
-            stations_to_process, min_from_date, max_to_date,
-            ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL, keep_looking_for_input_data=True
+    iteration = 0
+    while True:
+        iteration += 1
+        max_to_date = DEFAULT_TIMEZONE.localize(get_now())
+        logger.info(f"Catch-up iteration {iteration}: processing up to {max_to_date.isoformat()}")
+
+        try:
+            manager.run_computation(
+                stations_to_process, min_from_date, max_to_date,
+                ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL, keep_looking_for_input_data=True
+            )
+        except Exception:
+            logger.exception("Failed to run pollution dispersal computation")
+            raise
+
+        new_start = manager.get_starting_date(
+            manager.get_output_connector(), manager.get_input_connector(),
+            stations_to_process, min_from_date, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
+            keep_looking_for_input_data=False,
         )
-    except Exception:
-        logger.exception("Failed to run pollution dispersal computation")
-        raise
+        new_now = DEFAULT_TIMEZONE.localize(get_now())
+        caught_up = (
+            new_start is None
+            or new_start >= (new_now - timedelta(hours=POLLUTION_DISPERSAL_COMPUTATION_HOURS_SPAN))
+        )
+        if caught_up:
+            logger.info(f"Caught up to current time after {iteration} iteration(s)")
+            break
+        logger.info(
+            f"Still {(new_now - new_start).total_seconds() / 3600:.1f} hour(s) behind "
+            f"after iteration {iteration}, running again"
+        )
 
 
 if __name__ == "__main__":
