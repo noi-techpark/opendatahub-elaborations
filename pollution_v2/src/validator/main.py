@@ -4,6 +4,7 @@
 
 import logging
 import sys
+from datetime import timedelta
 
 import sentry_sdk
 
@@ -42,7 +43,6 @@ def main() -> None:
     manager = ValidationManager(connector_collector, provenance, checkpoint_cache)
 
     min_from_date = ODH_MINIMUM_STARTING_DATE
-    max_to_date = DEFAULT_TIMEZONE.localize(get_now())
 
     stations = manager.get_station_list()
     stations = [s for s in stations if s.km > 0]
@@ -50,14 +50,40 @@ def main() -> None:
     stations = [s for s in stations if s.origin != "FAMAS-traffic"]
     logger.info(f"Processing {len(stations)} stations")
 
-    try:
-        manager.run_computation(
-            stations, min_from_date, max_to_date,
-            ODH_COMPUTATION_BATCH_SIZE_VALIDATION, keep_looking_for_input_data=True
+    iteration = 0
+    while True:
+        iteration += 1
+        max_to_date = DEFAULT_TIMEZONE.localize(get_now())
+        logger.info(f"Catch-up iteration {iteration}: processing up to {max_to_date.isoformat()}")
+
+        try:
+            manager.run_computation(
+                stations, min_from_date, max_to_date,
+                ODH_COMPUTATION_BATCH_SIZE_VALIDATION, keep_looking_for_input_data=True
+            )
+        except Exception:
+            logger.exception("Failed to run validation computation")
+            raise
+
+        # Check whether a full batch period elapsed during this run, meaning new data has
+        # arrived that wasn't covered by max_to_date. Uses keep_looking_for_input_data=False
+        # so it reads checkpoints directly without scanning forward (fast path).
+        new_start = manager.get_starting_date(
+            manager.get_output_connector(), manager.get_input_connector(),
+            stations, min_from_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION,
+            keep_looking_for_input_data=False,
         )
-    except Exception:
-        logger.exception("Failed to run validation computation")
-        raise
+        new_now = DEFAULT_TIMEZONE.localize(get_now())
+        caught_up = (
+            new_start is None
+            or new_start.date() >= (new_now - timedelta(days=ODH_COMPUTATION_BATCH_SIZE_VALIDATION)).date()
+        )
+        if caught_up:
+            logger.info(f"Caught up to current time after {iteration} iteration(s)")
+            break
+        logger.info(
+            f"Still {(new_now - new_start).days} day(s) behind after iteration {iteration}, running again"
+        )
 
 
 if __name__ == "__main__":

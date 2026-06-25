@@ -5,6 +5,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
+import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
@@ -333,11 +334,12 @@ class TrafficStationManager(StationManager, ABC):
         :return: The resulting TrafficMeasureCollection containing the traffic data.
         """
 
+        t0 = time.monotonic()
         res = []
         for station in stations:
             res.extend(self._connector_collector.traffic.get_measures(from_date=from_date, to_date=to_date,
                                                                       station=station))
-
+        logger.info(f"Traffic download: {len(stations)} stations → {len(res)} measures in {time.monotonic()-t0:.1f}s")
         return res
 
     def _compute_and_upload_data(self, start_date: datetime, to_date: datetime,
@@ -351,13 +353,17 @@ class TrafficStationManager(StationManager, ABC):
         """
 
         try:
+            t0 = time.monotonic()
             entries = self._download_data_and_compute(start_date, to_date, stations)
+            logger.info(f"Download+compute: {len(entries)} entries in {time.monotonic()-t0:.1f}s")
         except Exception as e:
             logger.exception(f"Unable to compute data from stations {_get_stations_on_logs(stations)} in the "
                              f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
             raise
         try:
+            t0 = time.monotonic()
             self._upload_data(entries)
+            logger.info(f"Upload: {len(entries)} entries in {time.monotonic()-t0:.1f}s")
         except Exception as e:
             logger.exception(f"Unable to upload data from stations {_get_stations_on_logs(stations)} in the "
                              f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
@@ -429,8 +435,10 @@ class TrafficStationManager(StationManager, ABC):
                     f"between [{min_from_date.isoformat()}] and [{max_to_date.isoformat()}]")
 
         logger.info(f"Looking for latest measures available on [{type(self.get_output_connector()).__name__}] ")
+        t0 = time.monotonic()
         start_date = self.get_starting_date(self.get_output_connector(), self.get_input_connector(),
                                             stations, min_from_date, batch_size, keep_looking_for_input_data)
+        logger.info(f"Start date determination: {time.monotonic()-t0:.1f}s → {start_date.isoformat() if start_date else 'None'}")
 
         if start_date is None or start_date == max_to_date:
             logger.info(f"Not computing data for stations {_get_stations_on_logs(stations)} in interval "
@@ -442,7 +450,9 @@ class TrafficStationManager(StationManager, ABC):
             batch_diff = (max_to_date - start_date).days if not use_hours_for_batch_size \
                 else (max_to_date - start_date).seconds // 3600
             if start_date is not None and batch_diff > batch_size:
+                t0 = time.monotonic()
                 latest_measurement_date = self._get_latest_date(self.get_input_connector(), stations)
+                logger.info(f"Latest input date probe ({len(stations)} stations): {time.monotonic()-t0:.1f}s → {latest_measurement_date.isoformat()}")
                 # traffic data request range end is the latest measurement
                 # For inactive stations, this latest measurement date will be < start_date,
                 # thus no further requests will be made. In general, it makes no sense to ask for data
@@ -453,7 +463,10 @@ class TrafficStationManager(StationManager, ABC):
                         f"as maximum end date for data request")
                 max_to_date = min(max_to_date, latest_measurement_date)
 
+            batch_num = 0
+            t_total = time.monotonic()
             while start_date < max_to_date:
+                batch_num += 1
                 if use_hours_for_batch_size:
                     to_date = start_date + timedelta(hours=batch_size)
                 else:
@@ -467,9 +480,22 @@ class TrafficStationManager(StationManager, ABC):
                 logger.info(f"Computing data for stations {_get_stations_on_logs(stations)} in interval "
                             f"[{start_date.isoformat()} - {to_date.isoformat()}]")
 
+                t_batch = time.monotonic()
                 self._compute_and_upload_data(start_date, to_date, stations)
+                t_after_compute = time.monotonic()
                 self._update_cache(to_date, stations)
+                t_after_cache = time.monotonic()
+                logger.info(
+                    f"Batch {batch_num} [{start_date.date()} → {to_date.date()}]: "
+                    f"compute+upload={t_after_compute-t_batch:.1f}s  "
+                    f"cache_update={t_after_cache-t_after_compute:.1f}s  "
+                    f"total={t_after_cache-t_batch:.1f}s"
+                )
                 start_date = to_date
+
+            logger.info(
+                f"Completed {batch_num} batch(es) in {time.monotonic()-t_total:.1f}s total"
+            )
         else:
             logger.info(f"Nothing to process for stations {_get_stations_on_logs(stations)} in interval "
                         f"[{start_date.isoformat()} - no-date]")

@@ -5,6 +5,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
+import time
 from datetime import datetime, timedelta
 from typing import List
 
@@ -78,7 +79,9 @@ class ValidationManager(TrafficStationManager):
         traffic_data = []
         try:
             # no station as for history every station is needed
+            t0 = time.monotonic()
             history_data = self._download_history_data(start_date, to_date)
+            logger.info(f"History download: {len(history_data.measures)} measures in {time.monotonic()-t0:.1f}s")
             # no station as parameter as validation needs data from all stations
             traffic_data = self._download_traffic_data(start_date, to_date, stations)
         except Exception as e:
@@ -89,8 +92,10 @@ class ValidationManager(TrafficStationManager):
 
         if history_data and traffic_data:
             model = ValidationModel()
-            return model.compute_data(history_data, TrafficMeasureCollection(traffic_data),
-                                      stations)
+            t0 = time.monotonic()
+            result = model.compute_data(history_data, TrafficMeasureCollection(traffic_data), stations)
+            logger.info(f"Model computation: {len(result)} entries in {time.monotonic()-t0:.1f}s")
+            return result
 
         return []
 
