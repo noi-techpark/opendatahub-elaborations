@@ -47,7 +47,7 @@ env:
   LOG_LEVEL: "INFO"
   LOG_LEVEL_LIBS: "WARNING"
   DEFAULT_TIMEZONE: "Europe/Rome"
-  DATATYPE_PREFIX: "mig-"
+  DATATYPE_PREFIX: "" 
 
 # CronJob definitions — defined per environment in test.yaml / prod.yaml.
 jobs: {}

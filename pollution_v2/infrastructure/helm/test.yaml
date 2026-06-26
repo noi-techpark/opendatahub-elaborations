@@ -14,6 +14,7 @@ env:
   ODH_BASE_READER_URL: "https://mobility.api.opendatahub.testingmachine.eu"
   ODH_BASE_WRITER_URL: "https://mobility.share.opendatahub.testingmachine.eu"
   ODH_CLIENT_ID: "odh-a22-dataprocessor"
+  DATATYPE_PREFIX: "mig-"
   PROVENANCE_VERSION: ""  # injected by CI
 
 jobs:
