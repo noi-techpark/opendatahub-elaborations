@@ -4,6 +4,7 @@
 
 import logging
 import sys
+import time
 
 import sentry_sdk
 
@@ -11,6 +12,7 @@ from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
 from common.logging import setup_logging
+from common.manager.traffic_station import RunStats
 from common.settings import (
     COMPUTATION_CHECKPOINT_CACHE_PATH,
     DEFAULT_TIMEZONE,
@@ -29,6 +31,12 @@ setup_logging("pollution-computer")
 logger = logging.getLogger("pollution_v2.pollution_computer.main")
 
 sentry_sdk.init(traces_sample_rate=SENTRY_SAMPLE_RATE)
+
+
+def _fmt_duration(s: float) -> str:
+    h, rem = divmod(int(s), 3600)
+    m, sec = divmod(rem, 60)
+    return f"{h}h{m:02}m{sec:02}s" if h else f"{m}m{sec:02}s" if m else f"{sec}s"
 
 
 def main() -> None:
@@ -51,15 +59,32 @@ def main() -> None:
     stations = [s for s in stations if s.origin != "FAMAS-traffic"]
     logger.info(f"Processing {len(stations)} stations")
 
+    t_job = time.monotonic()
+    total = RunStats()
+    ok = skipped = failed = 0
     for station in stations:
         logger.info(f"Processing station {station.code}")
         try:
-            manager.run_computation(
+            stats = manager.run_computation(
                 [station], min_from_date, max_to_date,
                 ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION, keep_looking_for_input_data=False
             )
+            total += stats
+            if stats.batches == 0:
+                skipped += 1
+            else:
+                ok += 1
         except Exception:
             logger.exception(f"Failed to process station {station.code}")
+            failed += 1
+
+    date_range = (f"{total.date_from.date()} → {total.date_to.date()}"
+                  if total.date_from and total.date_to else "no data")
+    logger.info(
+        f"Run summary: stations={ok}ok/{skipped}skipped/{failed}failed  "
+        f"batches={total.batches}  entries={total.entries}  "
+        f"elapsed={_fmt_duration(time.monotonic() - t_job)}  range={date_range}"
+    )
 
 
 if __name__ == "__main__":

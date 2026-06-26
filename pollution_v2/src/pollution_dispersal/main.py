@@ -4,6 +4,7 @@
 
 import logging
 import sys
+import time
 from datetime import timedelta
 
 import sentry_sdk
@@ -12,6 +13,7 @@ from common.cache.computation_checkpoint import ComputationCheckpointCache
 from common.connector.collector import ConnectorCollector
 from common.data_model.common import Provenance
 from common.logging import setup_logging
+from common.manager.traffic_station import RunStats
 from common.settings import (
     COMPUTATION_CHECKPOINT_CACHE_PATH,
     DEFAULT_TIMEZONE,
@@ -31,6 +33,12 @@ setup_logging("pollution-dispersal")
 logger = logging.getLogger("pollution_v2.pollution_dispersal.main")
 
 sentry_sdk.init(traces_sample_rate=SENTRY_SAMPLE_RATE)
+
+
+def _fmt_duration(s: float) -> str:
+    h, rem = divmod(int(s), 3600)
+    m, sec = divmod(rem, 60)
+    return f"{h}h{m:02}m{sec:02}s" if h else f"{m}m{sec:02}s" if m else f"{sec}s"
 
 
 def main() -> None:
@@ -78,6 +86,8 @@ def main() -> None:
         logger.info("No stations to process")
         return
 
+    t_job = time.monotonic()
+    total = RunStats()
     iteration = 0
     while True:
         iteration += 1
@@ -85,7 +95,7 @@ def main() -> None:
         logger.info(f"Catch-up iteration {iteration}: processing up to {max_to_date.isoformat()}")
 
         try:
-            manager.run_computation(
+            total += manager.run_computation(
                 stations_to_process, min_from_date, max_to_date,
                 ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL, keep_looking_for_input_data=True
             )
@@ -110,6 +120,14 @@ def main() -> None:
             f"Still {(new_now - new_start).total_seconds() / 3600:.1f} hour(s) behind "
             f"after iteration {iteration}, running again"
         )
+
+    date_range = (f"{total.date_from.date()} → {total.date_to.date()}"
+                  if total.date_from and total.date_to else "no data")
+    logger.info(
+        f"Run summary: stations={len(stations_to_process)}  iterations={iteration}  "
+        f"batches={total.batches}  entries={total.entries}  "
+        f"elapsed={_fmt_duration(time.monotonic() - t_job)}  range={date_range}"
+    )
 
 
 if __name__ == "__main__":

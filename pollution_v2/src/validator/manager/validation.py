@@ -55,7 +55,7 @@ class ValidationManager(TrafficStationManager):
         # The daily sums are at (default) 00:00 UTC of the following day, so we have to convert timezone and look ahead 1 day
         from_date = HISTORY_TIMEZONE.localize(datetime.combine(from_date.astimezone(HISTORY_TIMEZONE), datetime.max.time()))
         to_date = HISTORY_TIMEZONE.localize(datetime.combine((to_date.astimezone(HISTORY_TIMEZONE) + timedelta(days=1)), datetime.max.time()))
-        logger.info(f"Download history data from date [{from_date.isoformat()}]")
+        logger.debug(f"Download history data from date [{from_date.isoformat()}]")
 
         measures = []
         from_date_on_month = from_date.replace(day=1)
@@ -66,7 +66,7 @@ class ValidationManager(TrafficStationManager):
         for i in range(0, 4):
             from_date_to_use = from_date_on_month.replace(year=from_date_on_month.year-i)
             to_date_to_use = min(to_date_on_month.replace(year=to_date_on_month.year-i), to_date)
-            logger.info(f"Getting measures for interval [{from_date_to_use.isoformat()}] - [{to_date_to_use.isoformat()}]")
+            logger.debug(f"Getting measures for interval [{from_date_to_use.isoformat()}] - [{to_date_to_use.isoformat()}]")
             measures.extend(self._connector_collector.history.get_measures(from_date=from_date_to_use,
                                                                            to_date=to_date_to_use))
 
