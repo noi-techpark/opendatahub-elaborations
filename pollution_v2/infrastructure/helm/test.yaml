@@ -25,6 +25,19 @@ jobs:
     concurrencyPolicy: Forbid
     resources:
       requests:
+        cpu: "600m"
+        memory: "600Mi"
+      limits:
+        memory: "1Gi"
+
+  pollution-computer:
+    schedule: "0 4 * * *"
+    command: ["python", "-m", "pollution_computer.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
         cpu: "100m"
         memory: "512Mi"
       limits:

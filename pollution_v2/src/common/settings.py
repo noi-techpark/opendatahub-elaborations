@@ -38,9 +38,10 @@ ODH_PASSWORD = os.getenv("ODH_PASSWORD")
 ODH_CLIENT_ID = os.getenv("ODH_CLIENT_ID")
 ODH_CLIENT_SECRET = os.getenv("ODH_CLIENT_SECRET")
 ODH_GRANT_TYPE = os.getenv("ODH_GRANT_TYPE", "client_credentials").split(";")
-ODH_PAGINATION_SIZE = int(os.getenv("ODH_PAGINATION_SIZE", "200"))
+ODH_PAGINATION_SIZE = int(os.getenv("ODH_PAGINATION_SIZE", "5000"))
 _max_post = os.getenv("ODH_MAX_POST_BATCH_SIZE")
 ODH_MAX_POST_BATCH_SIZE = int(_max_post) if _max_post else None
+ODH_PARALLEL_REQUESTS = int(os.getenv("ODH_PARALLEL_REQUESTS", "10"))
 ODH_MINIMUM_STARTING_DATE = DEFAULT_TIMEZONE.localize(
     dateutil.parser.parse(os.getenv("ODH_MINIMUM_STARTING_DATE", "2018-01-01"))
 )

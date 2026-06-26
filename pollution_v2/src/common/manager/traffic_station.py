@@ -7,6 +7,7 @@ from __future__ import absolute_import, annotations
 import logging
 import time
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 
@@ -17,7 +18,7 @@ from common.data_model import TrafficSensorStation, DataType
 from common.data_model.common import MeasureType, Provenance, Measure
 from common.data_model.entry import GenericEntry
 from common.manager.station import StationManager
-from common.settings import ODH_MINIMUM_STARTING_DATE, DEFAULT_TIMEZONE, get_now
+from common.settings import ODH_MINIMUM_STARTING_DATE, ODH_PARALLEL_REQUESTS, DEFAULT_TIMEZONE, get_now
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
 
@@ -334,12 +335,30 @@ class TrafficStationManager(StationManager, ABC):
         :return: The resulting TrafficMeasureCollection containing the traffic data.
         """
 
+        def _fetch(station):
+            return self._connector_collector.traffic.get_measures(
+                from_date=from_date, to_date=to_date, station=station
+            )
+
         t0 = time.monotonic()
         res = []
-        for station in stations:
-            res.extend(self._connector_collector.traffic.get_measures(from_date=from_date, to_date=to_date,
-                                                                      station=station))
-        logger.info(f"Traffic download: {len(stations)} stations → {len(res)} measures in {time.monotonic()-t0:.1f}s")
+        failed = []
+        with ThreadPoolExecutor(max_workers=ODH_PARALLEL_REQUESTS) as executor:
+            future_to_station = {executor.submit(_fetch, s): s for s in stations}
+            for future in as_completed(future_to_station):
+                station = future_to_station[future]
+                exc = future.exception()
+                if exc is not None:
+                    logger.error(f"[{station.code}] Traffic download failed: {exc}")
+                    failed.append(station.code)
+                else:
+                    res.extend(future.result())
+        if failed:
+            raise RuntimeError(
+                f"Traffic download failed for {len(failed)}/{len(stations)} station(s): {failed}"
+            )
+        logger.info(f"Traffic download: {len(stations)} stations → {len(res)} measures in {time.monotonic()-t0:.1f}s "
+                    f"(parallel={ODH_PARALLEL_REQUESTS})")
         return res
 
     def _compute_and_upload_data(self, start_date: datetime, to_date: datetime,
@@ -377,37 +396,29 @@ class TrafficStationManager(StationManager, ABC):
         :param stations: The list of stations to process.
         """
 
-        if self._checkpoint_cache is not None:
-            for station in stations:
-                checkpoint = self._checkpoint_cache.get(
-                    ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
-                if checkpoint and checkpoint.checkpoint_dt:
-                    logger.info(f"[{station.code}] Cache found on manager [{self._get_manager_code()}]: "
-                                f"[{checkpoint.checkpoint_dt}]; comparing with {to_date.isoformat()}")
-                latest_date = self._get_latest_date(connector=self.get_input_connector(), stations=[station])
-                logger.info(f"[{station.code}] Latest date on [{type(self.get_input_connector()).__name__}]: "
-                            f"{latest_date.isoformat()}")
-                min_datetime = min(to_date, latest_date, DEFAULT_TIMEZONE.localize(get_now()))
-                logger.info(f"Looking for min datetime among 'to_date' {to_date}, 'latest_date' {latest_date}, "
-                            f"'now' {DEFAULT_TIMEZONE.localize(get_now())} > {min_datetime}")
-                if checkpoint is None or checkpoint.checkpoint_dt is None \
-                        or checkpoint.checkpoint_dt.date() < min_datetime.date():
-                    logger.info(
-                        f"[{station.code}] Caching [{min_datetime.isoformat()}] on manager [{self._get_manager_code()}]")
-                    self._checkpoint_cache.set(
-                        ComputationCheckpoint(
-                            station_code=station.code,
-                            checkpoint_dt=min_datetime,
-                            manager_code=self._get_manager_code()
-                        )
+        if self._checkpoint_cache is None:
+            logger.info("Cache unavailable, unable to cache date.")
+            return
+
+        for station in stations:
+            checkpoint = self._checkpoint_cache.get(
+                ComputationCheckpoint.get_id_for_station(station, self._get_manager_code()))
+            if checkpoint and checkpoint.checkpoint_dt:
+                logger.info(f"[{station.code}] Cache found on manager [{self._get_manager_code()}]: "
+                            f"[{checkpoint.checkpoint_dt}]; comparing with {to_date.isoformat()}")
+            if checkpoint is None or checkpoint.checkpoint_dt is None \
+                    or checkpoint.checkpoint_dt.date() < to_date.date():
+                logger.info(
+                    f"[{station.code}] Caching [{to_date.isoformat()}] on manager [{self._get_manager_code()}]")
+                self._checkpoint_cache.set(
+                    ComputationCheckpoint(
+                        station_code=station.code,
+                        checkpoint_dt=to_date,
+                        manager_code=self._get_manager_code()
                     )
-                else:
-                    if checkpoint and checkpoint.checkpoint_dt and checkpoint.checkpoint_dt > latest_date:
-                        logger.info(f"[{station.code}] Cache available but cache writing skipped as latest date is prior to checkpoint.")
-                    else:
-                        logger.info(f"[{station.code}] Cache available but cache writing skipped.")
-        else:
-            logger.info(f"Cache unavailable, unable to cache date.")
+                )
+            else:
+                logger.info(f"[{station.code}] Cache writing skipped, checkpoint already at or beyond {to_date.date()}.")
 
     def run_computation(self,
                         stations: List[TrafficSensorStation],
