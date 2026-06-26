@@ -41,7 +41,7 @@ class Station:
         history_len = history[history['station'] == self.ID].shape[0]
         if self.ID not in history['station'].values or history_len < 10:
             if self.ID not in chilometriche.keys():
-                logger.info(
+                logger.debug(
                     f'{self.ID:<4} {self.direction:<4} no history, no information about position --> skip layer 1, 1.1, 2')
                 self.skip_validation = True
                 self.layer1 = None
@@ -53,7 +53,7 @@ class Station:
                 nearest = self.nearest_stations_L1(chilometriche, history, N)
                 history_data = history[(history['station'].isin(nearest)) & (history['lane'].isin(self.lane))]
                 history_data = history_data.groupby(['date', 'lane', 'daytype'])['total_traffic'].mean().reset_index()
-                logger.info(f'{self.ID:<4} {self.direction:<4} no history, get statistics from {nearest} stations')
+                logger.debug(f'{self.ID:<4} {self.direction:<4} no history, get statistics from {nearest} stations')
         else:
             history_data = history[(history['station'] == self.ID) & (history['lane'].isin(self.lane))]
             logger.debug(f'{self.ID:<4} {self.direction:<4}')
@@ -79,7 +79,7 @@ class Station:
                              f"containing {layer2_hist[layer2_hist['ratio'].isna()].shape[0]} NaN values "
                              f"and {layer2_hist[np.isfinite(layer2_hist).all(1)].shape[0]} infinite values")
         else:
-            logger.info(f'{self.ID:<4} {self.direction:<4} no lane history --> skip layer 2 validation')
+            logger.debug(f'{self.ID:<4} {self.direction:<4} no lane history --> skip layer 2 validation')
             self.layer2 = None
             self.skip_l2_validation = True
 
