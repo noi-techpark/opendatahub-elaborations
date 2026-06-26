@@ -103,7 +103,7 @@ def main() -> None:
             logger.exception("Failed to run pollution dispersal computation")
             raise
 
-        new_start = manager.get_starting_date(
+        new_start, _ = manager.get_starting_date(
             manager.get_output_connector(), manager.get_input_connector(),
             stations_to_process, min_from_date, ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL,
             keep_looking_for_input_data=False,

@@ -78,7 +78,7 @@ def main() -> None:
         # Check whether a full batch period elapsed during this run, meaning new data has
         # arrived that wasn't covered by max_to_date. Uses keep_looking_for_input_data=False
         # so it reads checkpoints directly without scanning forward (fast path).
-        new_start = manager.get_starting_date(
+        new_start, _ = manager.get_starting_date(
             manager.get_output_connector(), manager.get_input_connector(),
             stations, min_from_date, ODH_COMPUTATION_BATCH_SIZE_VALIDATION,
             keep_looking_for_input_data=False,

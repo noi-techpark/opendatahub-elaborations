@@ -19,7 +19,7 @@ from common.data_model import TrafficSensorStation, DataType
 from common.data_model.common import MeasureType, Provenance, Measure
 from common.data_model.entry import GenericEntry
 from common.manager.station import StationManager
-from common.settings import ODH_MINIMUM_STARTING_DATE, ODH_PARALLEL_REQUESTS, DEFAULT_TIMEZONE, get_now
+from common.settings import ODH_MINIMUM_STARTING_DATE, ODH_MAX_LOOKBACK_DAYS, ODH_PARALLEL_REQUESTS, DEFAULT_TIMEZONE, get_now
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
 
@@ -91,20 +91,12 @@ class TrafficStationManager(StationManager, ABC):
 
     def get_starting_date(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector | None,
                           stations: List[TrafficSensorStation], min_from_date: datetime, batch_size: int,
-                          keep_looking_for_input_data: bool, output_data_types: list[DataType] = None) -> datetime:
+                          keep_looking_for_input_data: bool, output_data_types: list[DataType] = None,
+                          ) -> Tuple[Optional[datetime], Optional[datetime]]:
         """
-        Returns the starting date for further processing, even managing some fallback values if necessary.
-
-        :param output_connector: The connector used to retrieve latest previously processed data.
-        :param input_connector: The connector used to retrieve the next data ready to be processed.
-        :param stations: The list of traffic stations to query.
-        :param min_from_date: The minimum date to start from.
-        :param batch_size: The size of the batch (in days) to be extracted.
-        :param keep_looking_for_input_data: If input data has no data, updates checkpoint and goes on looking for data:
-                                            Useful to find the first traffic data for a station on validation
-                                            To be avoided when there are no validation data on pollution (wait for them)
-        :param output_data_types: The data types to filter the output measures.
-        :return: Computation starting date.
+        Returns (min_start_date, max_start_date) across all stations.
+        min_start_date is the earliest date any station needs processing from.
+        max_start_date is the latest date any station needs processing from (i.e. the most-caught-up station).
         """
 
         if stations and len(stations) == 1:
@@ -113,7 +105,9 @@ class TrafficStationManager(StationManager, ABC):
         else:
             logger.info(f"Looking for latest measures available on [{type(output_connector).__name__}] "
                         f"for {_get_stations_on_logs(stations)} ")
-        from_date_across_stations = None
+        min_date = None
+        max_date = None
+        min_station = None
         for station in stations:
             # see https://github.com/noi-techpark/opendatahub-elaborations/issues/38
             # for cctv camera sensors, use a hardcoded minimum date, since before that point the data is not reliable
@@ -126,12 +120,23 @@ class TrafficStationManager(StationManager, ABC):
 
             if from_date is not None and from_date.tzinfo is None:
                 from_date = DEFAULT_TIMEZONE.localize(from_date)
-            if from_date_across_stations is not None and from_date_across_stations.tzinfo is None:
-                from_date_across_stations = DEFAULT_TIMEZONE.localize(from_date_across_stations)
-            if from_date_across_stations is None or from_date < from_date_across_stations:
-                from_date_across_stations = from_date
+            if min_date is not None and min_date.tzinfo is None:
+                min_date = DEFAULT_TIMEZONE.localize(min_date)
+            if min_date is None or from_date < min_date:
+                min_date = from_date
+                min_station = station.code
+            if max_date is None or from_date > max_date:
+                max_date = from_date
 
-        return from_date_across_stations
+        if min_station and max_date and len(stations) > 1:
+            days_behind = (max_date - min_date).days
+            if days_behind > batch_size:
+                logger.info(
+                    f"Station [{min_station}] is {days_behind} day(s) behind the most-caught-up station "
+                    f"({min_date.date()} vs {max_date.date()})"
+                )
+
+        return min_date, max_date
 
     def _iterate_while_data_found(self, output_connector: ODHBaseConnector, input_connector: ODHBaseConnector,
                                   station: TrafficSensorStation, min_from_date: datetime, batch_size: int,
@@ -465,9 +470,19 @@ class TrafficStationManager(StationManager, ABC):
 
         t_run = time.monotonic()
         t0 = t_run
-        start_date = self.get_starting_date(self.get_output_connector(), self.get_input_connector(),
-                                            stations, min_from_date, batch_size, keep_looking_for_input_data)
+        start_date, max_start_date = self.get_starting_date(self.get_output_connector(), self.get_input_connector(),
+                                                            stations, min_from_date, batch_size, keep_looking_for_input_data)
         logger.info(f"Start date determination: {time.monotonic()-t0:.1f}s -> {start_date.isoformat() if start_date else 'None'}")
+
+        if start_date and max_start_date and ODH_MAX_LOOKBACK_DAYS is not None:
+            lookback_floor = max_start_date - timedelta(days=ODH_MAX_LOOKBACK_DAYS)
+            if start_date < lookback_floor:
+                logger.warning(
+                    f"Start date {start_date.date()} is more than {ODH_MAX_LOOKBACK_DAYS} day(s) behind "
+                    f"the most-caught-up station ({max_start_date.date()}); "
+                    f"capping at {lookback_floor.date()}"
+                )
+                start_date = lookback_floor
 
         if start_date is None or start_date == max_to_date:
             logger.info(f"Not computing data for stations {_get_stations_on_logs(stations)} in interval "
