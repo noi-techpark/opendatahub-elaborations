@@ -121,7 +121,7 @@ def main() -> None:
             f"after iteration {iteration}, running again"
         )
 
-    date_range = (f"{total.date_from.date()} → {total.date_to.date()}"
+    date_range = (f"{total.date_from.date()} -> {total.date_to.date()}"
                   if total.date_from and total.date_to else "no data")
     logger.info(
         f"Run summary: stations={len(stations_to_process)}  iterations={iteration}  "

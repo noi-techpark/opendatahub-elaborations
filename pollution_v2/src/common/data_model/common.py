@@ -77,7 +77,6 @@ class DataType:
             "rtype": self.data_type,
             "unit": self.unit,
             "metadata": self.metadata,
-            "_t": "it.bz.idm.bdp.dto.DataTypeDto"
         }
 
 
@@ -108,7 +107,6 @@ class Measure:
             "timestamp": self.valid_time.timestamp() * 1000,
             "value": self.value,
             "period": self.period,
-            "_t": "it.bz.idm.bdp.dto.SimpleRecordDto"
         }
 
 
