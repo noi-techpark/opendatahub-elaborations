@@ -52,15 +52,9 @@ class PollutionDispersalODHConnector(ODHBaseConnector[PollutionDispersalMeasure,
                          requests_max_retries,
                          requests_sleep_time,
                          requests_retry_sleep_time,
-                         period)
-
-    @staticmethod
-    def build_station(raw_station: dict) -> Station:
-        return Station.from_odh_repr(raw_station)
-
-    @staticmethod
-    def build_measure(raw_measure: dict) -> PollutionDispersalMeasure:
-        return PollutionDispersalMeasure.from_odh_repr(raw_measure)
+                         period,
+                         build_station=Station.from_odh_repr,
+                         build_measure=PollutionDispersalMeasure.from_odh_repr)
 
     def _build_where_conds(self, station: Optional[Station or str] = None,
                             period_to_include: int = None, conditions: list[str] = None) -> List[str]:

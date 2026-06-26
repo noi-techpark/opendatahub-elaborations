@@ -6,10 +6,9 @@ from __future__ import absolute_import, annotations
 
 import logging
 import time
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional, Generic, List
+from typing import Callable, Optional, Generic, List
 
 import requests
 from keycloak import KeycloakOpenID
@@ -88,7 +87,7 @@ class ApiException(Exception):
         self.message = message
 
 
-class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
+class ODHBaseConnector(Generic[MeasureType, StationType]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -107,7 +106,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                  requests_max_retries: int,
                  requests_sleep_time: float,
                  requests_retry_sleep_time: float,
-                 period: Optional[int] = None):
+                 period: Optional[int] = None,
+                 build_station: Optional[Callable[[dict], StationType]] = None,
+                 build_measure: Optional[Callable[[dict], MeasureType]] = None):
 
         self._authentication_url = authentication_url
         self._base_reader_url = base_reader_url
@@ -126,6 +127,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         self._requests_sleep_time = requests_sleep_time
         self._requests_retry_sleep_time = requests_retry_sleep_time
         self._period = period
+        self._build_station = build_station
+        self._build_measure = build_measure
 
         self._keycloak_openid = KeycloakOpenID(server_url=self._authentication_url,
                                                client_id=self._client_id,
@@ -277,27 +280,11 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         return results
 
-    @staticmethod
-    @abstractmethod
-    def build_station(raw_station: dict) -> StationType:
-        """
-        Build a station from ODH representation.
+    def build_station(self, raw_station: dict) -> StationType:
+        return self._build_station(raw_station)
 
-        :param raw_station: A dictionary which contains the ODH json representation of a station
-        :return:
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def build_measure(raw_measure: dict) -> MeasureType:
-        """
-        Build a measure from ODH representation.
-
-        :param raw_measure: A dictionary which contains the ODH json representation of a measure
-        :return:
-        """
-        raise NotImplementedError
+    def build_measure(self, raw_measure: dict) -> MeasureType:
+        return self._build_measure(raw_measure)
 
     def get_station_list(self) -> list[StationType]:
         """
