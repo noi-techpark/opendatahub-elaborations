@@ -34,7 +34,6 @@ import tensorflow as tf
 
 from tensorflow import keras
 from tensorflow.keras import layers
-from tensorflow.keras.layers.experimental import preprocessing
 
 from parking_utils import *
 
@@ -117,7 +116,7 @@ test_labels = test_features.pop(COLS - 1)
 
 # normalization
 
-normalizer = preprocessing.Normalization()
+normalizer = layers.Normalization()
 normalizer.adapt(np.array(train_features))
 
 
