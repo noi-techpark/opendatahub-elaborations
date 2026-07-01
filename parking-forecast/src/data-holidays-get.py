@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# SPDX-FileCopyrightText: 2021-2025 STA AG <info@sta.bz.it>
-# SPDX-FileContributor: Chris Mair <chris@1006.org>
+# SPDX-FileCopyrightText: 2026 NOI Techpark <digital@noi.bz.it>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
-
 
 import requests
 from datetime import date, timedelta
@@ -67,7 +65,7 @@ with open(csv_file, 'w', newline='') as f:
         is_school_holiday = current in school_holiday_dates
         is_public_holiday = current in public_holiday_dates
         is_school = 0 if (is_weekend or is_school_holiday or is_public_holiday) else 1
-        is_holiday = 1 if is_public_holiday else 0
+        is_holiday = 1 if (is_public_holiday or is_weekend) else 0
         writer.writerow([current, is_school, is_holiday])
         current += timedelta(days=1)
 
