@@ -18,6 +18,7 @@ RUN <<EOF bash
     source /conda/etc/profile.d/conda.sh
     conda activate
     conda create --name tf -y --file requirements.txt
+    conda run -n tf pip install tensorflow==2.13.0
 EOF
 
 COPY infrastructure/docker/entrypoint.sh /entrypoint.sh
