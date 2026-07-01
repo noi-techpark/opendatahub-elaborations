@@ -133,7 +133,7 @@ def do_linear():
     ])
 
     linear_model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate=0.01),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
         loss='mean_absolute_error')
 
     linear_model.summary()
@@ -190,7 +190,7 @@ def do_dnn():
     dnn_model.compile(
         # changed optimizer from Adam to SGD:
         # optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-        optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.8, decay=0.005),
+        optimizer=tf.keras.optimizers.legacy.SGD(learning_rate=0.01, momentum=0.8, decay=0.005),
         loss = 'mean_absolute_error'
     )
 
