@@ -40,6 +40,7 @@ import tensorflow as tf
 
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras.layers.experimental import preprocessing
 
 from parking_utils import *
 

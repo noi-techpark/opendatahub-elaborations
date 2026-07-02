@@ -34,6 +34,7 @@ import tensorflow as tf
 
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras.layers.experimental import preprocessing
 
 from parking_utils import *
 
@@ -116,7 +117,7 @@ test_labels = test_features.pop(COLS - 1)
 
 # normalization
 
-normalizer = layers.Normalization()
+normalizer = preprocessing.Normalization()
 normalizer.adapt(np.array(train_features))
 
 
@@ -133,7 +134,7 @@ def do_linear():
     ])
 
     linear_model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.01),
+        optimizer=tf.optimizers.Adam(learning_rate=0.01),
         loss='mean_absolute_error')
 
     linear_model.summary()
@@ -190,7 +191,7 @@ def do_dnn():
     dnn_model.compile(
         # changed optimizer from Adam to SGD:
         # optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-        optimizer=tf.keras.optimizers.legacy.SGD(learning_rate=0.01, momentum=0.8, decay=0.005),
+        optimizer=tf.keras.optimizers.SGD(learning_rate=0.01, momentum=0.8, decay=0.005),
         loss = 'mean_absolute_error'
     )
 

@@ -17,8 +17,7 @@ COPY src/requirements.txt .
 RUN <<EOF bash
     source /conda/etc/profile.d/conda.sh
     conda activate
-    conda create --name tf -y python=3.12 --file requirements.txt
-    conda run -n tf pip install tensorflow==2.19.1
+    conda create --name tf -y --file requirements.txt
 EOF
 
 COPY infrastructure/docker/entrypoint.sh /entrypoint.sh
