@@ -116,74 +116,70 @@ print("unroll car parks and build training data:")
 #  "occmean"     ->  54 + hourN-1 + parkN-1                     running average of the last 7 days
 #  "occ"         ->  55 + hourN-1 + parkN-1                     current occupation (response)
 
-mat_out = np.empty((mat_in.shape[0] * parkN, 55 + hourN-1 + parkN-1 + 1), dtype="float32")
-mat_out[:] = np.NaN
+ncols = 55 + hourN-1 + parkN-1 + 1
 
 t0 = time.time()
 
-ox = 0
-for ix in range(0, mat_in.shape[0]):
-    if ix == CUTOFF_IX:
-        break
-    for park in range(0, parkN):
-        mat_out[ox, 0] = mat_in[ix, 2]                                                                  # "is_school"
-        mat_out[ox, 1] = mat_in[ix, 3]                                                                  # "is_holiday"
-        if HOUR_ONEHOT:                                                                                 # "hour"
-            mat_out[ox, 2:2+hourN] = onehot(mat_in[ix, 0], HOUR_COLS)
-        else:
-            mat_out[ox, 2] = mat_in[ix, 0]
-        mat_out[ox, 3+hourN-1:9+hourN] = onehot(mat_in[ix, 1], 7)                                       # "dow"
-        if USE_MONTH:
-            mat_out[ox, 10 + hourN-1:21 + hourN] = onehot(mat_in[ix, 4] - 1, 12)                        # "month"
-        else:
-            mat_out[ox, 10 + hourN - 1:21 + hourN] = 1.0
-        if USE_FORECAST:
-            mat_out[ox, 22 + hourN - 1:48 + hourN - 1] = onehot(mat_in[ix, 5], 26)                      # "symbol_value"
-        else:
-            mat_out[ox, 22 + hourN - 1:48 + hourN - 1] = 1.0
-        mat_out[ox, 48+hourN-1:48+hourN-1+parkN] = onehot(park, parkN)                                  # "parkIndex"
-        if ix >= 2016:
-            mat_out[ox, 49+hourN-1+parkN-1] = mat_in[ix - 2016, 6 + park]                               # "occlag2016"
-        if ix >= 288:
-            mat_out[ox, 50+hourN-1+parkN-1] = mat_in[ix -  288, 6 + park]                               # "occlag288"
-        if ix >= 12:
-            mat_out[ox, 51+hourN-1+parkN-1] = mat_in[ix -   12, 6 + park]                               # "occlag12"
-        if ix >= 2:
-            mat_out[ox, 52+hourN-1+parkN-1] = mat_in[ix -    2, 6 + park]                               # "occlag2"
-        if ix >= 1:
-            mat_out[ox, 53+hourN-1+parkN-1] = mat_in[ix -    1, 6 + park]                               # "occlag1"
-        if USE_7DAY_MEAN:
-            mat_out[ox, 54+hourN-1+parkN-1] = np.nanmean(mat_in[max(ix - 2016, 0):ix + 1, 6+park])      # "occmean"
-        else:
-            mat_out[ox, 54 + hourN - 1 + parkN - 1] = 1.0
+total_rows_written = 0
 
-        mat_out[ox, 55+hourN-1+parkN-1] = mat_in[ix, 6 + park]                                          # "occ"
-        ox += 1
+OUT_PATH = "data-predictors/trainingdata_nonan.csv"
+TMP_PATH = OUT_PATH + ".tmp"
 
-ox_end = ox
+if os.path.exists(TMP_PATH):
+    os.remove(TMP_PATH)
 
-t1 = time.time()
+print("save to %s:" % OUT_PATH)
 
-print("  mapped %d out of %d input rows to %d output rows in %.2f seconds" % (CUTOFF_IX, mat_in.shape[0], ox, (t1 - t0)) )
-if CUTOFF_IX * parkN != ox:
-    raise Exception("assert failed")
+try:
+    with open(TMP_PATH, "w") as f:
+        for park in range(0, parkN):
+            mat_park = np.empty((CUTOFF_IX, ncols), dtype="float32")
+            mat_park[:] = np.NaN
 
-# ----------------------------------------------------------------------------
-# save
+            for ix in range(0, CUTOFF_IX):
+                mat_park[ix, 0] = mat_in[ix, 2]                                                                  # "is_school"
+                mat_park[ix, 1] = mat_in[ix, 3]                                                                  # "is_holiday"
+                if HOUR_ONEHOT:                                                                                   # "hour"
+                    mat_park[ix, 2:2+hourN] = onehot(mat_in[ix, 0], HOUR_COLS)
+                else:
+                    mat_park[ix, 2] = mat_in[ix, 0]
+                mat_park[ix, 3+hourN-1:9+hourN] = onehot(mat_in[ix, 1], 7)                                       # "dow"
+                if USE_MONTH:
+                    mat_park[ix, 10 + hourN-1:21 + hourN] = onehot(mat_in[ix, 4] - 1, 12)                        # "month"
+                else:
+                    mat_park[ix, 10 + hourN - 1:21 + hourN] = 1.0
+                if USE_FORECAST:
+                    mat_park[ix, 22 + hourN - 1:48 + hourN - 1] = onehot(mat_in[ix, 5], 26)                      # "symbol_value"
+                else:
+                    mat_park[ix, 22 + hourN - 1:48 + hourN - 1] = 1.0
+                mat_park[ix, 48+hourN-1:48+hourN-1+parkN] = onehot(park, parkN)                                  # "parkIndex"
+                if ix >= 2016:
+                    mat_park[ix, 49+hourN-1+parkN-1] = mat_in[ix - 2016, 6 + park]                               # "occlag2016"
+                if ix >= 288:
+                    mat_park[ix, 50+hourN-1+parkN-1] = mat_in[ix -  288, 6 + park]                               # "occlag288"
+                if ix >= 12:
+                    mat_park[ix, 51+hourN-1+parkN-1] = mat_in[ix -   12, 6 + park]                               # "occlag12"
+                if ix >= 2:
+                    mat_park[ix, 52+hourN-1+parkN-1] = mat_in[ix -    2, 6 + park]                               # "occlag2"
+                if ix >= 1:
+                    mat_park[ix, 53+hourN-1+parkN-1] = mat_in[ix -    1, 6 + park]                               # "occlag1"
+                if USE_7DAY_MEAN:
+                    mat_park[ix, 54+hourN-1+parkN-1] = np.nanmean(mat_in[max(ix - 2016, 0):ix + 1, 6+park])      # "occmean"
+                else:
+                    mat_park[ix, 54 + hourN - 1 + parkN - 1] = 1.0
 
-t0 = time.time()
+                mat_park[ix, 55+hourN-1+parkN-1] = mat_in[ix, 6 + park]                                          # "occ"
 
-print("save to data-predictors/trainingdata_nonan.csv:")
+            mat_park = mat_park[~np.isnan(mat_park).any(axis=1)]       # remove NaNs
+            np.savetxt(f, mat_park, fmt="%.0f", delimiter=",")
+            total_rows_written += mat_park.shape[0]
+            print("  park %d: wrote %d rows" % (park, mat_park.shape[0]))
 
-# just save up to including LAST_TRAIN_TS, below are NaNs anyway
-mat_out = mat_out[:ox_end, :]
-
-# for debugging, uncomment this to save the complete data, including NaNs:
-# np.savetxt("data-predictors/trainingdata_complete.csv", mat_out, fmt="%.0f", delimiter=",")
-
-mat_out = mat_out[~np.isnan(mat_out).any(axis=1)]       # remove NaNs
-np.savetxt("data-predictors/trainingdata_nonan.csv", mat_out, fmt="%.0f", delimiter=",")
+    os.rename(TMP_PATH, OUT_PATH)
+finally:
+    if os.path.exists(TMP_PATH):
+        os.remove(TMP_PATH)
 
 t1 = time.time()
-print("  saved in %.2f seconds" % (t1 - t0))
+print("  mapped %d out of %d input rows to %d output rows across %d parks in %.2f seconds" % (CUTOFF_IX, mat_in.shape[0], total_rows_written, parkN, (t1 - t0)))
 

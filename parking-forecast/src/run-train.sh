@@ -45,7 +45,7 @@ fi
 
 echo
 echo "-> getting holidays"
-# not implemented
+./data-holidays-get.sh
 
 echo
 echo "-> getting meteo forecasts"
