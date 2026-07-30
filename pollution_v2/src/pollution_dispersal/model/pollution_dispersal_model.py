@@ -24,7 +24,7 @@ from common.model.helper import ModelHelper
 from common.settings import TMP_DIR, POLLUTION_DISPERSAL_PREDICTION_ENDPOINT, PERIOD_1HOUR, \
     POLLUTION_DISPERSAL_DOMAINS_COORDINATES_REFERENCE_SYSTEM
 
-logger = logging.getLogger("pollution_v2.pollution_connector.model.pollution_dispersal_model")
+logger = logging.getLogger("pollution_v2.pollution_dispersal.model.pollution_dispersal_model")
 
 
 class PollutionDispersalModel:

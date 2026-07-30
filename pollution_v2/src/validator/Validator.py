@@ -69,7 +69,7 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
             s.layer1_validation(params)
             if s.layer1 == False:
                 A22.layer1_not_valid_station(s)
-                logger.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 1')
+                logger.debug(f'{s.ID:<4} {s.direction:<4} not valid for layer 1')
                 if plot:
                     s.plot('layer1')
     # -------------------------------------------------------------------------
@@ -82,15 +82,15 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
             s.layer1_1_validation(params, A22)
             if s.layer1_1 == False:
                 if s in A22.layer1_not_valid:
-                    logger.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 1.1 (confirmed)')
+                    logger.debug(f'{s.ID:<4} {s.direction:<4} not valid for layer 1.1 (confirmed)')
                 else:
-                    logger.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 1.1')
+                    logger.debug(f'{s.ID:<4} {s.direction:<4} not valid for layer 1.1')
                 A22.layer1_1_not_valid_station(s)
                 if plot:
                     s.plot('layer1')
             else:
                 if s in A22.layer1_not_valid:
-                    logger.info(f'{s.ID:<4} {s.direction:<4} valid for layer 1.1 (not confirmed)')
+                    logger.debug(f'{s.ID:<4} {s.direction:<4} valid for layer 1.1 (not confirmed)')
     # -------------------------------------------------------------------------
     # Layer 2
     # -------------------------------------------------------------------------
@@ -101,7 +101,7 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
             # assegna flag di validità basato su confronto z-score con valori limite
             s.layer2_validation(params, A22)
             if s.layer2 == False:
-                logger.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 2')
+                logger.debug(f'{s.ID:<4} {s.direction:<4} not valid for layer 2')
                 A22.layer2_not_valid_station(s)
     # -------------------------------------------------------------------------
     # Layer 3
@@ -109,11 +109,11 @@ def validator(day, raw_data, history, km, station_type, config=default_config_pa
     for s in A22.station_list:
         s.layer3_validation()
         if any(not value for value in s.layer3.values()):
-            logger.info(f'{s.ID:<4} {s.direction:<4} not valid for layer 3')
+            logger.debug(f'{s.ID:<4} {s.direction:<4} not valid for layer 3')
             if plot:
                 s.plot('layer3')
             A22.layer3_not_valid_station(s)
-    logger.info('...validation complete!')
+    logger.debug('...validation complete!')
     # -----------------------------------------------------------------------------
     # Output
     # -----------------------------------------------------------------------------

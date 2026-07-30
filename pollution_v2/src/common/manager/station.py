@@ -81,14 +81,14 @@ class StationManager(ABC):
         if output_alternative_connector:
             output_connector = output_alternative_connector
 
-        logger.info(f"Posting provenance {self._provenance}")
+        logger.debug(f"Posting provenance {self._provenance}")
         if not self._provenance.provenance_id:
             self._provenance.provenance_id = output_connector.post_provenance(self._provenance)
 
-        logger.info(f"Posting data types {self._get_data_types()}")
+        logger.debug(f"Posting data types {self._get_data_types()}")
         if self._create_data_types:
             output_connector.post_data_types(self._get_data_types(), self._provenance)
 
         data = self._build_from_entries(input_entries)
-        logger.info(f"Posting measures {len(data.measures)}")
+        logger.debug(f"Posting measures {len(data.measures)}")
         output_connector.post_measures(data.measures)

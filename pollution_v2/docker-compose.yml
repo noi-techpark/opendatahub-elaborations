@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Each job runs on its own cron schedule via supercronic.
+# Set CRON_SCHEDULE in the environment (or .env) to override the default schedules.
+#
+# The ./data directory is bind-mounted at /app/data inside each container and holds
+# the SQLite checkpoint cache (checkpoint_cache.db).  Delete that file to reset all
+# computation checkpoints:
+#   rm -f ./data/checkpoint_cache.db
+#
+# One-shot execution (useful for testing):
+#   docker compose run --rm validator
+#   docker compose run --rm pollution-computer
+#   docker compose run --rm road-weather
+#   docker compose run --rm pollution-dispersal
+
+services:
+
+  validator:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+      target: build
+    image: pollution-v2
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CRON_SCHEDULE: ${VALIDATOR_CRON_SCHEDULE:-0 2 * * *}
+    command: ["python", "-m", "validator.main"]
+    volumes:
+      - ./data:/app/data
+
+  pollution-computer:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+      target: build
+    image: pollution-v2
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CRON_SCHEDULE: ${POLLUTION_COMPUTER_CRON_SCHEDULE:-0 4 * * *}
+    command: ["python", "-m", "pollution_computer.main"]
+    volumes:
+      - ./data:/app/data
+
+  road-weather:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+      target: build
+    image: pollution-v2
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CRON_SCHEDULE: ${ROAD_WEATHER_CRON_SCHEDULE:-0 */3 * * *}
+    command: ["python", "-m", "road_weather.main"]
+    volumes:
+      - ./data:/app/data
+
+  pollution-dispersal:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+      target: build
+    image: pollution-v2
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CRON_SCHEDULE: ${POLLUTION_DISPERSAL_CRON_SCHEDULE:-0 * * * *}
+    command: ["python", "-m", "pollution_dispersal.main"]
+    volumes:
+      - ./data:/app/data

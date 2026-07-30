@@ -6,10 +6,9 @@ from __future__ import absolute_import, annotations
 
 import logging
 import time
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional, Generic, List
+from typing import Callable, Optional, Generic, List
 
 import requests
 from keycloak import KeycloakOpenID
@@ -88,7 +87,7 @@ class ApiException(Exception):
         self.message = message
 
 
-class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
+class ODHBaseConnector(Generic[MeasureType, StationType]):
 
     def __init__(self,
                  base_reader_url: str,
@@ -107,7 +106,9 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                  requests_max_retries: int,
                  requests_sleep_time: float,
                  requests_retry_sleep_time: float,
-                 period: Optional[int] = None):
+                 period: Optional[int] = None,
+                 build_station: Optional[Callable[[dict], StationType]] = None,
+                 build_measure: Optional[Callable[[dict], MeasureType]] = None):
 
         self._authentication_url = authentication_url
         self._base_reader_url = base_reader_url
@@ -126,6 +127,8 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         self._requests_sleep_time = requests_sleep_time
         self._requests_retry_sleep_time = requests_retry_sleep_time
         self._period = period
+        self._build_station = build_station
+        self._build_measure = build_measure
 
         self._keycloak_openid = KeycloakOpenID(server_url=self._authentication_url,
                                                client_id=self._client_id,
@@ -145,7 +148,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                                             grant_type=self._grant_type)
             )
         elif self._token.refresh_token:
-            logger.info("Refresh current access token")
+            logger.debug("Refresh current access token")
             self._token = Token.from_repr(
                 self._keycloak_openid.refresh_token(self._token.refresh_token)
             )
@@ -277,27 +280,11 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         return results
 
-    @staticmethod
-    @abstractmethod
-    def build_station(raw_station: dict) -> StationType:
-        """
-        Build a station from ODH representation.
+    def build_station(self, raw_station: dict) -> StationType:
+        return self._build_station(raw_station)
 
-        :param raw_station: A dictionary which contains the ODH json representation of a station
-        :return:
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def build_measure(raw_measure: dict) -> MeasureType:
-        """
-        Build a measure from ODH representation.
-
-        :param raw_measure: A dictionary which contains the ODH json representation of a measure
-        :return:
-        """
-        raise NotImplementedError
+    def build_measure(self, raw_measure: dict) -> MeasureType:
+        return self._build_measure(raw_measure)
 
     def get_station_list(self) -> list[StationType]:
         """
@@ -330,7 +317,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         req_data_types = data_types if data_types else self._measure_types
         if data_types:
-            logger.info(f"Retrieving latest measures for data types [{data_types}]")
+            logger.debug(f"Retrieving latest measures for data types [{data_types}]")
         raw_measures = self._get_result_list(
             path=f"/v2/flat,node/{self._station_type}/{','.join(req_data_types)}/latest",
             query_params=query_params
@@ -484,7 +471,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
         :param data_types: The data types to be created.
         :param provenance: The provenance related to the data type to be created.
         """
-        logger.info("Creating data types")
+        logger.debug("Creating data types")
         if not self._max_batch_size or (self._max_batch_size and self._max_batch_size >= len(data_types)):
             self._post_data_type_batch(data_types, provenance)
         else:
@@ -553,7 +540,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                                  measures_dict[provenance_id][station_code][data_type_name]]
                     }
 
-            logger.info(data_map)
+            logger.debug(data_map)
             self._post_request(f"/json/pushRecords/{self._station_type}", data_map)
 
     def post_measures(self, measures: List[MeasureType]) -> None:
@@ -562,7 +549,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
 
         :param measures: The measures to be created.
         """
-        logger.info("Creating measures")
+        logger.debug("Creating measures")
         measures.sort(key=lambda x: x.valid_time)  # Send data to ODH in chronological order
         if not self._max_batch_size or (self._max_batch_size and self._max_batch_size >= len(measures)):
             self._post_measure_batch(measures)
@@ -600,7 +587,7 @@ class ODHBaseConnector(ABC, Generic[MeasureType, StationType]):
                                    "syncState": True,
                                    "onlyActivation": False
                                })
-            logger.info([station.to_odh_repr() for station in stations])
+            logger.debug([station.to_odh_repr() for station in stations])
 
     def post_stations(self, stations: List[Station], provenance: Provenance) -> None:
         """

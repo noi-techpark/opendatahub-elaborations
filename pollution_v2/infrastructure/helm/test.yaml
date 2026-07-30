@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+image:
+  repository: ""  # injected by CI
+  tag: ""         # injected by CI
+
+envSecret:
+  ODH_CLIENT_SECRET: ""  # injected by CI
+
+env:
+  ODH_AUTHENTICATION_URL: "https://auth.opendatahub.testingmachine.eu/auth/"
+  ODH_BASE_READER_URL: "https://mobility.api.opendatahub.testingmachine.eu"
+  ODH_BASE_WRITER_URL: "https://mobility.share.opendatahub.testingmachine.eu"
+  ODH_CLIENT_ID: "odh-a22-dataprocessor"
+  DATATYPE_PREFIX: "mig-"
+  PROVENANCE_VERSION: ""  # injected by CI
+
+jobs:
+  validator:
+    schedule: "0 2 * * *"
+    command: ["python", "-m", "validator.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "600m"
+        memory: "600Mi"
+      limits:
+        memory: "1Gi"
+
+  pollution-computer:
+    schedule: "0 4 * * *"
+    command: ["python", "-m", "pollution_computer.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "512Mi"
+      limits:
+        memory: "1Gi"

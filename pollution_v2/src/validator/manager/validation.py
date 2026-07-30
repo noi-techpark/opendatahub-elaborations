@@ -5,6 +5,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
+import time
 from datetime import datetime, timedelta
 from typing import List
 
@@ -54,7 +55,7 @@ class ValidationManager(TrafficStationManager):
         # The daily sums are at (default) 00:00 UTC of the following day, so we have to convert timezone and look ahead 1 day
         from_date = HISTORY_TIMEZONE.localize(datetime.combine(from_date.astimezone(HISTORY_TIMEZONE), datetime.max.time()))
         to_date = HISTORY_TIMEZONE.localize(datetime.combine((to_date.astimezone(HISTORY_TIMEZONE) + timedelta(days=1)), datetime.max.time()))
-        logger.info(f"Download history data from date [{from_date.isoformat()}]")
+        logger.debug(f"Download history data from date [{from_date.isoformat()}]")
 
         measures = []
         from_date_on_month = from_date.replace(day=1)
@@ -65,7 +66,7 @@ class ValidationManager(TrafficStationManager):
         for i in range(0, 4):
             from_date_to_use = from_date_on_month.replace(year=from_date_on_month.year-i)
             to_date_to_use = min(to_date_on_month.replace(year=to_date_on_month.year-i), to_date)
-            logger.info(f"Getting measures for interval [{from_date_to_use.isoformat()}] - [{to_date_to_use.isoformat()}]")
+            logger.debug(f"Getting measures for interval [{from_date_to_use.isoformat()}] - [{to_date_to_use.isoformat()}]")
             measures.extend(self._connector_collector.history.get_measures(from_date=from_date_to_use,
                                                                            to_date=to_date_to_use))
 
@@ -78,7 +79,9 @@ class ValidationManager(TrafficStationManager):
         traffic_data = []
         try:
             # no station as for history every station is needed
+            t0 = time.monotonic()
             history_data = self._download_history_data(start_date, to_date)
+            logger.info(f"History download: {len(history_data.measures)} measures in {time.monotonic()-t0:.1f}s")
             # no station as parameter as validation needs data from all stations
             traffic_data = self._download_traffic_data(start_date, to_date, stations)
         except Exception as e:
@@ -89,8 +92,10 @@ class ValidationManager(TrafficStationManager):
 
         if history_data and traffic_data:
             model = ValidationModel()
-            return model.compute_data(history_data, TrafficMeasureCollection(traffic_data),
-                                      stations)
+            t0 = time.monotonic()
+            result = model.compute_data(history_data, TrafficMeasureCollection(traffic_data), stations)
+            logger.info(f"Model computation: {len(result)} entries in {time.monotonic()-t0:.1f}s")
+            return result
 
         return []
 
