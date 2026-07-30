@@ -46,7 +46,7 @@ class ValidationModel:
         history_dates = {(measure.valid_time-timedelta(days=1)).date() for measure in history.measures}
         traffic_dates = {measure.valid_time.date() for measure in traffic.measures}
         
-        logger.info(f"Considering total of {len(history_dates)} history and {len(traffic_dates)} traffic dates")
+        logger.debug(f"Considering total of {len(history_dates)} history and {len(traffic_dates)} traffic dates")
 
         traffic_missing_dates = history_dates.difference(traffic_dates)
         if len(traffic_missing_dates) > 0:
@@ -60,7 +60,7 @@ class ValidationModel:
                            f"records will not be processed")
 
         run_on_dates = history_dates.intersection(traffic_dates)
-        logger.info(f"Ready to process validation on the following dates [{sorted(run_on_dates)}]")
+        logger.debug(f"Ready to process validation on the following dates [{sorted(run_on_dates)}]")
 
         traffic_entries = traffic.get_entries()
         history_entries = history.get_entries()
@@ -71,8 +71,8 @@ class ValidationModel:
         if len(traffic_entries) > 0 and len(history_entries) > 0:
             for date in run_on_dates:
                 traffic_df = ModelHelper.get_traffic_dataframe_for_validation(traffic_entries, date)
-                logger.info(f"Starting validation on {len(traffic_df)} traffic records on station "
-                            f"[{_get_station_on_logs(stations)}] on [{date.isoformat()}]")
+                logger.debug(f"Starting validation on {len(traffic_df)} traffic records on station "
+                             f"[{_get_station_on_logs(stations)}] on [{date.isoformat()}]")
                 history_df = ModelHelper.get_history_dataframe(history_entries, date)
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,
                                    stations_df[["station_id", "km"]].drop_duplicates().set_index("station_id")["km"].to_dict(),
@@ -80,7 +80,7 @@ class ValidationModel:
                 lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), PERIOD_10MIN, traffic.get_stations())
                 res.extend(lst)
         else:
-            logger.info("0 validated entries found skipping pollution computation")
+            logger.warning("0 validated entries found skipping pollution computation")
             return []
 
         return res

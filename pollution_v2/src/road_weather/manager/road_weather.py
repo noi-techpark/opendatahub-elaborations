@@ -156,11 +156,9 @@ class RoadWeatherManager(StationManager):
 
         return []
 
-    def run_computation_for_single_station(self, station: Station) -> None:
+    def run_computation_for_single_station(self, station: Station) -> int:
         """
-        Run the computation for a single station.
-
-        :param station: The station for which to run the computation.
+        Run the computation for a single station. Returns the number of entries uploaded.
         """
         entries = self._download_data_and_compute(station)
         self._upload_data(entries)
@@ -178,4 +176,5 @@ class RoadWeatherManager(StationManager):
                 period=1
             )
             self._upload_data([entry], self.get_output_additional_connector())
+        return len(entries)
 

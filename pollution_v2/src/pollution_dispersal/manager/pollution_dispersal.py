@@ -63,7 +63,7 @@ class PollutionDispersalManager(TrafficStationManager):
     def _build_from_entries(self, input_entries: List[PollutionDispersalEntry]) -> MeasureCollection:
         return PollutionDispersalMeasureCollection.build_from_entries(input_entries, self._provenance)
 
-    def _compute_and_upload_data(self, start_date: datetime, to_date: datetime, stations: List[TrafficSensorStation]) -> None:
+    def _compute_and_upload_data(self, start_date: datetime, to_date: datetime, stations: List[TrafficSensorStation]) -> int:
         """
         Compute and upload the data for the given stations in the given interval.
 
@@ -99,9 +99,11 @@ class PollutionDispersalManager(TrafficStationManager):
                 os.remove(self.zip_file_to_upload)
             else:
                 logger.info("No pollution dispersal zip file to upload")
+            return len(entries)
         except Exception as e:
             logger.exception(f"Unable to compute data from stations in the interval [{start_date.isoformat()}]"
                              f"- [{self.to_date_hours.isoformat()}]", exc_info=e)
+            return 0
 
     def _update_cache(self, to_date: datetime, stations: List[TrafficSensorStation]) -> None:
         """

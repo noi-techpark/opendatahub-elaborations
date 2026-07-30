@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+{{- range $jobName, $job := .Values.jobs }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name $jobName }}
+  labels:
+    {{- include "pollution-v2.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $jobName }}
+spec:
+  schedule: {{ $job.schedule | quote }}
+  concurrencyPolicy: {{ $job.concurrencyPolicy | default "Forbid" }}
+  successfulJobsHistoryLimit: {{ $job.successfulJobsHistoryLimit | default 3 }}
+  failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit | default 3 }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "pollution-v2.selectorLabels" $ | nindent 12 }}
+            app.kubernetes.io/component: {{ $jobName }}
+        spec:
+          restartPolicy: OnFailure
+          volumes:
+            - name: checkpoint-cache
+              persistentVolumeClaim:
+                claimName: {{ $.Release.Name }}-checkpoint-cache
+          containers:
+            - name: {{ $jobName }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+              imagePullPolicy: {{ $.Values.image.pullPolicy }}
+              command: {{ $job.command | toJson }}
+              volumeMounts:
+                - name: checkpoint-cache
+                  mountPath: {{ $.Values.checkpointCache.mountPath }}
+              env:
+                {{- range $key, $value := $.Values.env }}
+                - name: {{ $key }}
+                  value: {{ $value | quote }}
+                {{- end }}
+                {{- if $.Values.envSecret }}
+                {{- range $key, $value := $.Values.envSecret }}
+                - name: {{ $key }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ printf "%s-env-secret" $.Release.Name }}
+                      key: {{ $key }}
+                {{- end }}
+                {{- end }}
+              resources:
+                {{- toYaml $job.resources | nindent 16 }}
+{{- end }}
