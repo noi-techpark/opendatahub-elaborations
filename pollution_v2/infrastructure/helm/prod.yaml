@@ -25,8 +25,8 @@ jobs:
     concurrencyPolicy: Forbid
     resources:
       requests:
-        cpu: "100m"
-        memory: "512Mi"
+        cpu: "600m"
+        memory: "600Mi"
       limits:
         memory: "1Gi"
 
@@ -43,28 +43,29 @@ jobs:
       limits:
         memory: "1Gi"
 
-  road-weather:
-    schedule: "0 */3 * * *"
-    command: ["python", "-m", "road_weather.main"]
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    resources:
-      requests:
-        cpu: "50m"
-        memory: "256Mi"
-      limits:
-        memory: "512Mi"
 
-  pollution-dispersal:
-    schedule: "0 * * * *"
-    command: ["python", "-m", "pollution_dispersal.main"]
-    successfulJobsHistoryLimit: 3
-    failedJobsHistoryLimit: 3
-    concurrencyPolicy: Forbid
-    resources:
-      requests:
-        cpu: "200m"
-        memory: "512Mi"
-      limits:
-        memory: "2Gi"
+  # road-weather:
+  #   schedule: "0 */3 * * *"
+  #   command: ["python", "-m", "road_weather.main"]
+  #   successfulJobsHistoryLimit: 3
+  #   failedJobsHistoryLimit: 3
+  #   concurrencyPolicy: Forbid
+  #   resources:
+  #     requests:
+  #       cpu: "50m"
+  #       memory: "256Mi"
+  #     limits:
+  #       memory: "512Mi"
+
+  # pollution-dispersal:
+  #   schedule: "0 * * * *"
+  #   command: ["python", "-m", "pollution_dispersal.main"]
+  #   successfulJobsHistoryLimit: 3
+  #   failedJobsHistoryLimit: 3
+  #   concurrencyPolicy: Forbid
+  #   resources:
+  #     requests:
+  #       cpu: "200m"
+  #       memory: "512Mi"
+  #     limits:
+  #       memory: "2Gi"
