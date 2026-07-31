@@ -7,6 +7,7 @@ package dc
 import (
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 	"traffic-a22-data-quality/ninja"
 
@@ -18,7 +19,6 @@ import (
 type NinjaMeasurement struct {
 	Period uint64          `json:"mperiod"`
 	Time   ninja.NinjaTime `json:"mvalidtime"`
-	Since  ninja.NinjaTime `json:"mtransactiontime"`
 }
 
 type NinjaTreeData = map[string]struct { // key = stationtype
@@ -54,7 +54,7 @@ func sumJob() {
 	req.AddStationType(baseStationType)
 	req.DataTypes = maps.Keys(aggrDataTypes)
 	req.Limit = -1
-	req.Select = "mperiod,mvalidtime,mtransactiontime,pcode"
+	req.Select = "mperiod,mvalidtime,pcode"
 	req.Where = fmt.Sprintf("and(sactive.eq.true,mperiod.in.(%d,%d))", basePeriod, periodAgg)
 
 	var res ninja.NinjaResponse[NinjaTreeData]
@@ -171,20 +171,64 @@ func getHistoryPaged(todo window, stationCode string, typeName string) ([]NinjaF
 // arbitraty starting point where there should be no data yet
 var minTime = time.Date(2010, 1, 1, 0, 0, 0, 0, time.UTC)
 
+// mtransactiontime on the latest record no longer marks the start of the
+// timeseries, so firstBase is looked up separately and cached (hit or miss)
+// per station+type for the process lifetime, since lookups can be slow.
+type firstBaseResult struct {
+	date time.Time
+	ok   bool
+}
+
+var firstBaseCacheMu sync.Mutex
+var firstBaseCache = make(map[string]firstBaseResult)
+
+func getFirstBaseDate(stationCode string, typeName string) (time.Time, bool) {
+	key := stationCode + "|" + typeName
+
+	firstBaseCacheMu.Lock()
+	cached, hit := firstBaseCache[key]
+	firstBaseCacheMu.Unlock()
+	if hit {
+		return cached.date, cached.ok
+	}
+
+	req := ninja.DefaultNinjaRequest()
+	req.AddDataType(typeName)
+	req.AddStationType(baseStationType)
+	req.From = minTime
+	req.To = time.Now()
+	req.Select = "mvalue"
+	req.Where = fmt.Sprintf("mperiod.eq.%d,scode.eq.\"%s\"", basePeriod, stationCode)
+	req.Limit = 1 // history is returned ascending by mvalidtime, so this is the earliest record
+
+	res := &ninja.NinjaResponse[[]NinjaFlatData]{}
+	result := firstBaseResult{}
+	if err := ninja.History(req, res); err != nil {
+		slog.Error("unable to determine first base date, will not retry until process restart", "station", stationCode, "type", typeName, "err", err)
+		result = firstBaseResult{ok: false}
+	} else if len(res.Data) == 0 {
+		result = firstBaseResult{date: minTime, ok: true}
+	} else {
+		result = firstBaseResult{date: res.Data[0].Timestamp.Time, ok: true}
+	}
+
+	firstBaseCacheMu.Lock()
+	firstBaseCache[key] = result
+	firstBaseCacheMu.Unlock()
+	return result.date, result.ok
+}
+
 func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 	todos := make(map[string]map[string]window)
 	for _, stations := range dt {
 		for stationCode, station := range stations.Stations {
 			for tname, dataType := range station.Datatypes {
-				firstBase := minTime
 				lastBase := minTime
 				lastAggregate := minTime
 
 				for _, m := range dataType.Measurements {
-
 					if m.Period == uint64(basePeriod) {
 						lastBase = m.Time.Time
-						firstBase = m.Since.Time
 					}
 					if m.Period == periodAgg {
 						lastAggregate = m.Time.Time
@@ -193,6 +237,11 @@ func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 
 				// only consider stations that don't have up to date aggregates
 				if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
+					firstBase, ok := getFirstBaseDate(stationCode, tname)
+					if !ok {
+						continue
+					}
+
 					if _, exists := todos[stationCode]; !exists {
 						todos[stationCode] = make(map[string]window)
 					}
