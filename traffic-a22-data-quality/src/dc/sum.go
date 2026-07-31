@@ -182,18 +182,19 @@ type firstBaseResult struct {
 var firstBaseCacheMu sync.Mutex
 var firstBaseCache = make(map[string]firstBaseResult)
 
-func getFirstBaseDate(stationCode string, typeName string) (time.Time, bool) {
-	key := stationCode + "|" + typeName
-
+// getFirstBaseDate looks up the earliest base-period record across all base
+// data types at once, since they're ingested together and share a start
+// date - one request per station covers every type, instead of one each.
+func getFirstBaseDate(stationCode string) (time.Time, bool) {
 	firstBaseCacheMu.Lock()
-	cached, hit := firstBaseCache[key]
+	cached, hit := firstBaseCache[stationCode]
 	firstBaseCacheMu.Unlock()
 	if hit {
 		return cached.date, cached.ok
 	}
 
 	req := ninja.DefaultNinjaRequest()
-	req.AddDataType(typeName)
+	req.DataTypes = maps.Keys(aggrDataTypes)
 	req.AddStationType(baseStationType)
 	req.From = minTime
 	req.To = time.Now()
@@ -204,7 +205,7 @@ func getFirstBaseDate(stationCode string, typeName string) (time.Time, bool) {
 	res := &ninja.NinjaResponse[[]NinjaFlatData]{}
 	result := firstBaseResult{}
 	if err := ninja.History(req, res); err != nil {
-		slog.Error("unable to determine first base date, will not retry until process restart", "station", stationCode, "type", typeName, "err", err)
+		slog.Error("unable to determine first base date, will not retry until process restart", "station", stationCode, "err", err)
 		result = firstBaseResult{ok: false}
 	} else if len(res.Data) == 0 {
 		result = firstBaseResult{date: minTime, ok: true}
@@ -213,7 +214,7 @@ func getFirstBaseDate(stationCode string, typeName string) (time.Time, bool) {
 	}
 
 	firstBaseCacheMu.Lock()
-	firstBaseCache[key] = result
+	firstBaseCache[stationCode] = result
 	firstBaseCacheMu.Unlock()
 	return result.date, result.ok
 }
@@ -222,6 +223,9 @@ func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 	todos := make(map[string]map[string]window)
 	for _, stations := range dt {
 		for stationCode, station := range stations.Stations {
+			var firstBase time.Time
+			firstBaseLoaded, firstBaseOk := false, false
+
 			for tname, dataType := range station.Datatypes {
 				lastBase := minTime
 				lastAggregate := minTime
@@ -237,8 +241,11 @@ func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 
 				// only consider stations that don't have up to date aggregates
 				if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
-					firstBase, ok := getFirstBaseDate(stationCode, tname)
-					if !ok {
+					if !firstBaseLoaded {
+						firstBase, firstBaseOk = getFirstBaseDate(stationCode)
+						firstBaseLoaded = true
+					}
+					if !firstBaseOk {
 						continue
 					}
 
