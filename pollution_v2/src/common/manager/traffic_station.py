@@ -122,6 +122,8 @@ class TrafficStationManager(StationManager, ABC):
                 from_date = DEFAULT_TIMEZONE.localize(from_date)
             if min_date is not None and min_date.tzinfo is None:
                 min_date = DEFAULT_TIMEZONE.localize(min_date)
+            if from_date is None:
+                continue
             if min_date is None or from_date < min_date:
                 min_date = from_date
                 min_station = station.code
