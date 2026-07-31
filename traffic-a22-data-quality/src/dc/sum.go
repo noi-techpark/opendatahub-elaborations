@@ -241,12 +241,17 @@ func requestWindows(dt NinjaTreeData) map[string]map[string]window {
 
 				// only consider stations that don't have up to date aggregates
 				if lastBase.Sub(lastAggregate).Seconds() > periodAgg {
-					if !firstBaseLoaded {
-						firstBase, firstBaseOk = getFirstBaseDate(stationCode)
-						firstBaseLoaded = true
-					}
-					if !firstBaseOk {
-						continue
+					// firstBase only matters as a floor when there's no prior
+					// aggregate to continue from; otherwise lastAggregate
+					// already postdates it, so skip the lookup entirely.
+					if lastAggregate == minTime {
+						if !firstBaseLoaded {
+							firstBase, firstBaseOk = getFirstBaseDate(stationCode)
+							firstBaseLoaded = true
+						}
+						if !firstBaseOk {
+							continue
+						}
 					}
 
 					if _, exists := todos[stationCode]; !exists {
