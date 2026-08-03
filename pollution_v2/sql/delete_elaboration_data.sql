@@ -2,7 +2,7 @@
 --
 -- SPDX-License-Identifier: CC0-1.0
 
--- this script deletes all data (double measurements, extend it if strings exist) created by the pollution v2 elaboration beginning with a starting date
+-- this script deletes all data (double, json and string measurements) created by the pollution v2 elaboration beginning with a starting date
 
 set search_path=intimev2,public;
 
@@ -11,43 +11,101 @@ with
 vars as (select
 	timestamp '2023-01-01 00:00:00' as start_date
 )
-select distinct s.id as station_id, s.stationtype, s.origin, t.cname, t.id as type_id, m."period", v.start_date
+select distinct ts.id as timeseries_id, ts.value_table, s.stationtype, s.origin, t.cname, v.start_date
 from station s
 cross join vars v
-join measurement m on m.station_id = s.id
-join type t on t.id = m.type_id
+join timeseries ts on ts.station_id = s.id
+join type t on t.id = ts.type_id
 where s.stationtype = 'TrafficSensor'
   and s.origin = 'A22'
   and t.cname like '%-emissions'
   and t.cname not like 'testuh_staging%';
 
+-- DOUBLE
+
 delete from measurementhistory mh
 using tmp_delete b
-where mh.station_id = b.station_id
-and mh.type_id = b.type_id
-and mh.period = b.period
+where b.value_table = 'measurement'
+and mh.timeseries_id = b.timeseries_id
 and mh.timestamp > b.start_date;
 
--- This is faster for testing instead of the following two:
-
--- update measurement m set timestamp = b.start_date
--- from tmp_delete b
--- where m.station_id = b.station_id
--- and m.type_id = b.type_id
--- and m.period = b.period
--- and m.timestamp > b.start_date;
-
-delete from  measurement m
+-- delete the cached current-value row if no history is left to restore it from...
+delete from measurement m
 using tmp_delete b
-where m.station_id = b.station_id
-and m.type_id = b.type_id
-and m.period = b.period
+where b.value_table = 'measurement'
+and m.timeseries_id = b.timeseries_id
 and m.timestamp > b.start_date
-and (select max(timestamp) from measurementhistory mh where mh.station_id = m.station_id  and mh.type_id = m.type_id and mh.period = m.period) is null;
+and not exists (select 1 from measurementhistory mh where mh.timeseries_id = m.timeseries_id);
 
-update measurement m set timestamp = (select max(timestamp) from measurementhistory mh where mh.station_id = m.station_id  and mh.type_id = m.type_id and mh.period = m.period)
+-- ...otherwise restore it to the most recent surviving history record
+update measurement m
+set timestamp = h.timestamp, double_value = h.double_value, created_on = h.created_on, provenance_id = h.provenance_id
 from tmp_delete b
-where m.station_id = b.station_id
-and m.type_id = b.type_id
-and m.period = b.period
+join lateral (
+	select mh.timestamp, mh.double_value, mh.created_on, mh.provenance_id
+	from measurementhistory mh
+	where mh.timeseries_id = b.timeseries_id
+	order by mh.timestamp desc
+	limit 1
+) h on true
+where b.value_table = 'measurement'
+and m.timeseries_id = b.timeseries_id
+and m.timestamp > b.start_date;
+
+-- JSON
+
+delete from measurementjsonhistory mh
+using tmp_delete b
+where b.value_table = 'measurementjson'
+and mh.timeseries_id = b.timeseries_id
+and mh.timestamp > b.start_date;
+
+delete from measurementjson m
+using tmp_delete b
+where b.value_table = 'measurementjson'
+and m.timeseries_id = b.timeseries_id
+and m.timestamp > b.start_date
+and not exists (select 1 from measurementjsonhistory mh where mh.timeseries_id = m.timeseries_id);
+
+update measurementjson m
+set timestamp = h.timestamp, json_value = h.json_value, created_on = h.created_on, provenance_id = h.provenance_id
+from tmp_delete b
+join lateral (
+	select mh.timestamp, mh.json_value, mh.created_on, mh.provenance_id
+	from measurementjsonhistory mh
+	where mh.timeseries_id = b.timeseries_id
+	order by mh.timestamp desc
+	limit 1
+) h on true
+where b.value_table = 'measurementjson'
+and m.timeseries_id = b.timeseries_id
+and m.timestamp > b.start_date;
+
+-- STRING
+
+delete from measurementstringhistory mh
+using tmp_delete b
+where b.value_table = 'measurementstring'
+and mh.timeseries_id = b.timeseries_id
+and mh.timestamp > b.start_date;
+
+delete from measurementstring m
+using tmp_delete b
+where b.value_table = 'measurementstring'
+and m.timeseries_id = b.timeseries_id
+and m.timestamp > b.start_date
+and not exists (select 1 from measurementstringhistory mh where mh.timeseries_id = m.timeseries_id);
+
+update measurementstring m
+set timestamp = h.timestamp, string_value = h.string_value, created_on = h.created_on, provenance_id = h.provenance_id
+from tmp_delete b
+join lateral (
+	select mh.timestamp, mh.string_value, mh.created_on, mh.provenance_id
+	from measurementstringhistory mh
+	where mh.timeseries_id = b.timeseries_id
+	order by mh.timestamp desc
+	limit 1
+) h on true
+where b.value_table = 'measurementstring'
+and m.timeseries_id = b.timeseries_id
 and m.timestamp > b.start_date;

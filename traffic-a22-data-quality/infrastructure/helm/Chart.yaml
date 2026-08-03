@@ -1,0 +1,6 @@
+apiVersion: v2
+name: traffic-a22-data-quality
+description: A22 traffic daily data quality aggregation job
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

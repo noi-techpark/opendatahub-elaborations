@@ -5,6 +5,7 @@
 package dc
 
 import (
+	"errors"
 	"log/slog"
 	"os"
 	"strconv"
@@ -36,12 +37,13 @@ func syncDataTypes() {
 	bdp.SyncDataTypes("", []bdplib.DataType{TotalType})
 }
 
-func Job() {
+func Job() error {
 	slog.Info("starting job")
 	bdp = *bdplib.FromEnv()
 	syncDataTypes()
-	combineJob()
-	sumJob()
-	sumParentJob()
+
+	err := errors.Join(combineJob(), sumJob(), sumParentJob())
+
 	slog.Info("job ended")
+	return err
 }

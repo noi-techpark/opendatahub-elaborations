@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+{{- range $jobName, $job := .Values.jobs }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ printf "%s-%s" $.Release.Name $jobName }}
+  labels:
+    {{- include "traffic-a22-data-quality.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $jobName }}
+spec:
+  schedule: {{ $job.schedule | quote }}
+  concurrencyPolicy: {{ $job.concurrencyPolicy | default "Forbid" }}
+  successfulJobsHistoryLimit: {{ $job.successfulJobsHistoryLimit | default 3 }}
+  failedJobsHistoryLimit: {{ $job.failedJobsHistoryLimit | default 3 }}
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "traffic-a22-data-quality.selectorLabels" $ | nindent 12 }}
+            app.kubernetes.io/component: {{ $jobName }}
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: {{ $jobName }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+              imagePullPolicy: {{ $.Values.image.pullPolicy }}
+              env:
+                {{- range $key, $value := $.Values.env }}
+                - name: {{ $key }}
+                  value: {{ $value | quote }}
+                {{- end }}
+                {{- if $.Values.envSecret }}
+                {{- range $key, $value := $.Values.envSecret }}
+                - name: {{ $key }}
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ printf "%s-env-secret" $.Release.Name }}
+                      key: {{ $key }}
+                {{- end }}
+                {{- end }}
+              resources:
+                {{- toYaml $job.resources | nindent 16 }}
+{{- end }}

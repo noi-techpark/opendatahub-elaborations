@@ -13,14 +13,19 @@ me.double_value as "equiv",
 from station s
 left outer join station p on p.id = s.parent_id
 join type l on l.cname = 'Nr. Light Vehicles'
-join measurement ml on ml.type_id = l.id and ml.station_id = s.id and ml.period = 86400
+join timeseries tsl on tsl.type_id = l.id and tsl.station_id = s.id and tsl.period = 86400
+join measurement ml on ml.timeseries_id = tsl.id
 join type h on h.cname = 'Nr. Heavy Vehicles'
-join measurement mh on mh.type_id = h.id and mh.station_id = s.id and mh.period = 86400 and mh.timestamp = ml.timestamp
+join timeseries tsh on tsh.type_id = h.id and tsh.station_id = s.id and tsh.period = 86400
+join measurement mh on mh.timeseries_id = tsh.id and mh.timestamp = ml.timestamp
 join type b on b.cname = 'Nr. Buses'
-join measurement mb on mb.type_id = b.id and mb.station_id = s.id and mb.period = 86400 and mb.timestamp = ml.timestamp
+join timeseries tsb on tsb.type_id = b.id and tsb.station_id = s.id and tsb.period = 86400
+join measurement mb on mb.timeseries_id = tsb.id and mb.timestamp = ml.timestamp
 join type e on e.cname = 'Nr. Equivalent Vehicles'
-join measurement me on me.type_id = e.id and me.station_id = s.id and me.period = 86400 and me.timestamp = ml.timestamp
+join timeseries tse on tse.type_id = e.id and tse.station_id = s.id and tse.period = 86400
+join measurement me on me.timeseries_id = tse.id and me.timestamp = ml.timestamp
 join type t on t.cname = 'Nr. Vehicles'
-join measurement mt on mt.type_id = t.id and mt.station_id = s.id and mt.period = 86400 and mt.timestamp = ml.timestamp
+join timeseries tst on tst.type_id = t.id and tst.station_id = s.id and tst.period = 86400
+join measurement mt on mt.timeseries_id = tst.id and mt.timestamp = ml.timestamp
 where s.stationcode like 'A22:%' and s.stationtype in ('TrafficDirection','TrafficSensor')
 order by s.stationcode, ml.timestamp desc

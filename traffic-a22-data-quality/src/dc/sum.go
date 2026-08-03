@@ -47,7 +47,7 @@ type rec = struct {
 
 const numJobs = 5
 
-func sumJob() {
+func sumJob() error {
 	// Get current elaboration state from ninja. Both where we are with base data and with the sums
 	req := ninja.DefaultNinjaRequest()
 	req.Repr = ninja.TreeNode
@@ -60,8 +60,7 @@ func sumJob() {
 	var res ninja.NinjaResponse[NinjaTreeData]
 	err := ninja.Latest(req, &res)
 	if err != nil {
-		slog.Error("error getting latest records from ninja. aborting...", "err", err)
-		return
+		return fmt.Errorf("error getting latest records from ninja: %w", err)
 	}
 
 	stationWindows := requestWindows(res.Data)
@@ -117,6 +116,7 @@ func sumJob() {
 
 		bdp.PushData(baseStationType, bdpMap)
 	}
+	return nil
 }
 
 func sumHistory(win window, scode string, tname string, total chan tv, recs chan rec) error {

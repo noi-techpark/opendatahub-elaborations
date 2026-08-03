@@ -5,6 +5,7 @@
 package dc
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-func sumParentJob() {
+func sumParentJob() error {
 	req := ninja.DefaultNinjaRequest()
 	req.DataTypes = append(maps.Keys(aggrDataTypes), TotalType.Name)
 	req.Select = "tname,mvalue,pcode,stype,scode"
@@ -32,8 +33,7 @@ func sumParentJob() {
 
 	err := ninja.Latest(req, res)
 	if err != nil {
-		slog.Error("sumParent: Error in ninja call. aborting", "err", err)
-		panic(err)
+		return fmt.Errorf("sumParent: error in ninja call: %w", err)
 	}
 
 	type window = struct {
@@ -68,6 +68,7 @@ func sumParentJob() {
 		parents[parentStationCode][m.DType] = t
 	}
 
+	var errs []error
 	for parId, types := range parents {
 		// Do only a single request per parent. So we determine the max window.
 		// Note that when a data type does not exist yet on parent station, but in a child station, the window defaults to from = 0000-00-00...
@@ -99,8 +100,9 @@ func sumParentJob() {
 
 		err := ninja.History(req, res)
 		if err != nil {
-			slog.Error("sumParent: Error in ninja call. aborting", "err", err)
-			panic(err)
+			slog.Error("sumParent: error in ninja call, skipping parent", "parent", parId, "err", err)
+			errs = append(errs, fmt.Errorf("sumParent: parent %s: %w", parId, err))
+			continue
 		}
 
 		sums := make(map[string]map[time.Time]float64) // datatype / timestamp / sum value
@@ -121,4 +123,5 @@ func sumParentJob() {
 		}
 		bdp.PushData(directionStationType, recs)
 	}
+	return errors.Join(errs...)
 }

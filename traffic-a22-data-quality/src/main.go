@@ -7,10 +7,7 @@ package main
 import (
 	"log/slog"
 	"os"
-	"time"
 	"traffic-a22-data-quality/dc"
-
-	"github.com/go-co-op/gocron/v2"
 )
 
 // read logger level from env and uses INFO as default
@@ -30,20 +27,9 @@ func initLogging() {
 func main() {
 	initLogging()
 
-	cron := os.Getenv("SCHEDULER_CRON")
-	slog.Debug("Cron defined as: " + cron)
-
-	if len(cron) == 0 {
-		slog.Error("Cron job definition in env missing")
+	// scheduling is handled externally by a Kubernetes CronJob
+	if err := dc.Job(); err != nil {
+		slog.Error("job failed", "err", err)
 		os.Exit(1)
 	}
-
-	dc.Job()
-	s, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
-	if err != nil {
-		panic(err)
-	}
-	s.NewJob(gocron.CronJob(cron, true), gocron.NewTask(dc.Job))
-	s.Start()
-	select {}
 }
