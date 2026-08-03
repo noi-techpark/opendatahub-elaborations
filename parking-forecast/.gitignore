@@ -1,14 +1,17 @@
-# SPDX-FileCopyrightText: 2025 NOI Techpark <digital@noi.bz.it>
+# SPDX-FileCopyrightText: 2025-2026 NOI Techpark <digital@noi.bz.it>
 #
 # SPDX-License-Identifier: CC0-1.0
 
-src/data-models/*/
-src/data-predictors/*.csv
-src/result
-# src/graphs/**
+# Go build artifacts
+src/ingest
+src/train
+src/predict
+
+# stray leftover from the old Python pipeline; not removable in every
+# environment (root-owned), harmless to ignore
 src/__pycache__
-src/config.yaml
-src/config.yaml.tmp
-src/result*
+
+# local SQLite cache + result.json (docker-compose.yml bind-mounts ./data)
+data/
 
 .env

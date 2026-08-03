@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2026 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+#
+# Serves result.json (see templates/pvc.yaml's "result" claim, written by the
+# predict CronJob) for legacy STA-facing consumers. This chart intentionally
+# stops at a ClusterIP Service — routing an external hostname to it (Ingress,
+# DNS cutover from the old VM's nginx) is cluster/environment specific and is
+# left for whoever deploys this chart to wire up.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-nginx
+  labels:
+    {{- include "parking-forecast.labels" . | nindent 4 }}
+    app.kubernetes.io/component: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "parking-forecast.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: nginx
+  template:
+    metadata:
+      labels:
+        {{- include "parking-forecast.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: nginx
+    spec:
+      volumes:
+        - name: result
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-result
+      containers:
+        - name: nginx
+          image: nginx:latest
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: result
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-nginx
+  labels:
+    {{- include "parking-forecast.labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "parking-forecast.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: nginx
+  ports:
+    - port: 80
+      targetPort: 80

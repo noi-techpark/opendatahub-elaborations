@@ -1,30 +1,38 @@
-
-# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+# SPDX-FileCopyrightText: 2026 NOI Techpark <digital@noi.bz.it>
 #
 # SPDX-License-Identifier: CC0-1.0
-FROM debian:trixie-slim AS env
-RUN apt update
-RUN apt install -y wget curl nodejs jq cron
-RUN apt clean
 
-# install miniforge (conda alternative) https://github.com/conda-forge/miniforge
-RUN wget -O /Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-RUN bash /Miniforge3.sh -b -p /conda
-RUN rm /Miniforge3.sh
+FROM golang:1.25-bookworm AS base
 
-# Setup python environment
-COPY src/requirements.txt .
-RUN <<EOF bash
-    source /conda/etc/profile.d/conda.sh
-    conda activate
-    conda create --name tf -y --file requirements.txt
-EOF
+FROM base AS build-env
+WORKDIR /app
+COPY src/. .
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/ingest ./cmd/ingest
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/train ./cmd/train
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/predict ./cmd/predict
 
-COPY infrastructure/docker/entrypoint.sh /entrypoint.sh
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+# ── Test stage ───────────────────────────────────────────────────────────────
+FROM build-env AS test
+CMD ["go", "test", "./..."]
 
-RUN mkdir /code
-WORKDIR /code
+# ── Production stage ─────────────────────────────────────────────────────────
+FROM alpine:latest AS build
 
-FROM env AS build
-COPY src/ .
+# supercronic drives the local-dev cron schedule (see entrypoint.sh); in
+# production, scheduling is a Kubernetes CronJob per binary and CRON_SCHEDULE
+# is left unset, so entrypoint.sh just runs the given command once.
+ARG SUPERCRONIC_VERSION=0.2.29
+ARG TARGETARCH=amd64
+RUN apk add --no-cache curl \
+    && curl -fsSL -o /usr/local/bin/supercronic \
+        "https://github.com/aptible/supercronic/releases/download/v${SUPERCRONIC_VERSION}/supercronic-linux-${TARGETARCH}" \
+    && chmod +x /usr/local/bin/supercronic \
+    && apk del curl
+
+WORKDIR /app
+COPY --from=build-env /out/ingest /out/train /out/predict ./
+COPY infrastructure/docker/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]

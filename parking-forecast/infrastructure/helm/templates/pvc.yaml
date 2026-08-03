@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-cache
+  labels:
+    {{- include "parking-forecast.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.cache.storage }}
+  {{- if .Values.cache.storageClassName }}
+  storageClassName: {{ .Values.cache.storageClassName }}
+  {{- end }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-result
+  labels:
+    {{- include "parking-forecast.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.result.storage }}
+  {{- if .Values.result.storageClassName }}
+  storageClassName: {{ .Values.result.storageClassName }}
+  {{- end }}

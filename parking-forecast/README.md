@@ -2,220 +2,150 @@
 SPDX-FileCopyrightText: 2021-2025 STA AG <info@sta.bz.it>
 SPDX-FileContributor: Chris Mair <chris@1006.org>
 
-SPDX-FileCopyrightText: 2025 NOI AG <digital@noi.bz.it>
+SPDX-FileCopyrightText: 2026 NOI Techpark <digital@noi.bz.it>
 
 SPDX-License-Identifier: CC0-1.0
 -->
 
-# STA Parking Forecast
-This project was initially commissioned by STA and implemented by Thomas Auckenthaler and Chris Mair, but migrated to NOI in late 2025.  
+# Parking Forecast
 
-The machine learning part has stayed the same, but the data collection has been reworked in places.  
+Forecasts parking occupancy for [Open Data Hub](https://opendatahub.com/datasets) parking
+stations and sensors, up to 48 hours ahead at 5-minute resolution.
 
-Some features like rmse calculation have been disabled.
+This project was originally commissioned by STA and implemented by Thomas Auckenthaler and
+Chris Mair, migrated to NOI in late 2025, and re-architected from the ground up in 2026 to scale
+to many more stations at a fraction of the compute cost (see [Why this rewrite](#why-this-rewrite)).
 
 ## Overview
-This projects gathers parking occupation data from the [Open Data
-Hub](https://opendatahub.com/datasets) and uses that data together with weather forecast data
-and information about holidays and school days. From this data,
-it trains a simple, shallow neural network that can forecast occupation.
 
-## Architecture
-This application was originally running on a VM and has been dockerized when migrating from STA servers to the Open Data Hub.
+Three independent jobs, written in Go, share a single SQLite cache:
 
-The main container installs two cron jobs, one for training and one for prediction.
-- training runs once every night at midnight, downloads all historical data and trains a new model. This requires around 30GB RAM and up to an hour
-- prediction runs once every hour, has similar RAM requirements, but takes around 5 minutes 
+| Job               | Schedule (typical) | Does                                                                                          |
+|-------------------|---------------------|------------------------------------------------------------------------------------------------|
+| `cmd/ingest`      | every 15 min         | pulls new occupancy history from ODH, refreshes weather/holiday/neighbor caches                |
+| `cmd/train`       | nightly              | fits one Random Forest per station from the cached history                                     |
+| `cmd/predict`     | hourly                | rolls the forecast forward 48h and writes `result.json`                                        |
 
-A separate nginx container hosts the result, to be downloaded by the parking-forecast data collector (`/result.json`)
+Each is a standalone binary; in production each runs as its own Kubernetes CronJob against the
+same container image (see `infrastructure/helm`), the pattern this repo's other elaborations
+(`pollution_v2`, `traffic-a22-data-quality`) already use. Locally, `docker-compose.yml` runs the
+same three binaries under `supercronic` for convenience.
 
-## Part 1/2: run-train.sh - Data Gathering and Training
+## Model
 
-The main script for this part is:
+One **Random Forest regressor per station**, trained independently from that station's own
+history — not one joint model over every station like before (see below). Features, all fixed
+in number regardless of station count or time resolution:
 
-| File          | Purpose                             |
-|---------------|-------------------------------------|
-| run-train.sh  | gather data and start training run  |  
+- time of day / day of week / day of year (all cyclical, `sin`/`cos` — the day-of-year pair is
+  what lets the model learn annual seasonality, e.g. tourist/ski season vs. off-season)
+- `is_holiday`, `is_school`, weather symbol
+- own occupancy lags: 5 min, 10 min, 1 hour, 1 day, 1 week
+- own trailing 7-day mean
+- mean occupancy ratio across the station's k nearest neighbors (one step lagged, to avoid a
+  circular dependency during the multi-step forecast — see `internal/features`)
 
-> Note 1: `run-train.sh` contains a hardcoded path.
+`cmd/predict` steps through the 48h horizon one 5-minute tick at a time, evaluating every
+station together at each tick, so lag and neighbor features roll forward consistently (see
+`internal/features`'s and `cmd/predict`'s package docs for the details).
 
-> Note 2: `run-train.sh` calls among other things the `psql` executable to run SQL
-> against a PostgreSQL database.  The connection information is in hardcoded in
-> the script. Use `.pgpass` for the password.
+A forest's individual trees, evaluated separately, give the `lo`/`mean`/`hi` prediction interval
+"for free" (a percentile spread across trees) — see `internal/forest`.
 
-### Data Gathering
+## Data retention & training cost
 
-The main script (`run-train.sh`) first executes SQL commands to retrieve
-weather forecast data and information about holidays and school days from the
-PostgreSQL database. The data is stored in CSV files **with** header. This data
-is not persistent between runs - the CSV files are overwritten each time.
+`train` refits each station's forest from scratch every night — Random Forests (like almost all
+batch-trained models) can't be cheaply "updated" with just new data the way, say, a running
+average can; a true incremental/streaming tree learner (e.g. Mondrian forests, Hoeffding trees)
+is a real research area, not something to build for this. So instead of trying to make the
+*algorithm* incremental, the retained *data* is bounded: `ingest` purges raw occupancy history
+older than `OCCUPANCY_RETENTION_DAYS` (400 days by default — a bit over 13 months, enough for the
+model to see one full annual cycle via the day-of-year feature above, plus a buffer for the
+lag/rolling-window features) after every run (`store.PurgeOccupancyBefore`). That keeps both the
+SQLite cache and nightly training cost flat forever, instead of growing with every station-year
+ingested — and, since conditions this far back (capacity changes, road layout, etc.) are of
+questionable relevance anyway, it's arguably a model-quality improvement too, not just a cost one.
+Holiday/weather reference data is tiny (one row per calendar day, not per station) and isn't
+purged.
 
-| File                          | Purpose                                     |
-|-------------------------------|---------------------------------------------|
-| data-holidays-get.sql         | query to retrieve holidays and school days  |
-| (data-holidays/holidays.csv)  | resulting data                              |
-| data-meteo-get.sql            | query to retrieve meteo forecasts           |
-| (data-meteo/meteo.csv)        | resulting data                              |
+## Output
 
-The fields of holidays.csv are:
- - ts: ISO date
- - is_school: boolean 0/1
- - is holiday: boolean 0/1
+`cmd/predict` writes `result.json` in the schema documented in
+[`src/readme-for-data-consumers.md`](src/readme-for-data-consumers.md), served by the `nginx`
+container/Deployment, for existing consumers.
 
-The fields of meteo.csv are:
- - tomorrow_date: ISO date
- - symbol_value: int
+Publishing forecasts as native Open Data Hub/BDP time series (the way every other elaboration in
+this repo publishes results, e.g. `parking-free-slot-calculation` next to `occupied`) is planned
+but deliberately not implemented yet — that migration will happen separately, later.
 
-The meaning of `symbol_value` is documented inside `data-meteo-get.sql`.
+## Running locally
 
-The other input data is the parking occupancy, also stored in CSV files, but,
-updated in an incremental way:
+```sh
+cp .env.example .env   # fill in ODH_CLIENT_SECRET
+docker compose run --rm ingest
+docker compose run --rm train
+docker compose run --rm predict
+cat data/result/result.json
+```
 
-| File       | Purpose                                                    |
-|------------|------------------------------------------------------------|
-| data-raw/  | parking occupancy data (one CSV file per parking station)  |
+`docker compose up` runs all three continuously on the schedules in `.env`
+(`INGEST_CRON_SCHEDULE`/`TRAIN_CRON_SCHEDULE`/`PREDICT_CRON_SCHEDULE`), plus `nginx` serving
+`result.json` on `NGINX_PORT`.
 
-`run-train.sh` does **not** update the data of stations that
-already exist in `data-raw/`, it rather just looks for new stations to be added
-to the directory. This is delegated to a Node.js script:
+`src/go.mod`'s tests (`go test ./...`) don't need network access or credentials.
 
-| File                  | Purpose                                        |
-|-----------------------|------------------------------------------------|
-| data-raw-find-new.js  | add new stations, not yet present in data-raw/ |
+## Configuration
 
-The single CSV files in `data-raw/` encode the "station code" ("scode") in
-their name for uniqueness and are stored **without** header. They contain the
-fields:
- - timestamp: timestamp with sub second precision and time zone, such as
-   "2022-01-01 00:00:00.234+0000"
- - occupancy: int
+All configuration is environment variables, processed by `internal/config`; see that file for the
+full list and defaults (Open Data Hub endpoints/credentials, station types, neighbor count, forest
+hyperparameters, forecast horizon, `result.json` path).
 
-### Training
+## Repository layout
 
-`run-train.sh` then proceeds to train five models (we use an ensemble approach)
-using Python and Tensorflow.
+| Path                             | Purpose                                                              |
+|-----------------------------------|------------------------------------------------------------------------|
+| `src/cmd/ingest`                 | occupancy/weather/holiday/neighbor cache refresh                     |
+| `src/cmd/train`                  | per-station Random Forest fitting                                    |
+| `src/cmd/predict`                | 48h recursive rollout + `result.json`                                 |
+| `src/internal/store`             | SQLite cache (occupancy, reference data, station/neighbor metadata, models) |
+| `src/internal/odh`               | Open Data Hub station/history client (wraps `go-timeseries-client`/`elab`'s read side) |
+| `src/internal/weather`, `.../holidays` | Tourism Open Data Hub reference data                             |
+| `src/internal/neighbors`         | geographic k-nearest-neighbor computation                            |
+| `src/internal/features`          | feature row construction, shared by train and predict                |
+| `src/internal/forest`            | dependency-free Random Forest regressor                              |
+| `src/internal/publish`           | legacy `result.json` renderer                                        |
+| `src/graphs/`                    | tiny web app to plot `result.json`                                    |
+| `infrastructure/docker`          | multi-stage Go build                                                  |
+| `infrastructure/helm`            | Kubernetes CronJobs (ingest/train/predict), SQLite/result PVCs, nginx |
 
-We use the /Miniforge/ package to get Python and the required packages. A more
-common Python /venv/ should do as well.  Currently, we have:
+## Scaling headroom
 
-| package    | version |
-|------------|---------|
-| yaml       | 0.2.5   |
-| pandas     | 1.3.4   |
-| numpy      | 1.21.4  |
-| tensorflow | 2.4.3   |
+Everything here is designed to comfortably absorb an order of magnitude more stations than it
+runs against today:
 
-`run-train.sh` first copies the configuration file template, substituting
-the timestamp of the last training data. Then it proceeds to call
-**three Python scripts**. Training is typically run once a day after
-midnight.  So the timestamp of the last training data is computed as yesterday,
-23:55:00.
+- **ingest**'s occupancy fetch batches many stations into each ODH request instead of one request
+  per station (grouped by station type, sorted by catch-up start so batches end up cheap, sized to
+  stay under the same ~1000-char station-filter URL budget `opendatahub-go-sdk/elab` itself uses)
+  — request count stays roughly constant as station count grows, instead of growing linearly.
+- **train** fits one forest per station in parallel (bounded by CPU count); wall-clock time grows
+  with station count only as fast as core count allows, and per-worker memory is bounded by one
+  station's history, not the whole dataset.
+- **predict**'s rollout is O(stations × forecast steps), each step a cheap forest evaluation —
+  still comfortably sub-second-to-low-seconds at 10-100x today's station count.
+- **neighbors.Compute** is the one intentionally-simple piece: an O(n²) pairwise distance scan. At
+  today's scale and even 10-100x it, this is milliseconds and runs only when the station list
+  changes; it would need a spatial index (grid/k-d tree) well before it became a real cost, and
+  isn't worth that complexity until it actually matters.
+- the SQLite cache itself is bounded regardless of station count or how many years this runs for
+  — see [Data retention & training cost](#data-retention--training-cost).
 
-| File                                | Purpose                                                                                                                 |
-|-------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
-| config.yaml.template                | configuration template (LAST_TRAIN_TS missing)                                                                          |
-| (config.yaml)                       | configuration, temporary file during training run (overwritten and deleted after run)                                   |
-| process1-raw-to-signals.py          | preprocess the data and store it into data-predictors/signals.csv and signals_interpolated.csv                          |
-| process2-signals-to-trainingdata.py | read these files and create the matrix to be fed into tensorflow, store it into data-predictors/trainingdata_nonan.csv  |
-| process3-fit-model.py               | perform the actual training and persist the tensorflow model to data-models/dnn_model*/                                 |
+## Why this rewrite
 
-The end results of this step are the persisted tensorflow models. As we run it
-five times we end up with:
-
-| File                      |
-|---------------------------|
-| (data-models/dnn_model1/) |
-| (data-models/dnn_model2/) |
-| (data-models/dnn_model3/) |
-| (data-models/dnn_model4/) |
-| (data-models/dnn_model5/) |
-
-> Note 3: These trained models are currently retrained (overwritten) once a day. However,
-> they are certainly valid some time. For example, retraining could be happening
-> also just once a week.
-
-## Part 2/2: run-predict.sh - Do Forecasting and Publish Results
-
-The main script of this part is:
-
-| File           | Purpose                                                    |
-|----------------|------------------------------------------------------------|
-| run-predict.sh | run model inference to do forecasting and publish results  |  
-
-> Note 4: `run-predict.sh` contains a hardcoded path.
-
-> Note 5: `run-predict.sh` calls among other things the `psql` executable to insert
-> data into a PostgreSQL database.  The connection information is in hardcoded
-> in the script. Use `.pgpass` for the password.
-
-> Note 6: `run-predict.sh` calls `sftp` to upload the forecast data to a server.
-> User and hostname is hardcoded. Authentication is key based.
-
-`run-predict.sh` first copies the configuration file
-template, substituting the timestamp of the data point form which forecast
-should start.
-
-It then proceeds to **incrementally update** the parking occupancy data for
-each parking station known in `data-raw/` (see above).  It never adds stations
-in this step. Running forecasting would break if the number or ordering of stations
-changes after training. Again, this is delegated to a Node.js script:
-
-| File                  | Purpose                                                                                             |
-|-----------------------|-----------------------------------------------------------------------------------------------------|
-| data-raw-get-diff.js  | update data for stations that are already present in data-raw/ |
-
-`run-predict.sh` then calls the first Python script again:
-
-| File                        | Purpose                                                                                         |
-|-----------------------------|-------------------------------------------------------------------------------------------------|
-| process1-raw-to-signals.py  | preprocess the data and store it into data-predictors/signals.csv and signals_interpolated.csv  |
-
-to make the new data available in the signal format.
-
-After that, `run-predict.sh` calls, for each model:
-
-| File                    | Purpose                                                              |
-|-------------------------|----------------------------------------------------------------------|
-| process4-prediction.py  | apply the model to predict the following 48 hours of occupancy data  |
-
-The output is one CSV file for each model:
-
-| File          |
-|---------------|
-| (result1.csv) |
-| (result2.csv) |
-| (result3.csv) |
-| (result4.csv) |
-| (result5.csv) |
-
-One more step:
-
-| File                      | Purpose                                       |
-|---------------------------|-----------------------------------------------|
-| process5-generate-json.py | creates a result.json file with the forecast  |
-
-finally gives as the forecast:
-
-| File          |
-|---------------|
-| (result.json) |
-
-This is then stored in PostgreSQL and uploaded to the SFTP-Server.
-
-The format of the `results.json` file is documented in:
-
-| File                          |
-|-------------------------------|
-| readme-for-data-consumers.md  |
-
-
-`run-predict.sh` is typically called once each hour.
-
-## Other files
-
-| File              | Purpose                                    |
-|-------------------|--------------------------------------------|
-| parking_utils.py  | library used by the python scripts         |
-| compute-mae.py    | manually called to check forecast accuracy |
-| rmse.py           | manually called to check forecast accuracy |
-| graphs/           | tiny web app to plot `results.json`        |
+The old pipeline (bash + Node.js + Python/TensorFlow) trained a 5-way DNN ensemble jointly across
+every station, one-hot-encoding the station index as a feature. That one-hot encoding is what made
+it expensive and inflexible: every additional station added a column to every other station's
+training matrix, and the whole ensemble had to be retrained from scratch (~30GB RAM, up to an
+hour) for any change. Fitting one Random Forest per station instead means training cost grows
+linearly with station count, each fit takes seconds, and stations can be added or drop out
+independently. See `infrastructure/helm`'s comments and `internal/forest`'s package doc for more on
+the trade-offs made.

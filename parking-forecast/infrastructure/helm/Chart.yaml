@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+apiVersion: v2
+name: parking-forecast
+description: Parking occupancy forecast jobs (ingest, train, predict) and the legacy result.json endpoint
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

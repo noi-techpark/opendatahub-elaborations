@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2026 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# SQLite cache — occupancy/holiday/weather history, station/neighbor metadata
+# and fitted per-station forests. Shared by all three jobs (ingest writes
+# occupancy/reference data, train writes models, predict reads all of it).
+# Delete the file to force a full rebuild from scratch:
+#   kubectl exec -it <any ingest/train/predict pod> -- rm /app/data/parking.db
+#
+# ingest purges occupancy history past OCCUPANCY_RETENTION_DAYS (400 by
+# default), so this stays bounded rather than growing forever. Rough sizing:
+# ~50 bytes/sample * 288 samples/day * retention days * station count, e.g.
+# ~1.7Gi for 300 stations at the 400-day default — size this for your actual
+# station count and bump it (PVC expansion, if the StorageClass allows it) if
+# you grow past what it was sized for.
+cache:
+  storage: 5Gi
+  mountPath: /app/data
+  # storageClassName: ""  # uncomment to override the cluster default
+
+# result.json — the legacy consumer format (readme-for-data-consumers.md),
+# written by predict and served by the nginx Deployment below. Needs a
+# ReadWriteMany-capable StorageClass since predict (a Job pod) and nginx (a
+# long-running Deployment pod) mount it concurrently.
+result:
+  storage: 100Mi
+  mountPath: /app/result
+  # storageClassName: ""
+
+# Sensitive env vars — rendered into a K8s Secret and injected per-container.
+# Set in test.yaml / prod.yaml (or injected by CI via yq).
+envSecret: {}
+  # ODH_CLIENT_SECRET: ""
+
+# Shared environment variables injected into every job.
+# Environment-specific values (URLs, credentials) are overridden in
+# test.yaml / prod.yaml.
+#
+# Publishing to ODH/BDP isn't implemented yet (planned for later); predict
+# only writes result.json for now, so there's no BDP_* config here.
+env:
+  LOG_LEVEL: "INFO"
+
+  TS_API_BASE_URL: "https://mobility.api.opendatahub.com/v2"
+  TS_API_REFERER: "el-parking-forecast"
+  ODH_TOKEN_URL: "https://auth.opendatahub.com/auth/realms/noi/protocol/openid-connect/token"
+  ODH_CLIENT_ID: "odh-mobility-elaborations"
+  STATION_TYPES: "ParkingStation,ParkingSensor"
+  OCCUPANCY_DATA_TYPE: "occupied"
+  OCCUPANCY_PERIOD: "300"
+
+  TOURISM_API_BASE_URL: "https://tourism.api.opendatahub.com/v1"
+
+  DB_PATH: "/app/data/parking.db"
+  RESULT_JSON_PATH: "/app/result/result.json"
+  # Keeps the cache (and nightly training cost) bounded forever instead of
+  # growing with every station-year ingested — see internal/config.
+  OCCUPANCY_RETENTION_DAYS: "400"
+
+  NEIGHBOR_K: "4"
+  FOREST_TREES: "60"
+  FOREST_MAX_DEPTH: "8"
+  FOREST_MIN_LEAF_SAMPLES: "20"
+  FOREST_ROW_SUBSAMPLE: "0.8"
+  FOREST_FEATURE_SUBSAMPLE: "0.7"
+  MIN_TRAIN_ROWS: "500"
+  MODEL_VERSION: "2.0"
+  HOURS_TO_PREDICT: "48"
+
+# CronJob definitions — defined per environment in test.yaml / prod.yaml.
+# Expected keys: ingest, train, predict (see templates/cronjob.yaml).
+jobs: {}

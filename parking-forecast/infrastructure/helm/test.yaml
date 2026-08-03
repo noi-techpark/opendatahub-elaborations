@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+image:
+  repository: ""  # injected by CI
+  tag: ""         # injected by CI
+
+envSecret:
+  ODH_CLIENT_SECRET: ""  # injected by CI
+
+env:
+  ODH_TOKEN_URL: "https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token"
+  TS_API_BASE_URL: "https://mobility.api.opendatahub.testingmachine.eu/v2"
+  TOURISM_API_BASE_URL: "https://tourism.api.testingmachine.eu/v1"
+  LOG_LEVEL: "DEBUG"
+
+jobs:
+  ingest:
+    schedule: "*/15 * * * *"
+    command: ["/app/ingest"]
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        memory: "512Mi"
+
+  train:
+    schedule: "0 23 * * *"
+    command: ["/app/train"]
+    resources:
+      requests:
+        cpu: "1000m"
+        memory: "512Mi"
+      limits:
+        memory: "2Gi"
+
+  predict:
+    schedule: "33 3-22 * * *"
+    command: ["/app/predict"]
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "512Mi"
+      limits:
+        memory: "1Gi"

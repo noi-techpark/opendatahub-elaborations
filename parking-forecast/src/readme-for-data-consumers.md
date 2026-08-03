@@ -92,6 +92,7 @@ no warranty on availability or quality of the data.
 
 ## Changelog of this document
 
+- 2026-08-03 - model_version bumped to "2.0" (new per-station Random Forest model, see the main README); publishing as native Open Data Hub time series is planned for later
 - 2022-11-08 - from now on predictions are computed 21 times a day (3-23 hours) instead of 22 times a day
 - 2022-04-26 - added info about new timeseries field "rmse" and schema version bumped to 1.1
 - 2022-01-20 - document created 
