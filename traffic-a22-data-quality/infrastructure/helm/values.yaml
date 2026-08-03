@@ -1,21 +1,27 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 image:
-  repository: 
+  repository: ""
+  tag: ""
   pullPolicy: IfNotPresent
-  tag: "0.2.0" # Set this when upgrading chart with --set-value
 
+# Sensitive env vars — rendered into a K8s Secret and injected per-container.
+# Set in test.yaml / prod.yaml (or injected by CI via yq).
+envSecret: {}
+  # ODH_CLIENT_SECRET: ""
+
+# Shared environment variables injected into every job.
+# Environment-specific values (URLs, credentials) are overridden in test.yaml / prod.yaml.
 env:
-  ODH_TOKEN_URL: https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token
-  ODH_CLIENT_ID: odh-a22-dataprocessor
-
   BDP_ORIGIN: a22
-
   EL_STATION_TYPE: TrafficSensor
   EL_PARENT_STATION_TYPE: TrafficDirection
   EL_LOCATION_STATION_TYPE: TrafficStation
-  EL_BASE_PERIOD: 600
-
-  NINJA_QUERY_LIMIT: 50000
+  EL_BASE_PERIOD: "600"
+  NINJA_QUERY_LIMIT: "50000"
   LOG_LEVEL: DEBUG
 
-  # run a few times at start of day to give previous day's timeseries time to complete
-  SCHEDULER_CRON: "0 20 0,1,2,3 * * *"
+# CronJob definitions — defined per environment in test.yaml / prod.yaml.
+jobs: {}

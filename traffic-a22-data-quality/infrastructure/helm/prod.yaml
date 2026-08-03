@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+image:
+  repository: ""  # injected by CI
+  tag: ""         # injected by CI
+
+envSecret:
+  ODH_CLIENT_SECRET: ""  # injected by CI
+
+env:
+  ODH_TOKEN_URL: "https://auth.opendatahub.com/auth/realms/noi/protocol/openid-connect/token"
+  ODH_CLIENT_ID: "odh-a22-dataprocessor"
+  BDP_BASE_URL: "https://mobility.share.opendatahub.com"
+  BDP_PROVENANCE_NAME: "el-a22-traffic-data-quality"
+  BDP_PROVENANCE_VERSION: ""  # injected by CI
+  NINJA_BASE_URL: "https://mobility.api.opendatahub.com"
+  NINJA_REFERER: "el-a22-traffic-data-quality"
+  LOG_LEVEL: "INFO"
+
+jobs:
+  aggregate:
+    # run a few times at start of day to give previous day's timeseries time to complete
+    schedule: "20 0,1,2,3 * * *"
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        memory: "512Mi"
