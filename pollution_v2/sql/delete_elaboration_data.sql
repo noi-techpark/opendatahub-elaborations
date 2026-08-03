@@ -2,7 +2,7 @@
 --
 -- SPDX-License-Identifier: CC0-1.0
 
--- this script deletes all data (double, json and string measurements) created by the pollution v2 elaboration beginning with a starting date
+-- this script deletes all data (double, json and string measurements) created by the pollution v2 elaboration (emissions and validation) beginning with a starting date
 
 set search_path=intimev2,public;
 
@@ -18,8 +18,7 @@ join timeseries ts on ts.station_id = s.id
 join type t on t.id = ts.type_id
 where s.stationtype = 'TrafficSensor'
   and s.origin = 'A22'
-  and t.cname like '%-emissions'
-  and t.cname not like 'testuh_staging%';
+  and (t.cname like '%-emissions' or t.cname like '%-VALID');
 
 -- DOUBLE
 

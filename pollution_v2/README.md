@@ -20,7 +20,7 @@ The TrafficData is periodically pulled from the A22 collection, data validation 
 
 **Components**:
 
-- *Airflow*: It schedules the periodic task to update the validation and the pollution data.
+- *Jobs*: `validator`, `pollution-computer`, `road-weather` and `pollution-dispersal` are independent, containerized entry points (`src/<job>/main.py`), each on its own cron schedule. Locally, `docker-compose.yml` runs each job's container with `supercronic` handling the schedule; in the cluster, each job is a Kubernetes `CronJob` (see `infrastructure/helm`).
 - *Data validator*: This component downloads traffic data from ODH, validates them and upload them again into ODH.
 - *Pollution computer*: This task handles the computation of a batch of measures. It downloads the traffic data from the OpenDataHub (Using the TrafficMeasure connector), computes the pollution measures (using the Pollution Computation Model) and it uploads the new measure to the ODH using the PollutionMeasure connector.
 
@@ -60,118 +60,95 @@ Layer 3 has no adjustable parameters.
 
 ### Sequence
 
-The following sequence diagram describes how Airflow and the DAGs (validation or pollution computing) interact in order to process ODH data.
+The following sequence diagram describes how each job processes ODH data.
 
 ![sequence diagram](/pollution_v2/documentation/UML Sequence Diagram.png)
 
-Please note the following, apparently contrasting with Airflow capabilities of scheduling
-DAGs in backfill mode.
+Please note the following, which each job handles itself rather than relying on scheduler-level backfilling.
 
 Due to:
 1. ODH limitation (cannot write on ODH a record older than the ones already present),
 2. the needing of backfill a new station inserted when the others are already up-to-date,
 
-we have to rely on internal dates management in order to be sure that only the latest unprocessed data is used as DAG input. The information about dates is stored in the Redis container available on docker compose configuration (see [here](#computation-checkpoint)).
+we have to rely on internal dates management in order to be sure that only the latest unprocessed data is used as input. The information about dates is stored in the checkpoint cache (see [here](#computation-checkpoint)).
 
-1. First the scheduler starts the execution of a new _Validation_ or _Pollution Computation_ DAG.
-2. Then the DAG activates the first task that retrieves the station list.
-3. For each station the DAG runs a task in charge of process the single station:
-   1. the task will download the latest data available,
-   2. using the available data, the task computes the values,
-   3. the task uploads the calculated values on ODH.
-4. Finally, the DAG determine if on ODH there are more data to process and, in that case, triggers another DAG run to process them.
+1. First the cron schedule starts a new run of the _Validation_ or _Pollution Computation_ job.
+2. The job retrieves the station list.
+3. For each station the job processes it individually:
+   1. it downloads the latest data available,
+   2. using the available data, it computes the values,
+   3. it uploads the calculated values on ODH.
+4. Finally, the job determines if on ODH there is more data to process and, in that case, keeps iterating in the same run until it catches up (see `main.py` of each job for the catch-up loop).
 
-In details, the following step describe how the pollution computation DAG works.
+In details, the following steps describe how the pollution computer job works.
 
-1. First the scheduler starts the execution of a new `Pollution Computation DAG`.
-2. Then the task will first, download the list of available TrafficSensor stations. A GET request to the `/v2/flat,node/TrafficSensor` endpoint will be used.
+1. First the cron schedule starts a new run of the `pollution-computer` job.
+2. It first downloads the list of available TrafficSensor stations. A GET request to the `/v2/flat,node/TrafficSensor` endpoint will be used.
 3. For each station and lane it will download the latest pollution data available for each class of vehicle class it downloads the last stored measure. Using a GET to the following endpoint `/v2/{representation}/{stationTypes}/{dataTypes}/latest`.
-4. Using the available data, the `Pollution Computation DAG` identifies the new data to download for each lane station and vehicle class.
+4. Using the available data, the job identifies the new data to download for each lane station and vehicle class.
 5. The `TrafficODHConnector` download the new batch of traffic data using the starting point identified in the previous step. Using a GET to the following endpoint `/v2/{representation}/{stationTypes}/{dataTypes}/{from}/{to}`.
 6. The `PollutionComputationModel` computes the new PollutionMeasures and returns them to the main task.
-7. Finally, the main task uploads the new PollutionMeasures to the ODH using the *PollutionODHConnector*.
+7. Finally, the job uploads the new PollutionMeasures to the ODH using the *PollutionODHConnector*.
 
 #### Computation checkpoint
-By setting the *COMPUTATION_CHECKPOINT_REDIS_HOST* variable to a valid Redis server, the computation checkpoints will be enabled.
+
+Computation checkpoints are enabled by setting *COMPUTATION_CHECKPOINT_CACHE_PATH* to a SQLite file path (set to an empty string to disable them).
 
 The computation checkpoint stores the final date of the last computed interval of data for a station. The checkpoint is used
 as a starting date for the next computation if the station has no pollution data associated.
-This feature has been implemented to avoid attempting a recalculation, at each execution of the task, of all
+This feature has been implemented to avoid attempting a recalculation, at each execution of the job, of all
 the historical data of the stations that have only invalid data for this library.
 
-We can use the Redis host made available by airflow when building its containers. The environment variable
-(taken from `docker-compose.yaml`) dictating the redis host used by airflow is:
+Locally (`docker-compose.yml`), the checkpoint file is bind-mounted at `./data/checkpoint_cache.db`. In Kubernetes, it lives
+on a PersistentVolumeClaim shared by all jobs, mounted at `/app/data` (see `infrastructure/helm/templates/pvc.yaml`).
 
-```
-AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
-```
-
-This is standard for Airflow and means it connects to Redis host at port 6379, with database 0.
-Redis supports up to 16 databases, and they are independent from each other.
-Therefore we can use the redis host already present to check for the computation error, we just need to use a different database.
-We can use these environment variables (db is set to 10, but needs only to be different from 0):
-
-```
-AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_HOST: 'redis'
-AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_PORT: 6379
-AIRFLOW_VAR_COMPUTATION_CHECKPOINT_REDIS_DB: 10
-```
-
-By using these settings, the computations persist when errors on the data were found.
-When a task could not compute the validation or pollution computation, it updated the redis cache with the next
-date to retrieve data and then finished with MARK=SUCCESS, thus not breaking the flow of task executions.
-The next planned task for that station retrieves the date available from cache and continues the computation from there.
+By using this cache, computations persist across runs even when errors on the data were found: when a job could not compute
+the validation or pollution computation for a station, it updates the checkpoint with the next date to retrieve data and
+moves on, rather than blocking the whole run. The next run for that station retrieves the date available from the cache
+and continues the computation from there.
 
 ## How to maintain it
 
-### Reset Airflow Redis cache
+### Reset checkpoint cache
 
-When a reset of the workflow manager is needed (e.g. to make it process all the data available from the beginning or
-from a specific date), you need to clean the Redis volume used as state database as detailed above. Once
-stopped the docker compose, remove the dedicated volume and start again the compose or cleanup keys as follows.
+When a reset is needed (e.g. to make a job process all the data available from the beginning or from a specific date),
+delete the checkpoint file.
 
-Connect to the container
+Locally:
 ```bash
-docker exec -it {{container_name}} bash
+rm -f ./data/checkpoint_cache.db
 ```
 
-Clean Redis db
+In Kubernetes, the checkpoint file lives on a PVC shared by all jobs. Release name and namespace are defined in
+`.github/workflows/ci-pollution-v2.yml` (`K8S_NAME`, `KUBERNETES_NAMESPACE`), e.g. `el-pollution-v2` in namespace `collector`.
+
+If you have to redo calculations, you must clean the cache:
 ```bash
-redis-cli -n 10 flushdb
+kubectl -n collector run checkpoint-cache-cleanup --rm -it --restart=Never \
+  --image=busybox \
+  --overrides='{"spec":{"containers":[{"name":"cleanup","image":"busybox","command":["sh"],"stdin":true,"tty":true,"volumeMounts":[{"name":"data","mountPath":"/app/data"}]}],"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"el-pollution-v2-checkpoint-cache"}}]}}' \
+  -- sh -c "rm -f /app/data/checkpoint_cache.db"
 ```
 
-Check there are no keys
-```bash
-redis-cli -n 10 keys '*'
-```
-
-Look for a specific key
-```bash
-redis-cli -n 10 GET "ComputationCheckpoint-A22:6127:4-VALIDATION"
-redis-cli -n 10 KEYS '*POLLUTION*'
-```
-
-Delete a specific key
-```bash
-redis-cli -n 10 KEYS '*POLLUTION*' | xargs -r redis-cli -n 10 DEL
-```
+Note: `ODH_MAX_LOOKBACK_DAYS`, if set, caps how far behind a station's start date can be relative to the most-caught-up
+station, even with an empty cache.
 
 ### Update "parco circolante"
 
 "Parco circolante" stands for the configuration containing the estimate of the distribution of the types of car moving
 on the considered road.
 
-The folder `pollution_v2/src/pollution_connector/model/input` contains a dedicated CSV file and copert55.db (a sqlite database) for each year
+The folder `pollution_v2/src/pollution_computer/model/input` contains a dedicated CSV file and copert55.db (a sqlite database) for each year
 (e.g. `fc_info_2018.csv`)
 
-When processing data for a specific year, the DAG looks for the file `fc_<year>.csv`: if found, the file is used,
+When processing data for a specific year, the pollution computer job looks for the file `fc_<year>.csv`: if found, the file is used,
 otherwise the system look for the most recent year before `<year>` (e.g. if it does not find 2025 it will try 2024, and so on).  
 
-No configuration needs to be changed, just add the updated file, clean already processed records and let the DAGs run.
+No configuration needs to be changed, just add the updated file, clean already processed records and let the job run again.
 
-To update the "parco circolante" for a specific year, add the corresponding file and then [reset the Airflow cache](#Reset-Airflow-Redis-cache) for the previously computed data.
+To update the "parco circolante" for a specific year, add the corresponding file and then [reset the checkpoint cache](#reset-checkpoint-cache) for the previously computed data.
 
-Clean previously updated data on Open Data Hub and run the corresponding DAGs again.
+Clean previously updated data on Open Data Hub and run the pollution computer job again.
 
 ## How to use it
 
@@ -196,189 +173,124 @@ Clean previously updated data on Open Data Hub and run the corresponding DAGs ag
 	pip install pre-commit
 	pre-commit install
 	```
+5. Copy `.env.example` to `.env` and fill in the ODH credentials and any other setting you need to override.
 
 ### Project folders
 
-* ```airflow``` contains Airflow installation files (under .gitignore)
-* ```documentation``` contains UML diagrams describing the system
-* ```sample_data``` contains any sample data useful to test tasks (under .gitignore); sample data for validator are available [here](https://drive.google.com/file/d/1aPFDXOCECvA_h6npYe_aZ0k8vxHTwlYy/view?usp=drive_link)
-* ```src```contains source files
-  * ```src/config``` contains configuration files for tasks, e.g. validator
-  * ```src/dags```contains DAG of the project
-  * ```src/tests``` contains test files
-* ```venv``` contains Python virtual environment (under .gitignore)
+* `documentation` contains UML diagrams describing the system
+* `infrastructure` contains the Dockerfile (`infrastructure/docker/Dockerfile`), the Helm chart (`infrastructure/helm`) and the compose files used for build/test in CI
+* `sample_data` contains any sample data useful to test tasks (under .gitignore); sample data for validator are available [here](https://drive.google.com/file/d/1aPFDXOCECvA_h6npYe_aZ0k8vxHTwlYy/view?usp=drive_link)
+* `sql` contains maintenance SQL scripts (e.g. deleting elaboration data)
+* `dispersal` and `weather` are standalone prediction services (RLine and METRo respectively) called over HTTP by the pollution-dispersal and road-weather jobs; each has its own Dockerfile, requirements and README
+* `src` contains source files
+  * `src/common` contains shared connectors, data models, managers and the checkpoint cache
+  * `src/config` contains configuration files for jobs, e.g. `validator.yaml`, `road_weather.yaml`
+  * `src/validator`, `src/pollution_computer`, `src/road_weather`, `src/pollution_dispersal` each contain one job's `main.py` entry point, manager and model
+  * `src/tests` contains test files
+* `venv`/`.venv` contains Python virtual environment (under .gitignore)
 
-### Setup Airflow
+### Running a job locally
 
-1. Move to project folder (.)
-2. Set Airflow Home
-```commandline
-mkdir ./airflow
-export AIRFLOW_HOME=<your_local_path>/pollution_v2/airflow
-```
-3. Install Airflow running the following commands
-```commandline
-AIRFLOW_VERSION=2.8.1
-PYTHON_VERSION="$(python --version | cut -d " " -f 2 | cut -d "." -f 1-2)"
-CONSTRAINT_URL="https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-${PYTHON_VERSION}.txt"
-pip install "apache-airflow==${AIRFLOW_VERSION}" --constraint "${CONSTRAINT_URL}"
-```
-4. If needed (see console errors on first run, see below), install the following:
-```commandline
-pip install apache-airflow-providers-cncf-kubernetes
-```
-5. Run Airflow Standalone
-```commandline
-airflow standalone
-```
-6. Test it by accessing the Airflow UI: http://localhost:8080 and check files creation in ```./airflow``` (at least ```airflow.cfg```)
-7. Trigger a few task instances (optional)
-```commandline
-# run your first task instance
-airflow tasks test example_bash_operator runme_0 2015-01-01
-```
-```commandline
-# backfill: when you may want to run the DAG for a specified historical period even when catchup is disabled, e.g. before the start_date
-airflow dags backfill example_bash_operator --start-date 2015-01-01 --end-date 2015-01-02
+Each job can be run once or on a schedule via `docker-compose.yml`:
 
-# clear: after task failure, once errors have been fixed, you can re-run the tasks by clearing them for the scheduled date
-airflow dags backfill example_bash_operator --start-date 2015-01-01 --end-date 2015-01-02
-```
-8. More commands (optional)
+```bash
+# one-shot run, useful for testing
+docker compose run --rm validator
+docker compose run --rm pollution-computer
+docker compose run --rm road-weather
+docker compose run --rm pollution-dispersal
 
-Run scheduler alone
-```commandline
-airflow scheduler
-```
-Run webserver alone
-```commandline
-airflow webserver
-```
-9. Once Airflow is running on samples, change DAG folder in file ```./airflow/airflow.cfg```
-```commandline
-dags_folder = <your_local_path>/pollution_v2/src
-```
-9. Once Airflow is running on samples, change DAG folder in file ```./airflow/airflow.cfg``` and skip examples loading
-```commandline
-dags_folder = <your_local_path>/pollution_v2/src
-load_examples = False
+# run all jobs continuously, each on its own cron schedule (via supercronic)
+docker compose up --detach
 ```
 
-### Working with DAGs
+Cron schedules are set via `VALIDATOR_CRON_SCHEDULE`, `POLLUTION_COMPUTER_CRON_SCHEDULE`, `ROAD_WEATHER_CRON_SCHEDULE`
+and `POLLUTION_DISPERSAL_CRON_SCHEDULE` (see `.env.example`); these are only used by `docker-compose.yml` and are
+ignored in Kubernetes, where each job's `schedule` is set per-environment in `infrastructure/helm/test.yaml` /
+`infrastructure/helm/prod.yaml`.
 
-1. Check DAG consistency over Python
-```commandline
-python ./src/dags/<name>.py
-```
-```commandline
-# if errors in importing modules, try adding src folder to PYTHONPATH
-# see https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/modules_management.html
-export PYTHONPATH=<your_local_path>/pollution_v2/src
-```
-2. Check DAG code processing time
-```commandline
-time python ./airflow/dags/<name>.py
-```
-3. List available DAGs
-```commandline
-airflow dags list
-```
-4. Test DAG run
-```commandline
-airflow dags test pollution_computer
-airflow dags test pollution_computer 2024-01-01
-```
+To run a job directly with Python (e.g. from an IDE run/debug configuration):
+1. Set the working directory to `pollution_v2/src` (or add it to `PYTHONPATH`).
+2. Set the environment variables listed below (or load them from `.env`).
+3. Run the module for the job you want, e.g.:
+	```commandline
+	python -m validator.main
+	python -m pollution_computer.main
+	python -m road_weather.main
+	python -m pollution_dispersal.main
+	```
 
-### Working on Tasks
+### Running tests
 
-1. List tasks in DAG
-```commandline
-airflow tasks list tutorial_of_mines
-airflow tasks list tutorial_of_mines --tree
-```
-2. Test single task from DAG
-```commandline
-airflow tasks test tutorial_of_mines print_date 2015-06-01
+```bash
+cd infrastructure
+docker compose -f docker-compose.test.yml build
+docker compose -f docker-compose.test.yml run --rm test
 ```
 
-### Resources
-[Airflow best practices](https://airflow.apache.org/docs/apache-airflow/stable/best-practices.html)
+This is the same command run in CI (see `.github/workflows/ci-pollution-v2.yml`).
 
-### Run/debug configuration
+#### List of environment variables
 
-1. Create a Python run/debug configuration named 'airflow standalone' or similar.
-2. Select 'module' on drop-down list and fill the next field with 'airflow'.
-3. Specify as Working directory the following: '<your_local_path>/pollution_v2'.
-4. Set the following environmental variables.
+| Name                                                   | Required | Description                                                                                                                                                                                                             | Default                                  |
+|---------------------------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------|
+| ODH_BASE_READER_URL                                    | Yes      | The base url for the ODH requests for reading data.                                                                                                                                                                     | -                                         |
+| ODH_BASE_WRITER_URL                                    | Yes      | The base url for the ODH requests for writing data.                                                                                                                                                                     | -                                         |
+| ODH_AUTHENTICATION_URL                                 | Yes      | The url for ODH authentication endpoints.                                                                                                                                                                               | -                                         |
+| ODH_USERNAME                                           | No       | The username for the ODH authentication (only needed for `ODH_GRANT_TYPE=password`).                                                                                                                                   | -                                         |
+| ODH_PASSWORD                                           | No       | The password for the ODH authentication (only needed for `ODH_GRANT_TYPE=password`).                                                                                                                                    | -                                         |
+| ODH_CLIENT_ID                                          | Yes      | The client ID for the ODH authentication.                                                                                                                                                                               | -                                         |
+| ODH_CLIENT_SECRET                                      | Yes      | The client secret for the ODH authentication.                                                                                                                                                                           | -                                         |
+| ODH_GRANT_TYPE                                         | No       | The token grant type for the ODH authentication. It is possible to specify more types by separating them using `;`.                                                                                                     | "client_credentials"                      |
+| ODH_PAGINATION_SIZE                                    | No       | The pagination size for the get requests to ODH.                                                                                                                                                                        | 5000                                      |
+| ODH_MAX_POST_BATCH_SIZE                                | No       | The maximum size of the batch for each post request to ODH. If not present there is not a maximum batch size and all data will sent in a single call.                                                                   | -                                         |
+| ODH_PARALLEL_REQUESTS                                  | No       | The number of parallel requests used when downloading traffic data.                                                                                                                                                     | 10                                        |
+| ODH_STATIONS_FILTER_ORIGIN                             | No       | Filters the station list to a specific origin, e.g. `A22`.                                                                                                                                                              | -                                         |
+| ODH_MINIMUM_STARTING_DATE                              | No       | The minimum starting date[time] in isoformat (up to one second level of precision, milliseconds for the from date field are not supported in ODH) for downloading data from ODH if no measures are available.          | 2018-01-01                                |
+| ODH_MAX_LOOKBACK_DAYS                                  | No       | Caps how many days behind the most-caught-up station a lagging station's computation start date can be. Unset disables the cap.                                                                                       | -                                         |
+| ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION            | No       | The maximum size (in days) of a batch to compute pollution.                                                                                                                                                             | 30                                        |
+| ODH_COMPUTATION_BATCH_SIZE_VALIDATION                  | No       | The maximum size (in days) of a batch to compute validation.                                                                                                                                                            | 1                                         |
+| ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL              | No       | The range (in days) used to look for the pollution dispersal computation starting date.                                                                                                                                | 30                                        |
+| REQUESTS_TIMEOUT                                       | No       | Timeout (in seconds) for requests to ODH and other HTTP endpoints.                                                                                                                                                      | 300                                       |
+| REQUESTS_MAX_RETRIES                                   | No       | Maximum number of retries for failed requests.                                                                                                                                                                          | 1                                         |
+| REQUESTS_SLEEP_TIME                                    | No       | Sleep time (in seconds) between requests.                                                                                                                                                                               | 0                                         |
+| REQUESTS_RETRY_SLEEP_TIME                              | No       | Sleep time (in seconds) before retrying a failed request.                                                                                                                                                               | 30                                        |
+| PROVENANCE_ID                                          | No       | Set if the provenance record already exists in ODH.                                                                                                                                                                     | -                                         |
+| PROVENANCE_LINEAGE                                     | No       | The provenance lineage posted to ODH.                                                                                                                                                                                   | "u-hopper"                                |
+| PROVENANCE_NAME                                        | No       | The provenance name posted to ODH.                                                                                                                                                                                      | "a22-pollutant-elaboration"               |
+| PROVENANCE_VERSION                                     | No       | The provenance version posted to ODH (set to the git SHA in CI).                                                                                                                                                        | "0.1.0"                                   |
+| DATATYPE_PREFIX                                        | No       | The prefix for datatypes (both while reading and while creating), useful to test the system simulating nothing has ever been written before on ODH.                                                                     | ""                                        |
+| COMPUTATION_CHECKPOINT_CACHE_PATH                      | No       | Path to the SQLite file used for computation checkpoints. Set to an empty string to disable caching entirely.                                                                                                          | "data/checkpoint_cache.db"                |
+| VALIDATOR_CONFIG_FILE                                  | No       | The validator config file.                                                                                                                                                                                              | "config/validator.yaml"                   |
+| ROAD_WEATHER_CONFIG_FILE                               | No       | The road weather config file.                                                                                                                                                                                           | "config/road_weather.yaml"                |
+| METRO_WS_PREDICTION_ENDPOINT                           | No       | The web-service endpoint exposing METRo forecasts.                                                                                                                                                                      | "http://metro:80/predict/?station_code="  |
+| ROAD_WEATHER_NUM_FORECASTS                             | No       | The number of forecasts to save on ODH.                                                                                                                                                                                 | 45                                        |
+| ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS                 | No       | The minutes between forecasts to be saved on ODH.                                                                                                                                                                       | 60                                        |
+| POLLUTION_DISPERSAL_STARTING_DATE                      | No       | The starting date for the pollution dispersal computation.                                                                                                                                                              | "2020-12-01 02:00"                        |
+| POLLUTION_DISPERSAL_COMPUTATION_HOURS_SPAN             | No       | The range (in hours) used to download the data to pass to the pollution dispersal model.                                                                                                                               | 1                                         |
+| POLLUTION_DISPERSAL_PREDICTION_ENDPOINT                | No       | The web-service endpoint exposing RLine forecasts.                                                                                                                                                                      | "http://rline:80/process/?dt="            |
+| POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT           | No       | The web-service endpoint exposing RLine capabilities.                                                                                                                                                                   | "http://rline:80/get_capabilities/"       |
+| POLLUTION_DISPERSAL_DOMAINS_COORDINATES_REFERENCE_SYSTEM | No     | The coordinates reference system of the stations coordinates returned by the pollution dispersal model.                                                                                                                | 32632                                     |
+| DEFAULT_TIMEZONE                                       | No       | Timezone used for scheduling/date computations.                                                                                                                                                                         | "Europe/Rome"                             |
+| HISTORY_TIMEZONE                                       | No       | Timezone used when reading history data.                                                                                                                                                                                | "UTC"                                     |
+| LOG_LEVEL                                              | No       | Log level for this project's own loggers.                                                                                                                                                                               | "INFO"                                    |
+| LOG_LEVEL_LIBS                                         | No       | Log level for third-party libraries.                                                                                                                                                                                    | "WARNING"                                 |
+| SENTRY_SAMPLE_RATE                                     | No       | Sentry traces sample rate.                                                                                                                                                                                              | 1.0                                       |
+| CRON_SCHEDULE                                          | No       | Cron expression the container runs its command on (via supercronic). If unset, the command runs once and the container exits. Ignored in Kubernetes, where scheduling is done via the CronJob's own `schedule`.        | -                                          |
 
-#### List of environmental variables for development
-
-| Name                                                                 | Required       | Description                                                                                                                                                                                                             | Default                                  |
-|----------------------------------------------------------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
-| AIRFLOW_HOME                                                         | Yes            | Airflow home.                                                                                                                                                                                                           | -                                        |
-| AIRFLOW_VAR_ODH_BASE_READER_URL                                      | Yes            | The base url for the ODH requests for reading data.                                                                                                                                                                     | -                                        |
-| AIRFLOW_VAR_ODH_BASE_WRITER_URL                                      | Yes            | The base url for the ODH requests for writing data.                                                                                                                                                                     | -                                        |
-| AIRFLOW_VAR_ODH_AUTHENTICATION_URL                                   | Yes            | The url for ODH authentication endpoints.                                                                                                                                                                               | -                                        |
-| AIRFLOW_VAR_ODH_USERNAME                                             | Yes            | The username for the ODH authentication.                                                                                                                                                                                | -                                        |
-| AIRFLOW_VAR_ODH_PASSWORD                                             | Yes            | The password for the ODH authentication.                                                                                                                                                                                | -                                        |
-| AIRFLOW_VAR_ODH_CLIENT_ID                                            | Yes            | The client ID for the ODH authentication.                                                                                                                                                                               | -                                        |
-| AIRFLOW_VAR_ODH_CLIENT_SECRET                                        | Yes            | The client secret for the ODH authentication.                                                                                                                                                                           | -                                        |
-| AIRFLOW_VAR_ODH_GRANT_TYPE                                           | Yes            | The token grant type for the ODH authentication. It is possible to specify more types by separating them using `;`.                                                                                                     | "password"                               |
-| AIRFLOW_VAR_ODH_PAGINATION_SIZE                                      | No             | The pagination size for the get requests to ODH. Set it to `-1` to disable it.                                                                                                                                          | 200                                      |
-| AIRFLOW_VAR_ODH_MAX_POST_BATCH_SIZE                                  | No             | The maximum size of the batch for each post request to ODH. If not present there is not a maximum batch size and all data will sent in a single call.                                                                   | -                                        |
-| AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION              | No             | The maximum size (in days) of a batch to compute pollution                                                                                                                                                              | 30                                       |
-| AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_VALIDATION                    | No             | The maximum size (in days) of a batch to compute validation                                                                                                                                                             | 1                                        |
-| AIRFLOW_VAR_ODH_MINIMUM_STARTING_DATE                                | No             | The minimum starting date[time] in isoformat (up to one second level of precision, milliseconds for the from date field are not supported in ODH) for downloading data from ODH if no pollution measures are available. | 2018-01-01                               |
-| AIRFLOW_VAR_DATATYPE_PREFIX                                          | No             | The prefix for datatypes (both while reading and while creating), useful to test the system simulating nothing has ever been written before on ODH.                                                                     |                                          |
-| COMPUTATION_CHECKPOINT_REDIS_HOST                                    | No             | The redis host for the computation checkpoints. Set to enable the computation checkpoints                                                                                                                               |                                          |
-| COMPUTATION_CHECKPOINT_REDIS_PORT                                    | No             | The port for the redis server for the computation checkpoints                                                                                                                                                           | 6379                                     |
-| COMPUTATION_CHECKPOINT_REDIS_DB                                      | No             | The DB number of the checkpoint redis server                                                                                                                                                                            | 0                                        |
-| AIRFLOW_VAR_DAG_POLLUTION_EXECUTION_CRONTAB                          | No             | The crontab used to schedule pollution computation                                                                                                                                                                      | 0 0 * * *                                |
-| AIRFLOW_VAR_DAG_VALIDATION_EXECUTION_CRONTAB                         | No             | The crontab used to schedule data validation                                                                                                                                                                            | 0 0 * * *                                |
-| AIRFLOW_VAR_DAG_ROAD_WEATHER_EXECUTION_CRONTAB                       | No             | The crontab used to schedule data road weather conditions calculation                                                                                                                                                   | 0 */3 * * *                              |
-| AIRFLOW_VAR_VALIDATOR_CONFIG_FILE                                    | No             | The validator config file                                                                                                                                                                                               | "src/config/validator.yaml"              |
-| AIRFLOW_VAR_ROAD_WEATHER_CONFIG_FILE                                 | No             | The road weather config file                                                                                                                                                                                            | "config/road_weather.yaml"               |
-| AIRFLOW_VAR_METRO_WS_PREDICTION_ENDPOINT                             | No             | The web-service endpoint exposing METRo forecasts                                                                                                                                                                       | "http://metro:80/predict/?station_code=" |
-| AIRFLOW_VAR_ROAD_WEATHER_NUM_FORECASTS                               | No             | The number of forecasts to save on ODH                                                                                                                                                                                  | 48                                       |
-| AIRFLOW_VAR_ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS                   | No             | The minutes between forecasts to be saved on ODH                                                                                                                                                                        | 60                                       |
-| AIRFLOW_VAR_ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL                | No             | The range (in days) used to look for the computation starting date.                                                                                                                                                     | 30                                       |
-| AIRFLOW_VAR_DAG_POLLUTION_DISPERSAL_TRIGGER_DAG_HOURS_SPAN           | No             | After a computation is completed, look in the next hours for new data to trigger a new computation.                                                                                                                     | 24                                       |
-| AIRFLOW_VAR_POLLUTION_DISPERSAL_STARTING_DATE                        | No             | The starting date for the pollution dispersal computation.                                                                                                                                                              | "2020-12-01 02:00"                       |
-| AIRFLOW_VAR_POLLUTION_DISPERSAL_COMPUTATION_HOURS_SPAN               | No             | The range (in hours) used to download the data to pass to the pollution dispersal model.                                                                                                                                | 1                                        |
-| AIRFLOW_VAR_POLLUTION_DISPERSAL_PREDICTION_ENDPOINT                  | No             | The web-service endpoint exposing RLine forecasts                                                                                                                                                                       | "http://rline:80/process/?dt="           |
-| AIRFLOW_VAR_POLLUTION_DISPERSAL_STATION_MAPPING_ENDPOINT             | No             | The web-service endpoint exposing RLine capabilities                                                                                                                                                                    | "http://rline:80/get_capabilities/       |
-| AIRFLOW_VAR_POLLUTION_DISPERSAL_DOMAINS_COORDINATES_REFERENCE_SYSTEM | No             | The coordinates reference system of the stations coordinates returned by the pollution dispersal model.                                                                                                                 | 32632                                    |
-| AIRFLOW_CONN_MINIO_S3_CONN                                           | No             | The MinIO connetion parameters (if expressed as JSON it could be necessary to escape double quotes)                                                                                                                     |                                          |
-| AIRFLOW__CORE__REMOTE_LOGGING                                        | No             | The flag enabling remote logging (install `pip install apache-airflow-providers-amazon` if not present)                                                                                                                 |                                          |
-| AIRFLOW__CORE__REMOTE_BASE_LOG_FOLDER                                | No             | The bucket name for remote logging                                                                                                                                                                                      |                                          |
-| AIRFLOW__CORE__REMOTE_LOG_CONN_ID                                    | No             | The remote logging connection id                                                                                                                                                                                        |                                          |
-| AIRFLOW__CORE__ENCRYPT_S3_LOGS                                       | No             | The flag for remote logs encryption                                                                                                                                                                                     |                                          |
-| AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG                              | No             | The maximun number of active tasks (running in parallel) for each executing DAG                                                                                                                                         | 16                                       |
-| NO_PROXY                                                             | Yes (on macOS) | Sets every URL to skip proxy (see [here](https://docs.python.org/3/library/urllib.request.html))                                                                                                                        | -                                        |                                                                                                                                                                                                   |
-
-### Notes on Docker deployment
-
-[Main reference](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html)
-
-[Useful reference](https://copyprogramming.com/howto/how-to-install-packages-in-airflow-docker-compose)
+### Notes on deployment
 
 See the following files:
- * `Dockerfile`: definition of custom image with correct image reference and requirements installation instructions
- * `docker-compose.yaml`: service definitions:
-     * `airflow-scheduler` - the scheduler monitors all tasks and DAGs, then triggers the task instances once their dependencies are complete
-     * `airflow-webserver` - the webserver is available at http://localhost:8080
-     * `airflow-worker` - the worker that executes the tasks given by the scheduler
-     * `airflow-triggerer` - the triggerer runs an event loop for deferrable tasks
-     * `airflow-init` - the initialization service
-     * `postgres` - the database
-     * `redis` - the redis - broker that forwards messages from scheduler to worker.
-* `airflow.sh`: optional wrapper scripts that will allow you to run commands with a simpler command
+ * `infrastructure/docker/Dockerfile`: multi-stage image definition (`test` stage for running the test suite, `build` stage with `supercronic` for running jobs)
+ * `docker-compose.yml`: one service per job (`validator`, `pollution-computer`, `road-weather`, `pollution-dispersal`), each built from the same image with its own `command` and `CRON_SCHEDULE`; `./data` is bind-mounted to `/app/data` for the checkpoint cache
+ * `entrypoint.sh`: if `CRON_SCHEDULE` is set, runs the job's command on that schedule via `supercronic`; otherwise runs the command once
+ * `infrastructure/helm`: Helm chart with a single `CronJob` template iterating over the `jobs` map in `values.yaml` (schedule, command and resources are set per job, per environment in `test.yaml`/`prod.yaml`); a shared PVC backs the checkpoint cache for all jobs
+ * `.github/workflows/ci-pollution-v2.yml`: CI/CD pipeline — runs tests, lints and validates the Helm chart, builds and pushes the image, then deploys to the `test` environment on push to `main` and to `prod` on push to `prod`
 
-Use the following commands (could be necessary to use `docker-compose` on older Docker Compose versions):
- * `docker compose up airflow-init`: runs database migrations and create the first user account
- * `docker compose up`: starts all services
- * `docker compose up --detach`: starts all services in detached mode
- * `docker compose --profile flower up`: starts all services plus the flower app for monitoring the environment
- * `docker compose down --volumes --remove-orphans`: cleans-up the environment
- * `docker compose down --volumes --rmi all`: stops and deletes containers, deletes volumes with database data and downloads images
-
+Use the following commands (from the `infrastructure` folder unless noted):
+ * `docker compose -f docker-compose.build.yml build`: builds the image
+ * `docker compose -f docker-compose.test.yml build && docker compose -f docker-compose.test.yml run --rm test`: runs the test suite
+ * `docker compose up --detach` (from the project root): starts all 4 jobs, each on its own cron schedule
+ * `docker compose run --rm <job>` (from the project root): runs a single job once
+ * `helm lint infrastructure/helm`: lints the chart
+ * `helm template el-pollution-v2 infrastructure/helm -f infrastructure/helm/test.yaml`: renders the manifests for the test environment
