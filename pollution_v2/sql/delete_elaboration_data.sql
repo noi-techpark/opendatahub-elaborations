@@ -39,10 +39,10 @@ and not exists (select 1 from measurementhistory mh where mh.timeseries_id = m.t
 
 -- ...otherwise restore it to the most recent surviving history record
 update measurement m
-set timestamp = h.timestamp, double_value = h.double_value
+set timestamp = h.timestamp, double_value = h.double_value, created_on = h.created_on, provenance_id = h.provenance_id
 from tmp_delete b
 join lateral (
-	select mh.timestamp, mh.double_value
+	select mh.timestamp, mh.double_value, mh.created_on, mh.provenance_id
 	from measurementhistory mh
 	where mh.timeseries_id = b.timeseries_id
 	order by mh.timestamp desc
@@ -68,10 +68,10 @@ and m.timestamp > b.start_date
 and not exists (select 1 from measurementjsonhistory mh where mh.timeseries_id = m.timeseries_id);
 
 update measurementjson m
-set timestamp = h.timestamp, json_value = h.json_value
+set timestamp = h.timestamp, json_value = h.json_value, created_on = h.created_on, provenance_id = h.provenance_id
 from tmp_delete b
 join lateral (
-	select mh.timestamp, mh.json_value
+	select mh.timestamp, mh.json_value, mh.created_on, mh.provenance_id
 	from measurementjsonhistory mh
 	where mh.timeseries_id = b.timeseries_id
 	order by mh.timestamp desc
@@ -97,10 +97,10 @@ and m.timestamp > b.start_date
 and not exists (select 1 from measurementstringhistory mh where mh.timeseries_id = m.timeseries_id);
 
 update measurementstring m
-set timestamp = h.timestamp, string_value = h.string_value
+set timestamp = h.timestamp, string_value = h.string_value, created_on = h.created_on, provenance_id = h.provenance_id
 from tmp_delete b
 join lateral (
-	select mh.timestamp, mh.string_value
+	select mh.timestamp, mh.string_value, mh.created_on, mh.provenance_id
 	from measurementstringhistory mh
 	where mh.timeseries_id = b.timeseries_id
 	order by mh.timestamp desc

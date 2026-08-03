@@ -48,10 +48,10 @@ and not exists (select 1 from measurementhistory mh where mh.timeseries_id = m.t
 
 -- ...otherwise restore it to the most recent surviving history record
 update measurement m
-set timestamp = h.timestamp, double_value = h.double_value
+set timestamp = h.timestamp, double_value = h.double_value, created_on = h.created_on, provenance_id = h.provenance_id
 from tmp_delete b
 join lateral (
-	select mh.timestamp, mh.double_value
+	select mh.timestamp, mh.double_value, mh.created_on, mh.provenance_id
 	from measurementhistory mh
 	where mh.timeseries_id = b.timeseries_id
 	order by mh.timestamp desc
