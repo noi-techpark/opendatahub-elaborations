@@ -117,24 +117,32 @@ class Processor:
                 value = data[type_id]
                 processed_value = None
                 parameters = PARAMETER_MAP[sensor_id][type_id][temparature_key]
-                if ((type_id == NO2 or type_id == NO) and O3 in data and T_INT in data):
-                    if(int(parameters["calc_version"]) == 1):
-                        processed_value = (
-                            float(parameters["a"]) 
-                            + np.multiply(float(parameters["b"]), np.power(float(value),2)) 
-                            + np.multiply(float(parameters["c"]), float(value)) 
-                            + np.multiply(float(parameters["d"]), np.power(float(data[O3]), 0.1))
-                            + np.multiply(float(parameters["e"]), np.power(data[T_INT],4))
-                        ) 
-                    else:
-                        processed_value = (
-                            float(parameters["a"]) 
-                            + np.multiply(float(parameters["b"]), np.power(float(value),2)) 
-                            + np.multiply(float(parameters["c"]), float(value)) 
-                            + np.multiply(float(parameters["d"]), float(data[O3]))
-                            + np.multiply(float(parameters["e"]), np.power(data[T_INT],4))
-                        )
-                elif ((type_id == PM10 or type_id == PM25) and all (tid in data for tid in (RH,PM10,T_INT))
+                if (type_id == NO2 and O3 in data and T_INT in data and RH in data):
+                    processed_value = (
+                        float(parameters["a"])
+                        + np.multiply(float(parameters["b"]), float(value))
+                        + np.multiply(float(parameters["c"]), float(data[O3]))
+                        + np.multiply(float(parameters["d"]), float(data[T_INT]))
+                        + np.multiply(float(parameters["e"]), float(data[RH]))
+                    )
+                elif (type_id == NO and O3 in data and T_INT in data):
+                    processed_value = (
+                        float(parameters["a"])
+                        + np.multiply(float(parameters["b"]), np.power(float(value),2))
+                        + np.multiply(float(parameters["c"]), float(value))
+                        + np.multiply(float(parameters["d"]), np.power(float(data[O3]), 0.1))
+                        + np.multiply(float(parameters["e"]), np.power(data[T_INT],4))
+                    )
+                elif (type_id == PM10 and all (tid in data for tid in (RH,PM10,T_INT))
+                        and not (data[T_INT] >= 35 and data[PM10]>100) and not(data[T_INT] < 35 and data[RH]>97)):
+                    processed_value = (
+                        float(parameters["a"])
+                        + np.multiply(float(parameters["b"]), np.power(float(value),2))
+                        + np.multiply(float(parameters["c"]), float(value))
+                        + np.multiply(float(parameters["d"]), np.power(float(data[T_INT]),0.1))
+                        + np.multiply(float(parameters["e"]), np.power(float(data[RH]),6))
+                    )
+                elif (type_id == PM25 and all (tid in data for tid in (RH,PM10,T_INT))
                         and not (data[T_INT] >= 35 and data[PM10]>100) and not(data[T_INT] < 35 and data[RH]>97)):
                     processed_value = (
                         float(parameters["a"])

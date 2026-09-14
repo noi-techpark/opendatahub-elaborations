@@ -31,7 +31,7 @@ jobs:
   # Deploy Test
   deploy-test-environment-a22-non-linear-calibration:
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/issue/#88'
     needs: test
     concurrency: deploy-test-environment-a22-non-linear-calibration
     steps:
