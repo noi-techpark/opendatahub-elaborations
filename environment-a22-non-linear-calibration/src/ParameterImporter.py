@@ -29,8 +29,7 @@ def getParameters():
             "c": row[7],
             "d": row[8],
             "e": row[9],
-            "f": row[10],
-            "calc_version": row[11]
+            "f": row[10]
         }
         if len(str(row[2])) == 0:
             temp_map['lowtemp']= parameter_map
