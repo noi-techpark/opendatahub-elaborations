@@ -7,14 +7,10 @@ image:
   tag: ""
   pullPolicy: IfNotPresent
 
-# Single volume for everything: the SQLite cache (occupancy/holiday/weather
-# history, station metadata, fitted per-station forests) and result.json
-# (written by predict under <mountPath>/result/, served from there by the
-# nginx Deployment below via a subPath mount — same layout docker-compose.yml
-# uses locally). Shared by all three jobs (ingest writes occupancy/reference
-# data, train writes models, predict reads all of it and writes result.json).
-# Needs a ReadWriteMany-capable StorageClass since job pods and the
-# long-running nginx pod mount it concurrently.
+# SQLite cache (occupancy/holiday/weather history, station metadata, fitted
+# per-station forests). EBS (ReadWriteOnce) because SQLite locking is unreliable
+# on NFS/EFS. Mounted by the three jobs only. The volume lives in one AZ; the
+# scheduler pins job pods to that AZ via the PV's node affinity.
 # Delete the DB file to force a full rebuild from scratch:
 #   kubectl exec -it <any ingest/train/predict pod> -- rm /app/data/parking.db
 #
@@ -28,6 +24,14 @@ data:
   storage: 10Gi
   mountPath: /app/data
   storageClassName: "gp3"
+
+# result.json, written by predict and served by the nginx Deployment. Needs a
+# ReadWriteMany StorageClass (EFS) since the job pods and nginx mount it
+# concurrently. Must match the directory of RESULT_JSON_PATH below.
+result:
+  storage: 1Gi
+  mountPath: /app/data/result
+  storageClassName: "efs"
 
 # Sensitive env vars — rendered into a K8s Secret and injected per-container.
 # Set in test.yaml / prod.yaml (or injected by CI via yq).
