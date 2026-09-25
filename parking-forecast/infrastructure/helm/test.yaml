@@ -12,7 +12,7 @@ envSecret:
 env:
   ODH_TOKEN_URL: "https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token"
   TS_API_BASE_URL: "https://mobility.api.opendatahub.testingmachine.eu/v2"
-  TOURISM_API_BASE_URL: "https://tourism.api.testingmachine.eu/v1"
+  TOURISM_API_BASE_URL: "https://tourism.api.opendatahub.testingmachine.eu/v1"
   LOG_LEVEL: "DEBUG"
 
 jobs:
