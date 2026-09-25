@@ -50,7 +50,7 @@ env:
   TS_API_BASE_URL: "https://mobility.api.opendatahub.com/v2"
   TS_API_REFERER: "el-parking-forecast"
   ODH_TOKEN_URL: "https://auth.opendatahub.com/auth/realms/noi/protocol/openid-connect/token"
-  ODH_CLIENT_ID: "odh-mobility-elaborations"
+  ODH_CLIENT_ID: "el-parking-forecast"
   STATION_TYPES: "ParkingStation,ParkingSensor"
   OCCUPANCY_DATA_TYPE: "occupied"
   OCCUPANCY_PERIOD: "300"
