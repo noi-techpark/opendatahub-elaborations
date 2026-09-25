@@ -20,8 +20,9 @@ from util import logging_setup, settings
 
 log = logging.getLogger("ingest")
 
-# "dawn of time" for stations we've never cached anything for yet.
-MIN_HISTORY_START = datetime(2022, 1, 1, tzinfo=timezone.utc)
+# Bounds the size of one API response (and so peak memory); windows of a
+# batch are fetched oldest-first so the per-station cursor only moves forward.
+FETCH_WINDOW = timedelta(days=7)
 
 FETCH_CONCURRENCY = 8
 MAX_BATCH_STATIONS = 200
@@ -93,12 +94,14 @@ def main() -> None:
 
 def ingest_occupancy(client: odh_client.Client, conn, odh_stations: list[odh_client.StationInfo]) -> None:
     by_type: dict[str, list[PendingStation]] = {}
+    # No point fetching what the retention purge would delete right after.
+    history_start = datetime.now(timezone.utc) - timedelta(days=settings.OCCUPANCY_RETENTION_DAYS)
 
     for s in odh_stations:
         if not s.has_occupancy_ts:
             continue  # ODH has no data for this station at all yet
 
-        from_ts = MIN_HISTORY_START
+        from_ts = history_start
         cursor = occupancy.last_occupancy_ts(conn, s.scode)
         if cursor is not None:
             from_ts = cursor + timedelta(seconds=1)
@@ -109,31 +112,48 @@ def ingest_occupancy(client: odh_client.Client, conn, odh_stations: list[odh_cli
 
         by_type.setdefault(s.station_type, []).append(PendingStation(station=s, from_ts=from_ts, to_ts=to_ts))
 
+    batches: list[tuple[str, list[PendingStation]]] = []
+    for station_type, pending in by_type.items():
+        # Sorting by catch-up start clusters already-caught-up stations
+        # into cheap, narrow-range batches instead of dragging them back
+        # to the retention cutoff alongside a brand-new station.
+        pending.sort(key=lambda p: p.from_ts)
+        batches.extend((station_type, batch) for batch in chunk_by_url_length(pending))
+
+    # Each round fetches one window per still-active batch, in parallel.
+    window_start = {id(batch): min(p.from_ts for p in batch) for _, batch in batches}
+    window_end = {id(batch): max(p.to_ts for p in batch) for _, batch in batches}
+
     with ThreadPoolExecutor(max_workers=FETCH_CONCURRENCY) as pool:
-        futures = []
-        for station_type, pending in by_type.items():
-            # Sorting by catch-up start clusters already-caught-up stations
-            # into cheap, narrow-range batches instead of dragging them back
-            # to 2022 alongside a brand-new station.
-            pending.sort(key=lambda p: p.from_ts)
+        while batches:
+            futures = []
+            for station_type, batch in batches:
+                start = window_start[id(batch)]
+                end = min(start + FETCH_WINDOW, window_end[id(batch)])
+                futures.append(pool.submit(_fetch_batch, client, station_type, batch, start, end))
 
-            for batch in chunk_by_url_length(pending):
-                futures.append(pool.submit(_fetch_batch, client, station_type, batch))
+            failed: set[int] = set()
+            for future in as_completed(futures):
+                station_type, batch, measurements, error = future.result()
+                if error is not None:
+                    log.error(
+                        "fetching occupancy history batch failed",
+                        extra={"stationType": station_type, "stations": len(batch), "err": str(error)},
+                    )
+                    failed.add(id(batch))
+                    continue
+                _cache_batch(conn, batch, measurements)
 
-        for future in as_completed(futures):
-            station_type, batch, measurements, error = future.result()
-            if error is not None:
-                log.error(
-                    "fetching occupancy history batch failed",
-                    extra={"stationType": station_type, "stations": len(batch), "err": str(error)},
-                )
-                continue
-            _cache_batch(conn, batch, measurements)
+            for _, batch in batches:
+                window_start[id(batch)] = min(window_start[id(batch)] + FETCH_WINDOW, window_end[id(batch)])
+            batches = [
+                (t, b) for t, b in batches if id(b) not in failed and window_start[id(b)] < window_end[id(b)]
+            ]
 
 
-def _fetch_batch(client: odh_client.Client, station_type: str, batch: list[PendingStation]):
-    from_ts = min(p.from_ts for p in batch)
-    to_ts = max(p.to_ts for p in batch)
+def _fetch_batch(
+    client: odh_client.Client, station_type: str, batch: list[PendingStation], from_ts: datetime, to_ts: datetime
+):
     scodes = [p.station.scode for p in batch]
     try:
         measurements = client.fetch_occupancy_history(station_type, scodes, from_ts, to_ts)
