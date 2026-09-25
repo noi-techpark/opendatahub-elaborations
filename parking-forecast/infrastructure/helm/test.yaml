@@ -31,7 +31,7 @@ jobs:
     command: ["python", "/app/main.py", "train"]
     resources:
       requests:
-        cpu: "500"
+        cpu: "500m"
         memory: "512Mi"
       limits:
         memory: "2Gi"
