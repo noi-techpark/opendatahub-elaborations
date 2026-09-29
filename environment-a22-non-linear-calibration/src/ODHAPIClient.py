@@ -5,7 +5,7 @@
 import requests
 import os
 import logging
-from ODHKeyCloakClient import KeycloakClient
+from ODHKeyCloakClient import TokenManager
 from functools import reduce
 
 log = logging.getLogger()
@@ -13,14 +13,12 @@ logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))
 
 class DataFetcher:
     def __init__(self):
-        self.token = KeycloakClient.getDefaultInstance().token("", "","client_credentials")
-        log.debug("Token created:")
-        log.debug(self.token)
+        self.token_manager = TokenManager()
 
     def fetch_data(self, endpoint):
         r = requests.get(
             os.getenv("ODH_MOBILITY_API_NINJA") + endpoint,
-            headers={"Authorization" : "Bearer " + self.token['access_token']}
+            headers={"Authorization" : "Bearer " + self.token_manager.get_access_token()}
         )
         if (r.status_code != 200):
             log.warn("Status code not 200 but " + str(r.status_code))
