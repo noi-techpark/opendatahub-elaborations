@@ -15,7 +15,7 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout source code
         uses: actions/checkout@v2
@@ -30,8 +30,8 @@ jobs:
 
   # Deploy Test
   deploy-test-environment-a22-non-linear-calibration:
-    runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/issue/#88'
+    runs-on: ubuntu-24.04
+    if: github.ref == 'refs/heads/main'
     needs: test
     concurrency: deploy-test-environment-a22-non-linear-calibration
     steps:
@@ -79,7 +79,7 @@ jobs:
 
   # Deploy Prod
   deploy-prod-environment-a22-non-linear-calibration:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     if: github.ref == 'refs/heads/prod'
     needs: test
     concurrency: deploy-prod-environment-a22-non-linear-calibration
