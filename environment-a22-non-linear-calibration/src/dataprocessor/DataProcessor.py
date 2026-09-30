@@ -12,6 +12,8 @@ import json
 import numpy as np
 import logging
 import math
+import os
+import time
 
 DEFAULT_START_CALC = "2016-01-01 00:00:00.000+0000"
 NO2 = "NO2-Alphasense"
@@ -34,6 +36,23 @@ def parseODHTime(time: str) -> datetime:
     return datetime.datetime.strptime(time, "%Y-%m-%d %H:%M:%S.%f%z")
 
 class Processor:
+    # How long to wait before re-checking a station that has no calibration
+    # coverage at all, instead of skipping it forever.
+    RECHECK_INTERVAL = datetime.timedelta(days=7)
+    # Delay applied after a heavy fetch, to avoid bursting the API.
+    STATION_PACING_SEC = float(os.environ.get("STATION_PACING_SEC", "1"))
+    # A fetch covering more than this many days is considered "heavy".
+    HEAVY_FETCH_DAYS = 30
+
+    def __init__(self):
+        # station_id -> last time we confirmed it has no calibration coverage
+        self._uncalibratable_checked_at = {}
+
+    def _has_calibration_coverage(self, sensor_history):
+        if not sensor_history:
+            return False
+        return any(PARAMETER_MAP.get(entry.get("id")) for entry in sensor_history)
+
     def calc_by_station(self):
         pusher.sync_datatypes([
             DataType("O3_processed","ug/m3", "O3", "Mean"),
@@ -43,25 +62,37 @@ class Processor:
             DataType("NO2-Alphasense_processed", "ug/m3", "NO2 (Alphasense)", "Mean"),
             DataType("CO_processed", "mg/m3", "CO", "Mean"),
         ])
-        
+
         time_map = fetcher.get_newest_data_timestamps(types=TYPES_TO_ELABORATE)
+        now = datetime.datetime.now(datetime.timezone.utc)
         for s_id in time_map:
+            sensor_history = time_map[s_id]['sensor_history']
+
+            last_checked = self._uncalibratable_checked_at.get(s_id)
+            if last_checked is not None and now - last_checked < self.RECHECK_INTERVAL:
+                continue
+            if not self._has_calibration_coverage(sensor_history):
+                log.info("Station %s has no sensor with calibration parameters; skipping fetch (rechecking in %s)"
+                    % (s_id, self.RECHECK_INTERVAL))
+                self._uncalibratable_checked_at[s_id] = now
+                continue
+            self._uncalibratable_checked_at.pop(s_id, None)
+
             start = datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
             end = parseODHTime(DEFAULT_START_CALC)
             for t_id in time_map[s_id]['types']:
                 state_map = time_map[s_id]['types'][t_id]
                 end = max(parseODHTime(state_map.get('raw')), end)
                 start = min(parseODHTime(state_map.get('processed', DEFAULT_START_CALC)), start)
-            sensor_history = time_map[s_id]['sensor_history']
 
             # Process in 1-year batches to not overload API
             current_start = start
             batch_end = end + datetime.timedelta(0, 3)
-            
+
             while current_start < batch_end:
                 current_end = min(current_start + datetime.timedelta(days=365), batch_end)
                 timeseries = fetcher.get_raw_history(s_id, current_start, current_end, types=TYPES_TO_REQUEST)
-                
+
                 if timeseries:
                     elaborations = self.calc(timeseries, sensor_history, s_id)
                     try:
@@ -69,7 +100,11 @@ class Processor:
                     except Exception as e:
                         log.error("Failed to send data for station: " + s_id)
                         raise
-                
+
+                # Pace heavy fetches so we don't burst the API
+                if (current_end - current_start).days > self.HEAVY_FETCH_DAYS and self.STATION_PACING_SEC > 0:
+                    time.sleep(self.STATION_PACING_SEC)
+
                 current_start = current_end
 
     def calc(self, timeseries, sensor_history, station_id):
