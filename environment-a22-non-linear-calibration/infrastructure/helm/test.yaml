@@ -1,0 +1,18 @@
+image:
+  repository:
+  pullPolicy: IfNotPresent
+  tag: "0.0.0" # Set this when upgrading chart with --set-value
+
+env:
+  ODH_MOBILITY_API_NINJA: https://mobility.api.opendatahub.testingmachine.eu/v2
+  AUTHENTICATION_SERVER: https://auth.opendatahub.testingmachine.eu/auth/
+  ODH_MOBILITY_API_WRITER: https://mobility.share.opendatahub.testingmachine.eu
+  PROVENANCE_LINEAGE: NOI
+  PROVENANCE_NAME: el-environment-a22-non-linear-calibration
+  PROVENANCE_VERSION: 0.0.0
+
+  LOG_LEVEL: DEBUG
+  JOB_SCHEDULE_SEC: "3600"
+
+envSecret:
+  CLIENT_SECRET:
