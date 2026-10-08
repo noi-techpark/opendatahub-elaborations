@@ -4,9 +4,9 @@ image:
   tag: "0.0.0" # Set this when upgrading chart with --set-value
 
 env:
-  ODH_MOBILITY_API_NINJA: https://mobility.api.opendatahub.com/v2
+  ODH_MOBILITY_API_NINJA: http://ninja-api.core.svc.cluster.local/v2
   AUTHENTICATION_SERVER: https://auth.opendatahub.com/auth/
-  ODH_MOBILITY_API_WRITER: https://mobility.share.opendatahub.com
+  ODH_MOBILITY_API_WRITER: http://bdp-core.core.svc.cluster.local
   PROVENANCE_LINEAGE: NOI
   PROVENANCE_NAME: el-environment-a22-non-linear-calibration
   PROVENANCE_VERSION: 0.0.0
