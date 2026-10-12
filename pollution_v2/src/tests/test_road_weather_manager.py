@@ -52,13 +52,14 @@ def test_computes_and_uploads_forecast_and_conf_level(manager, connectors, check
     assert {m.data_type.name.split("-")[0] for m in forecast} == {"ROADCAST"}
     assert len({m.data_type.name for m in forecast}) == n  # one data type per forecast step
     assert all(isinstance(m.value, str) and m.value for m in forecast)
-    assert {m.period for m in forecast} == {1}
+    assert {m.period for m in forecast if m.data_type.name.endswith("FORECAST_1200")} == {72000}
     assert all(m.provenance.provenance_id == "prov-new" for m in forecast)
 
     conf = connectors.road_weather_conf_level.posted_measures
     assert len(conf) == 1
     assert conf[0].data_type.name.endswith("RW_FORECAST_CONF_LEVEL")
     assert conf[0].value == "0"  # the recorded observations lack data
+    assert conf[0].period == 1
 
     assert connectors.road_weather_forecast.posted_data_types  # data types are created
     assert _checkpoint(checkpoint_cache, station) == RW_FORECAST_START
