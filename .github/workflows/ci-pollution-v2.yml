@@ -59,7 +59,7 @@ jobs:
   deploy-test:
     runs-on: ubuntu-24.04
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/pv2-rwis'
     concurrency: deploy-test
     environment: test
     env:

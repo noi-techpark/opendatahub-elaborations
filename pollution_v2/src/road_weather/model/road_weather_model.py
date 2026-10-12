@@ -5,25 +5,26 @@
 from __future__ import absolute_import, annotations
 
 import logging
-import os
-import time
-import urllib
-from datetime import datetime, timedelta
+import subprocess
+import tempfile
+from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from xml.etree import ElementTree
-from zoneinfo import ZoneInfo
 
-from common.data_model import TrafficSensorStation, RoadWeatherObservationMeasureCollection, Station
+import pandas as pd
 
-import urllib.request
-
+from common.data_model import RoadWeatherObservationMeasureCollection, Station
 from common.data_model.roadcast import RoadCastEntry, RoadCastTypeClass, RoadCastClass, ExtendedRoadCastEntry
-from common.model.helper import ModelHelper
-from common.settings import TMP_DIR, METRO_WS_PREDICTION_ENDPOINT, ROAD_WEATHER_NUM_FORECASTS, \
-    ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
+from road_weather.model.observations import Observations
+from common.settings import TMP_DIR, METRO_PYTHON, METRO_BIN, METRO_PARAMETERS_DIR, ROAD_WEATHER_NUM_FORECASTS, \
+    ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS, PERIOD_1SEC
 
 logger = logging.getLogger("pollution_v2.road_weather.model.road_weather_model")
+
+# format of the roadcast-time tags in the METRo output, e.g. 2024-08-27T21:20Z (always UTC)
+ROADCAST_TIME_FORMAT = "%Y-%m-%dT%H:%M%z"
+METRO_TIMEOUT = 300
 
 
 class RoadConditions(Enum):
@@ -40,125 +41,131 @@ class RoadConditions(Enum):
     def get_enum_member_value(name: str) -> str | None:
         try:
             return RoadConditions[name].value
-        except:
+        except KeyError:
             return None
 
 
 class RoadWeatherModel:
     """
-    The model for computing road condition.
+    The model for computing road condition. It prepares the METRo inputs (forecast and observations), runs METRo and
+    converts the roadcast it produces into entries.
     """
 
     def compute_data(self, observation: RoadWeatherObservationMeasureCollection,
                      forecast_filename: str,  # TODO: change with RoadWeatherForecastMeasureCollection
-                     forecast_start: datetime,  # TODO: check if needed
-                     station: TrafficSensorStation) -> List[ExtendedRoadCastEntry]:
+                     forecast_start: datetime,
+                     station: Station) -> List[ExtendedRoadCastEntry]:
         """
         Compute the road condition for the given station.
+
         :param observation: The road weather observation measure collection
         :param forecast_filename: The forecast file name
         :param forecast_start: The forecast start
-        :param station: The traffic station
+        :param station: The road weather station, with `wrf_code` set
         :return: The list of road conditions
+        :raise: ValueError if the observations are not enough for METRo, CalledProcessError if METRo fails
         """
+        obs = Observations(self._get_observations_dataframe(observation), station.wrf_code)
+        obs.process()
+        conf_level = str(obs.conf_level)
+        logger.info(f"Computing road condition for station [{station.code}], confidence level {conf_level}")
 
-        logger.info(f"Creating observations file from {len(observation.measures)} measures")
-
-        entries = observation.get_entries()
-        observation_filename = f"{TMP_DIR}/observations_{round(time.time() * 1000)}.csv"
-        with open(observation_filename, 'a') as tmp_csv:
-            tmp_csv.write('"time","station_code","prec_qta","stato_meteo",'
-                          '"temp_aria","temp_rugiada","temp_suolo","vento_vel"\n')
-            for entry in entries:
-                tmp_csv.write(f'{entry.valid_time.strftime("%Y-%m-%d %H:%M:%S")},{entry.station.code},{entry.prec_qta},'
-                              f'{entry.stato_meteo},{entry.temp_aria},{entry.temp_rugiada},{entry.temp_suolo},'
-                              f'{entry.vento_vel}\n')
-
-        logger.info(f"Computing road condition for station [{station.code}] with observations from "
-                    f"{observation_filename} and forecast from {forecast_filename}")
-        logger.info(f"Forecast start: {forecast_start}")
-
-        url = f"{METRO_WS_PREDICTION_ENDPOINT}{station.wrf_code}"
-
-        # List of files to upload
-        files_to_upload = [forecast_filename, observation_filename]
-
-        # Create multipart form data
-        body, boundary = ModelHelper.create_multipart_formdata(files_to_upload)
-
-        # Create a request object
-        req = urllib.request.Request(url, data=body)
-        req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
+        with tempfile.TemporaryDirectory(dir=TMP_DIR) as work_dir:
+            observation_filename = f"{work_dir}/observation.xml"
+            roadcast_filename = f"{work_dir}/roadcast.xml"
+            obs.to_xml(observation_filename)
+            obs.validate()
+            self._run_metro(station, forecast_filename, observation_filename, roadcast_filename, forecast_start,
+                            f"{work_dir}/metro.log")
+            with open(roadcast_filename, "rb") as f:
+                roadcast = f.read()
 
         entries = []
-        try:
-            with urllib.request.urlopen(req) as response:
-                response_data = response.read()
-                response_content = response_data.decode('utf-8')
-                logger.debug(f"server response: \n{response_content}")
-
-                root = ElementTree.fromstring(response_content)
-                header_element = root.findall('.//header')[0]
-                conf_level = ""
-                for tags in header_element:
-                    if tags.tag == 'conf_level':
-                        conf_level = tags.text
-                        logger.info(f"conf level found: {conf_level}")
-                        break
-
-                if not conf_level:
-                    logger.warning("No conf_level found in the response")
-
-                for entry in self._get_entries_from_xml(response_data, conf_level, station):
-                    extended_entry = ExtendedRoadCastEntry(entry.station, entry.valid_time, entry.roadcast_class,
-                                                           entry.entry_class, entry.entry_value, entry.period)
-                    extended_entry.set_conf_level(conf_level)
-                    entries.append(extended_entry)
-        except Exception as e:
-            logger.error(f"error while processing request: {e}")
-
-        # Remove observation temporary file (forecast file is removed later)
-        os.remove(observation_filename)
-
+        for entry in self.parse_roadcast(roadcast, station):
+            extended_entry = ExtendedRoadCastEntry(entry.station, entry.valid_time, entry.roadcast_class,
+                                                   entry.entry_class, entry.entry_value, entry.period)
+            extended_entry.set_conf_level(conf_level)
+            entries.append(extended_entry)
         return entries
 
     @staticmethod
-    def _get_entries_from_xml(response_data, conf_level: str, station: Station) -> List[RoadCastEntry]:
+    def _get_observations_dataframe(observation: RoadWeatherObservationMeasureCollection) -> pd.DataFrame:
+        """
+        The observations in the format expected by `Observations`. Times are UTC, as METRo handles them as such.
+        """
+        columns = ["time", "prec_qta", "stato_meteo", "temp_aria", "temp_rugiada", "temp_suolo", "vento_vel"]
+        df = pd.DataFrame([{
+            "time": entry.valid_time.astimezone(timezone.utc).replace(tzinfo=None)
+            if entry.valid_time.tzinfo else entry.valid_time,
+            **{c: getattr(entry, c) for c in columns[1:]}
+        } for entry in observation.get_entries()], columns=columns)
+        df[columns[1:]] = df[columns[1:]].apply(pd.to_numeric, errors="coerce")
+        # Observations handles 0 as no data for these variables
+        nodata_columns = ["temp_aria", "temp_rugiada", "temp_suolo", "vento_vel"]
+        df[nodata_columns] = df[nodata_columns].fillna(0)
+        return df.sort_values("time", ignore_index=True)
 
-        # TODO cablato
-        roadcast_format = '%Y-%m-%dT%H:%M%z'
+    @staticmethod
+    def _run_metro(station: Station, forecast_filename: str, observation_filename: str, roadcast_filename: str,
+                   forecast_start: datetime, log_filename: str) -> None:
+        metro = [
+            METRO_PYTHON, METRO_BIN,
+            "--verbose-level", "0",
+            "--enable-sunshadow",
+            "--sunshadow-method", "1",
+            "--use-sst-sensor-depth",
+            "--log-file", log_filename,
+            "--input-forecast", forecast_filename,
+            "--input-observation", observation_filename,
+            "--input-station", f"{METRO_PARAMETERS_DIR}/parameters_{station.wrf_code}.xml",
+            "--roadcast-start-date", forecast_start.strftime("%Y-%m-%dT%H:%M"),
+            "--output-roadcast", roadcast_filename
+        ]
+        logger.info(f"running {metro}")
+        subprocess.run(metro, check=True, capture_output=True, timeout=METRO_TIMEOUT)
 
-        root = ElementTree.fromstring(response_data.decode('utf-8'))
-        prediction_list_elements = root.findall('.//prediction-list')
-        predictions_list = []
-        for prediction_list_element in prediction_list_elements:
-            for prediction_element in prediction_list_element:
-                prediction_dict = {}
-                for prediction_value in prediction_element:
-                    if prediction_value.tag == 'roadcast-time' or prediction_value.tag == 'rc':
-                        prediction_dict[prediction_value.tag] = prediction_value.text
-                predictions_list.append(prediction_dict)
+    @staticmethod
+    def parse_roadcast(roadcast: bytes, station: Station) -> List[RoadCastEntry]:
+        """
+        Parse the roadcast XML produced by METRo.
+
+        The roadcast has one prediction every few minutes (UTC); one entry is generated for each of the
+        ROAD_WEATHER_NUM_FORECASTS forecast steps, ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS minutes apart, starting
+        from the first roadcast time. Steps beyond the roadcast horizon are skipped.
+        """
+        root = ElementTree.fromstring(roadcast)
+
         rc_by_datetime = {}
-        for prediction in predictions_list:
-            rc_by_datetime[datetime.strptime(prediction['roadcast-time'], roadcast_format)] = (
-                RoadConditions.get_enum_member_value(f"RC{prediction['rc']}"))
-        min_roadcast_time = min([datetime.strptime(prediction['roadcast-time'], roadcast_format)
-                                 for prediction in predictions_list])
-
-        tz = ZoneInfo("Europe/Rome")
+        for prediction_element in root.findall(".//prediction-list/prediction"):
+            roadcast_time = prediction_element.findtext("roadcast-time")
+            rc = prediction_element.findtext("rc")
+            if roadcast_time and rc:
+                rc_by_datetime[datetime.strptime(roadcast_time.strip(), ROADCAST_TIME_FORMAT)] = (
+                    RoadConditions.get_enum_member_value(f"RC{rc.strip()}"))
+        if not rc_by_datetime:
+            raise ValueError("No predictions found in the roadcast")
+        min_roadcast_time = min(rc_by_datetime)
 
         out_entries = []
-        for delta in range(1, ROAD_WEATHER_NUM_FORECASTS + 1):
-            roadcast_time = min_roadcast_time + timedelta(hours=delta)
+        for step in range(1, ROAD_WEATHER_NUM_FORECASTS + 1):
+            minutes = step * ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
+            roadcast_time = min_roadcast_time + timedelta(minutes=minutes)
 
-            minutes = delta * ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
+            entry_class = RoadCastTypeClass.get_by_suffix(str(minutes))
+            if entry_class is None:
+                logger.warning(f"No data type defined for a forecast at {minutes} minutes, skipping")
+                continue
+            entry_value = rc_by_datetime.get(roadcast_time)
+            if entry_value is None:
+                logger.debug(f"No road condition for [{station.code}] at {roadcast_time}, skipping")
+                continue
+
             out_entries.append(RoadCastEntry(
                 station=station,
-                valid_time=roadcast_time.replace(tzinfo=tz),
+                valid_time=roadcast_time,
                 roadcast_class=RoadCastClass.ROADCAST,
-                entry_class=RoadCastTypeClass.get_by_suffix(str(minutes)),
-                entry_value=rc_by_datetime.get(roadcast_time),
-                period=minutes * ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
+                entry_class=entry_class,
+                entry_value=entry_value,
+                period=PERIOD_1SEC
             ))
-        [print(entry) for entry in out_entries]
         return out_entries
