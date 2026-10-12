@@ -57,9 +57,11 @@ def test_parse_roadcast_maps_road_conditions():
     assert {e.entry_value for e in entries[1:]} <= {c.value for c in RoadConditions}
 
 
-def test_parse_roadcast_period_is_the_one_of_the_forecast_connector():
+def test_parse_roadcast_period_is_the_lead_time_in_seconds():
+    # this is how the forecasts are stored in ODH since the first version (e.g. forecast-1200 has period 72000)
     entries = RoadWeatherModel.parse_roadcast(recorded_roadcast(), make_station())
-    assert {e.period for e in entries} == {1}
+    assert [e.period for e in entries[:3]] == [3600, 7200, 10800]
+    assert entries[19].entry_class == RoadCastTypeClass.RW_FORECAST_1200 and entries[19].period == 72000
 
 
 def test_parse_roadcast_skips_steps_beyond_the_horizon(monkeypatch):

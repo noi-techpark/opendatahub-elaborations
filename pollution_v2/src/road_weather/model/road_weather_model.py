@@ -18,7 +18,7 @@ from common.data_model import RoadWeatherObservationMeasureCollection, Station
 from common.data_model.roadcast import RoadCastEntry, RoadCastTypeClass, RoadCastClass, ExtendedRoadCastEntry
 from road_weather.model.observations import Observations
 from common.settings import TMP_DIR, METRO_PYTHON, METRO_BIN, METRO_PARAMETERS_DIR, ROAD_WEATHER_NUM_FORECASTS, \
-    ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS, PERIOD_1SEC
+    ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS
 
 logger = logging.getLogger("pollution_v2.road_weather.model.road_weather_model")
 
@@ -166,6 +166,6 @@ class RoadWeatherModel:
                 roadcast_class=RoadCastClass.ROADCAST,
                 entry_class=entry_class,
                 entry_value=entry_value,
-                period=PERIOD_1SEC
+                period=minutes * 60  # the lead time in seconds, as the forecasts have always been stored
             ))
         return out_entries
