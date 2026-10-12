@@ -82,7 +82,11 @@ if not os.path.exists(TMP_DIR):
     os.makedirs(TMP_DIR)
 
 # Road weather
-METRO_WS_PREDICTION_ENDPOINT = os.getenv("METRO_WS_PREDICTION_ENDPOINT", "http://metro:80/predict/?station_code=")
+# METRo runs on the system python, since it needs python-libxml2 (see the Dockerfile)
+METRO_PYTHON = os.getenv("METRO_PYTHON", "/usr/bin/python3")
+METRO_BIN = os.getenv("METRO_BIN", "/usr/local/metro/usr/bin/metro")
+# METRo input with the station parameters, one file per station, named parameters_<WRF code>.xml
+METRO_PARAMETERS_DIR = os.getenv("METRO_PARAMETERS_DIR", os.path.join(os.path.dirname(__file__), "..", "config", "metro"))
 ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS = int(os.getenv("ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS", "60"))
 ROAD_WEATHER_NUM_FORECASTS = int(os.getenv("ROAD_WEATHER_NUM_FORECASTS", "45"))
 

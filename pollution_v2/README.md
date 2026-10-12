@@ -22,6 +22,7 @@ The TrafficData is periodically pulled from the A22 collection, data validation 
 
 - *Jobs*: `validator`, `pollution-computer`, `road-weather` and `pollution-dispersal` are independent, containerized entry points (`src/<job>/main.py`), each on its own cron schedule. Locally, `docker-compose.yml` runs each job's container with `supercronic` handling the schedule; in the cluster, each job is a Kubernetes `CronJob` (see `infrastructure/helm`).
 - *Data validator*: This component downloads traffic data from ODH, validates them and upload them again into ODH.
+- *Road weather*: This job computes the road condition forecast of the road weather (RWIS) stations listed in `src/config/road_weather.yaml` (which also maps each ODH station to its WRF/METRo station code). For each station it downloads the latest WRF forecast from CISMA and the observations of the surrounding hours (from 16 hours before to 8 hours after the forecast start) from ODH, and runs the METRo model (`weather`) on them to get the roadcast. The road condition (e.g. "Dry road", "Ice / snow on the road") is uploaded to ODH for each of the next `ROAD_WEATHER_NUM_FORECASTS` steps of `ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS` minutes, together with the confidence level of the forecast, which is low when the observations lack data. All the times are UTC. Unlike the other jobs it does not walk through past batches: a forecast already processed (the start of the last one is kept in the checkpoint cache) is skipped, and one that failed is retried at the next run.
 - *Pollution computer*: This task handles the computation of a batch of measures. It downloads the traffic data from the OpenDataHub (Using the TrafficMeasure connector), computes the pollution measures (using the Pollution Computation Model) and it uploads the new measure to the ODH using the PollutionMeasure connector.
 
 #### Validation Algorithm Criteria
@@ -181,7 +182,7 @@ Clean previously updated data on Open Data Hub and run the pollution computer jo
 * `infrastructure` contains the Dockerfile (`infrastructure/docker/Dockerfile`), the Helm chart (`infrastructure/helm`) and the compose files used for build/test in CI
 * `sample_data` contains any sample data useful to test tasks (under .gitignore); sample data for validator are available [here](https://drive.google.com/file/d/1aPFDXOCECvA_h6npYe_aZ0k8vxHTwlYy/view?usp=drive_link)
 * `sql` contains maintenance SQL scripts (e.g. deleting elaboration data)
-* `dispersal` and `weather` are standalone prediction services (RLine and METRo respectively) called over HTTP by the pollution-dispersal and road-weather jobs; each has its own Dockerfile, requirements and README
+* `dispersal` is a standalone prediction service (RLine) called over HTTP by the pollution-dispersal job, with its own Dockerfile, requirements and README; `weather` has the METRo model, built in the job image and run by the road-weather job (see its README)
 * `src` contains source files
   * `src/common` contains shared connectors, data models, managers and the checkpoint cache
   * `src/config` contains configuration files for jobs, e.g. `validator.yaml`, `road_weather.yaml`
@@ -230,6 +231,24 @@ docker compose -f docker-compose.test.yml run --rm test
 
 This is the same command run in CI (see `.github/workflows/ci-pollution-v2.yml`).
 
+Or directly with Python, from `pollution_v2/src` (with the dependencies of `requirements.txt` installed):
+
+```bash
+PYTHONPATH=. python -m pytest tests
+```
+
+The road weather tests (`tests/test_road_weather_*.py`) run against recorded data (`tests/data/road_weather`: a WRF
+forecast, the observations of the road weather station and the METRo roadcast computed from them) and a fake METRo
+executable, so they need neither ODH nor network access.
+
+`tests/test_road_weather_metro_integration.py` runs the same recorded data through the real METRo, and is skipped where
+METRo is not installed. To run the tests in the job image, which has it:
+
+```bash
+docker build -f infrastructure/docker/Dockerfile --target build -t pollution-v2 .
+docker run --rm --entrypoint python pollution-v2 -m pytest tests
+```
+
 #### List of environment variables
 
 | Name                                                   | Required | Description                                                                                                                                                                                                             | Default                                  |
@@ -263,7 +282,6 @@ This is the same command run in CI (see `.github/workflows/ci-pollution-v2.yml`)
 | COMPUTATION_CHECKPOINT_CACHE_PATH                      | No       | Path to the SQLite file used for computation checkpoints. Set to an empty string to disable caching entirely.                                                                                                          | "data/checkpoint_cache.db"                |
 | VALIDATOR_CONFIG_FILE                                  | No       | The validator config file.                                                                                                                                                                                              | "config/validator.yaml"                   |
 | ROAD_WEATHER_CONFIG_FILE                               | No       | The road weather config file.                                                                                                                                                                                           | "config/road_weather.yaml"                |
-| METRO_WS_PREDICTION_ENDPOINT                           | No       | The web-service endpoint exposing METRo forecasts.                                                                                                                                                                      | "http://metro:80/predict/?station_code="  |
 | ROAD_WEATHER_NUM_FORECASTS                             | No       | The number of forecasts to save on ODH.                                                                                                                                                                                 | 45                                        |
 | ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS                 | No       | The minutes between forecasts to be saved on ODH.                                                                                                                                                                       | 60                                        |
 | POLLUTION_DISPERSAL_STARTING_DATE                      | No       | The starting date for the pollution dispersal computation.                                                                                                                                                              | "2020-12-01 02:00"                        |

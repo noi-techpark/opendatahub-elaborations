@@ -42,3 +42,16 @@ jobs:
         memory: "512Mi"
       limits:
         memory: "1Gi"
+
+  road-weather:
+    schedule: "0 */3 * * *"
+    command: ["python", "-m", "road_weather.main"]
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "256Mi"
+      limits:
+        memory: "512Mi"

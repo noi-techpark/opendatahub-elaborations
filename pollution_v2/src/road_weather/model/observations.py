@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
@@ -13,7 +10,7 @@ from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
-from common.settings import PARAMETERS_DIR
+from common.settings import METRO_PARAMETERS_DIR
 
 
 class Observations:
@@ -30,7 +27,7 @@ class Observations:
     def __init__(self, obs_data, station_code):
         self.df = obs_data
         self.station_code = station_code
-        self.parameters = ET.parse(f'{PARAMETERS_DIR}/parameters_{station_code}.xml')
+        self.parameters = ET.parse(f'{METRO_PARAMETERS_DIR}/parameters_{station_code}.xml')
 
     def process(self):
         """

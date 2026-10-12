@@ -120,14 +120,14 @@ class RoadWeatherObservationMeasureCollection(MeasureCollection[RoadWeatherObser
                     station=stations[group_by_station],
                     valid_time=group_by_time,
                     period=1,
-                    temp_aria=entry['temp_aria'],
-                    temp_suolo=entry['temp_suolo'] if 'temp_suolo' in entry else None,
-                    temp_rugiada=entry['temp_rugiada'] if 'temp_rugiada' in entry else None,
-                    prec_qta=entry['prec_qta'] if 'prec_qta' in entry else None,
-                    vento_vel=entry['vento_vel'],
-                    stato_meteo=entry['stato_meteo'] if 'stato_meteo' in entry else None,
-                    umidita_rel=entry['umidita_rel'],
-                    vento_dir=entry['vento_dir']
+                    temp_aria=entry.get('temp_aria'),
+                    temp_suolo=entry.get('temp_suolo'),
+                    temp_rugiada=entry.get('temp_rugiada'),
+                    prec_qta=entry.get('prec_qta'),
+                    vento_vel=entry.get('vento_vel'),
+                    stato_meteo=entry.get('stato_meteo'),
+                    umidita_rel=entry.get('umidita_rel'),
+                    vento_dir=entry.get('vento_dir')
                 )
 
         return result
