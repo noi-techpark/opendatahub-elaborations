@@ -9,6 +9,8 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 
+from common.settings import REQUESTS_TIMEOUT
+
 
 class Forecast:
     def __init__(self, station_code):
@@ -20,13 +22,20 @@ class Forecast:
         Args: forecast_url_xml (str): URL del file XML delle previsioni da scaricare.
         """
         url_xml = forecast_url_xml
-        with urllib.request.urlopen(url_xml) as response:
+        with urllib.request.urlopen(url_xml, timeout=REQUESTS_TIMEOUT) as response:
             xml_data = response.read()
-            self.tree = ET.ElementTree(ET.fromstring(xml_data))
-            self.root = self.tree.getroot()
-            # estrai il datetime corrispondente iniziale (per definire sovrapposizione con observations)
-            first_forecast_time = self.root.find(".//forecast-time").text
-            self.start = datetime.strptime(first_forecast_time, "%Y-%m-%dT%H:%M:%SZ").strftime('%Y-%m-%dT%H:%M')
+        self.load_xml(xml_data)
+
+    def load_xml(self, xml_data):
+        """
+        Carica i dati delle previsioni meteorologiche dall'XML.
+        Args: xml_data (str|bytes): contenuto del file XML delle previsioni.
+        """
+        self.tree = ET.ElementTree(ET.fromstring(xml_data))
+        self.root = self.tree.getroot()
+        # estrai il datetime corrispondente iniziale (per definire sovrapposizione con observations)
+        first_forecast_time = self.root.find(".//forecast-time").text
+        self.start = datetime.strptime(first_forecast_time, "%Y-%m-%dT%H:%M:%SZ").strftime('%Y-%m-%dT%H:%M')
 
     def interpolate_data(self, point1, point2, timestamp):
         """
