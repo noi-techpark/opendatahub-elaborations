@@ -40,6 +40,8 @@ LAG_1H = 12 * STEP_SECONDS
 LAG_1D = 288 * STEP_SECONDS
 LAG_1W = 2016 * STEP_SECONDS
 MEAN_7D_SPAN = 7 * 24 * 60 * 60
+LAG_1H_TOLERANCE = 3 * STEP_SECONDS  # how far from the exact lag a substitute sample may be
+LAG_LONG_TOLERANCE = 12 * STEP_SECONDS
 
 # Horizons train/main.py generates labeled rows for; predict/main.py evaluates
 # any horizon by varying IDX_HORIZON_MINUTES against a fixed anchor instead of
@@ -67,6 +69,19 @@ def truncate_to_step(dt: datetime) -> datetime:
     """
     unix = int(dt.timestamp())
     return datetime.fromtimestamp(unix - (unix % STEP_SECONDS), tz=timezone.utc)
+
+
+def _lag(occ: dict[int, float], unix: int, tolerance: int, fallback: float) -> float:
+    """occ at unix, else the nearest sample within tolerance, else fallback."""
+    v = occ.get(unix)
+    if v is not None:
+        return v
+    for d in range(STEP_SECONDS, tolerance + 1, STEP_SECONDS):
+        for t in (unix - d, unix + d):
+            v = occ.get(t)
+            if v is not None:
+                return v
+    return fallback
 
 
 def _weekday_sunday0(dt: datetime) -> int:
@@ -117,20 +132,20 @@ def build(target: datetime, anchor: datetime, inputs: Inputs) -> tuple[list[floa
     occ = inputs.occupancy
     lag_now = occ.get(anchor_unix)
     lag_prev_5m = occ.get(anchor_unix - STEP_SECONDS)
-    lag_1h = occ.get(anchor_unix - LAG_1H)
-    lag_1d = occ.get(anchor_unix - LAG_1D)
-    lag_1w = occ.get(anchor_unix - LAG_1W)
-    if None in (lag_now, lag_prev_5m, lag_1h, lag_1d, lag_1w):
+    if None in (lag_now, lag_prev_5m):
         return x, False
-    x[IDX_LAG_NOW] = lag_now
-    x[IDX_LAG_PREV_5M] = lag_prev_5m
-    x[IDX_LAG_1H] = lag_1h
-    x[IDX_LAG_1D] = lag_1d
-    x[IDX_LAG_1W] = lag_1w
 
     mean_7d = inputs.mean_7d.get(anchor_unix)
     if mean_7d is None:
         return x, False
+
+    # The older lags tolerate gaps in the feed (an outage a week ago must not
+    # blank today's forecast): nearest sample within tolerance, else the mean.
+    x[IDX_LAG_NOW] = lag_now
+    x[IDX_LAG_PREV_5M] = lag_prev_5m
+    x[IDX_LAG_1H] = _lag(occ, anchor_unix - LAG_1H, LAG_1H_TOLERANCE, mean_7d)
+    x[IDX_LAG_1D] = _lag(occ, anchor_unix - LAG_1D, LAG_LONG_TOLERANCE, mean_7d)
+    x[IDX_LAG_1W] = _lag(occ, anchor_unix - LAG_1W, LAG_LONG_TOLERANCE, mean_7d)
     x[IDX_MEAN_7D] = mean_7d
 
     x[IDX_HORIZON_MINUTES] = (unix - anchor_unix) / 60

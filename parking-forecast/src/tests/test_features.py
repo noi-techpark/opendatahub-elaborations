@@ -80,7 +80,7 @@ def test_build_requires_all_mandatory_inputs():
     assert ok
 
     missing_lag = features.Inputs(
-        occupancy={int(anchor.timestamp()): 0.1},
+        occupancy={},
         mean_7d=full.mean_7d,
         holidays=full.holidays,
         weather=full.weather,
@@ -115,3 +115,27 @@ def test_build_direct_horizon_uses_anchor_lags_and_target_calendar():
         row_next_day[features.IDX_SIN_DOW] == row[features.IDX_SIN_DOW]
         and row_next_day[features.IDX_COS_DOW] == row[features.IDX_COS_DOW]
     )
+
+
+def test_build_tolerates_gap_in_older_lags():
+    anchor = datetime(2026, 1, 8, 8, 5, 0, tzinfo=timezone.utc)
+    unix = int(anchor.timestamp())
+    inputs = features.Inputs(
+        occupancy={unix: 0.2, unix - features.STEP_SECONDS: 0.2, unix - features.LAG_1H + features.STEP_SECONDS: 0.7},
+        mean_7d={unix: 0.3},
+        holidays={anchor.strftime("%Y-%m-%d"): DayInfo()},
+        weather={anchor.strftime("%Y-%m-%d"): 1},
+    )
+    row, ok = features.build(anchor, anchor, inputs)
+    assert ok
+    assert row[features.IDX_LAG_1H] == 0.7  # nearest sample within tolerance
+    assert row[features.IDX_LAG_1D] == 0.3  # nothing nearby: falls back to the 7d mean
+    assert row[features.IDX_LAG_1W] == 0.3
+
+
+def test_build_still_requires_recent_observations():
+    anchor = datetime(2026, 1, 8, 8, 5, 0, tzinfo=timezone.utc)
+    inputs = full_inputs(anchor)
+    inputs.occupancy.pop(int(anchor.timestamp()))
+    _, ok = features.build(anchor, anchor, inputs)
+    assert not ok

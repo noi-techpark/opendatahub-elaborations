@@ -47,6 +47,12 @@ def main() -> None:
         log.info("forecast window", extra={"cutoff": cutoff, "horizonSteps": horizon_steps})
 
         loaded_models = load_models(conn, active_stations)
+        no_model = [s.scode for s in active_stations if s.scode not in loaded_models]
+        if no_model:
+            log.warning(
+                "stations without a trained model get an all-null forecast",
+                extra={"count": len(no_model), "total": len(active_stations), "scodes": no_model},
+            )
 
         forecasts = [
             predict_station(
@@ -63,6 +69,17 @@ def main() -> None:
             )
             for s in active_stations
         ]
+
+        empty = [f.scode for f in forecasts if all(p.mean is None for p in f.points)]
+        partial = [f.scode for f in forecasts if f.scode not in empty and any(p.mean is None for p in f.points)]
+        log.info(
+            "forecast coverage",
+            extra={"stations": len(forecasts), "withForecast": len(forecasts) - len(empty), "partial": len(partial)},
+        )
+        if empty:
+            log.warning("stations with no forecast values at all", extra={"count": len(empty), "scodes": empty})
+        if len(empty) == len(forecasts):
+            log.error("every station's forecast is empty, check models and recent occupancy data")
 
         try:
             resultjson.write_result_json(
