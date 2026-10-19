@@ -1,0 +1,18 @@
+image:
+  repository:
+  pullPolicy: IfNotPresent
+  tag: "0.0.0" # Set this when upgrading chart with --set-value
+
+env:
+  ODH_MOBILITY_API_NINJA: http://ninja-api.core.svc.cluster.local
+  AUTHENTICATION_SERVER: https://auth.opendatahub.testingmachine.eu/auth/
+  ODH_MOBILITY_API_WRITER: http://bdp-core.core.svc.cluster.local
+  PROVENANCE_LINEAGE: NOI
+  PROVENANCE_NAME: el-environment-a22-non-linear-calibration
+  PROVENANCE_VERSION: 0.0.0
+
+  LOG_LEVEL: DEBUG
+  JOB_SCHEDULE_SEC: "3600"
+
+envSecret:
+  CLIENT_SECRET:
