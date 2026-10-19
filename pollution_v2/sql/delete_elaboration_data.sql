@@ -9,7 +9,7 @@ set search_path=intimev2,public;
 create temporary table tmp_delete as
 with
 vars as (select
-	timestamp '2023-01-01 00:00:00' as start_date
+	timestamp '2026-01-01 00:00:00' as start_date
 )
 select distinct ts.id as timeseries_id, ts.value_table, s.stationtype, s.origin, t.cname, v.start_date
 from station s

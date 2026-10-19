@@ -8,6 +8,7 @@ Created on Tue Aug 16 2022
 """
 import logging
 import os
+import re
 import sqlite3
 from pathlib import Path
 
@@ -37,6 +38,28 @@ def find_latest_file(path_format: str, year: int) -> str:
     return ret
 
 
+def find_copert_db(input_data_path: str, year: int) -> str:
+    """Prefers a COPERT db named for the given year (copert<version>_<year>.db), otherwise falls back to the
+    most recent unversioned-by-year db (copert<version>.db, highest version, e.g. copert510.db)."""
+    directory = Path(input_data_path)
+
+    year_matches = sorted(directory.glob(f"copert*_{year}.db"))
+    if year_matches:
+        return str(year_matches[-1])
+
+    def version(file: Path):
+        match = re.fullmatch(r"copert(\d+)\.db", file.name)
+        return int(match.group(1)) if match else None
+
+    candidates = [(version(f), f) for f in directory.glob("copert*.db") if version(f) is not None]
+    if not candidates:
+        raise FileNotFoundError(f"Unable to find a copert db in {input_data_path} for year {year}")
+
+    _, latest = max(candidates)
+    logger.warning(f"No copert db for year {year} found. Using most recent {latest.name} instead")
+    return str(latest)
+
+
 # stima delle emissioni con metodo di copert
 def copert_emissions(traffic_df, fc_info_year: str = ""):
 
@@ -45,7 +68,7 @@ def copert_emissions(traffic_df, fc_info_year: str = ""):
     # ------------------------------------------------------------------------------
     input_data_path = f"{os.path.dirname(os.path.abspath(__file__))}/input/"
     input_fc_info = find_latest_file(input_data_path + "fc_info_{}.csv", int(fc_info_year))
-    input_copert = find_latest_file(input_data_path + "copert55_{}.db", int(fc_info_year))
+    input_copert = find_copert_db(input_data_path, int(fc_info_year))
 
     con = sqlite3.connect(input_copert)
     copert = pd.read_sql_query("SELECT * FROM COPERT", con)
