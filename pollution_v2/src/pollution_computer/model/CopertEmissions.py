@@ -90,9 +90,9 @@ def copert_emissions(traffic_df, fc_info_year: str = ""):
     if ("RoadSlope" in copert) and ("RoadSlope" in geometry):
         adt = pd.merge(adt, geometry[["KM", "RoadSlope"]], on="KM")
         adt.loc[(adt["Lane"] == 1) | (adt["Lane"] == 2), "RoadSlope"] = -1 * adt["RoadSlope"]
-        df = pd.DataFrame(copert, columns=["Category", "RoadSlope"])
-        df = df[df["RoadSlope"].isnull()].drop_duplicates()
-        adt["RoadSlope"] = np.where(adt["Category"].isin(df["Category"]), float("NaN"), adt["RoadSlope"])
+        slope_independent = copert.groupby("Category")["RoadSlope"].apply(lambda s: s.isnull().all())
+        adt["RoadSlope"] = np.where(adt["Category"].isin(slope_independent[slope_independent].index),
+                                    float("NaN"), adt["RoadSlope"])
 
     emission = pd.merge(adt, fc, on=["Category"])
     emission["Total_Transits"] = emission["Transits"] * emission["PercvsADT"]
