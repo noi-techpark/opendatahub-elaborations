@@ -29,6 +29,8 @@ class PollutionComputationModel:
     def _get_pollution_entries_from_df(pollution_df: pd.DataFrame,
                                        stations_dict: Dict[str, TrafficSensorStation]) -> List[PollutionEntry]:
         pollution_entries = []
+        known_pollutants = {p.value for p in PollutantClass}
+        pollution_df = pollution_df[pollution_df["Pollutant"].isin(known_pollutants)]
         for _, row in pollution_df.iterrows():
             pollution_entries.append(PollutionEntry(
                 station=stations_dict[f"{row['Location']}:{row['Station']}:{row['Lane']}"],
