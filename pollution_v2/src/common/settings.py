@@ -42,6 +42,8 @@ ODH_PAGINATION_SIZE = int(os.getenv("ODH_PAGINATION_SIZE", "5000"))
 _max_post = os.getenv("ODH_MAX_POST_BATCH_SIZE")
 ODH_MAX_POST_BATCH_SIZE = int(_max_post) if _max_post else None
 ODH_PARALLEL_REQUESTS = int(os.getenv("ODH_PARALLEL_REQUESTS", "10"))
+# maximum number of requests in flight at the same time towards each ODH API (reader and writer are separate APIs)
+ODH_MAX_CONCURRENT_REQUESTS = int(os.getenv("ODH_MAX_CONCURRENT_REQUESTS", "1"))
 ODH_MINIMUM_STARTING_DATE = DEFAULT_TIMEZONE.localize(
     dateutil.parser.parse(os.getenv("ODH_MINIMUM_STARTING_DATE", "2018-01-01"))
 )

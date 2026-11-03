@@ -7,7 +7,7 @@ from __future__ import absolute_import, annotations
 import logging
 import time
 from abc import ABC, abstractmethod
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
@@ -22,6 +22,17 @@ from common.manager.station import StationManager
 from common.settings import ODH_MINIMUM_STARTING_DATE, ODH_MAX_LOOKBACK_DAYS, ODH_PARALLEL_REQUESTS, DEFAULT_TIMEZONE, get_now
 
 logger = logging.getLogger("pollution_v2.common.manager.traffic_station")
+
+
+@dataclass
+class _PendingBatch:
+    """A computed batch whose upload is running in the background."""
+    number: int
+    start_date: datetime
+    to_date: datetime
+    entries: int
+    download_s: float
+    upload: "Future[float]"
 
 
 @dataclass
@@ -52,6 +63,10 @@ class TrafficStationManager(StationManager, ABC):
     """
     Abstract class generalising traffic managers, in charge of computing the data given the traffic data.
     """
+
+    # Upload a batch in the background while the next one is downloaded and computed. Subclasses that override
+    # _compute_and_upload_data with their own logic must switch this off.
+    _pipelined_uploads = True
 
     def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance,
                  checkpoint_cache: Optional[ComputationCheckpointCache] = None):
@@ -388,6 +403,39 @@ class TrafficStationManager(StationManager, ABC):
                     f"(parallel={ODH_PARALLEL_REQUESTS})")
         return res
 
+    def _download_and_compute(self, start_date: datetime, to_date: datetime,
+                              stations: List[TrafficSensorStation]) -> List[GenericEntry]:
+        """
+        Download the input data and compute the entries for the given stations in the given interval.
+        """
+
+        try:
+            t0 = time.monotonic()
+            entries = self._download_data_and_compute(start_date, to_date, stations)
+            logger.info(f"Download+compute: {len(entries)} entries in {time.monotonic()-t0:.1f}s")
+            return entries
+        except Exception as e:
+            logger.exception(f"Unable to compute data from stations {_get_stations_on_logs(stations)} in the "
+                             f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
+            raise
+
+    def _upload_entries(self, entries: List[GenericEntry], start_date: datetime, to_date: datetime,
+                        stations: List[TrafficSensorStation]) -> float:
+        """
+        Upload the computed entries. Returns the seconds it took.
+        """
+
+        try:
+            t0 = time.monotonic()
+            self._upload_data(entries)
+            elapsed = time.monotonic() - t0
+            logger.info(f"Upload: {len(entries)} entries in {elapsed:.1f}s")
+            return elapsed
+        except Exception as e:
+            logger.exception(f"Unable to upload data from stations {_get_stations_on_logs(stations)} in the "
+                             f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
+            raise
+
     def _compute_and_upload_data(self, start_date: datetime, to_date: datetime,
                                  stations: List[TrafficSensorStation]) -> int:
         """
@@ -395,23 +443,29 @@ class TrafficStationManager(StationManager, ABC):
         Returns the number of entries computed and uploaded.
         """
 
-        try:
-            t0 = time.monotonic()
-            entries = self._download_data_and_compute(start_date, to_date, stations)
-            logger.info(f"Download+compute: {len(entries)} entries in {time.monotonic()-t0:.1f}s")
-        except Exception as e:
-            logger.exception(f"Unable to compute data from stations {_get_stations_on_logs(stations)} in the "
-                             f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
-            raise
-        try:
-            t0 = time.monotonic()
-            self._upload_data(entries)
-            logger.info(f"Upload: {len(entries)} entries in {time.monotonic()-t0:.1f}s")
-        except Exception as e:
-            logger.exception(f"Unable to upload data from stations {_get_stations_on_logs(stations)} in the "
-                             f"interval [{start_date.isoformat()}] - [{to_date.isoformat()}]", exc_info=e)
-            raise
+        entries = self._download_and_compute(start_date, to_date, stations)
+        self._upload_entries(entries, start_date, to_date, stations)
         return len(entries)
+
+    def _finish_batch(self, pending: Optional["_PendingBatch"], stations: List[TrafficSensorStation]) -> int:
+        """
+        Wait for the upload of a pipelined batch, then move the checkpoint: it is moved only once the data is uploaded.
+        Returns the number of uploaded entries.
+        """
+
+        if pending is None:
+            return 0
+        t0 = time.monotonic()
+        upload_s = pending.upload.result()  # raises the upload error, if any
+        waited_s = time.monotonic() - t0
+        t0 = time.monotonic()
+        self._update_cache(pending.to_date, stations)
+        logger.info(
+            f"Batch {pending.number} [{pending.start_date.date()} -> {pending.to_date.date()}]: "
+            f"download+compute={pending.download_s:.1f}s  upload={upload_s:.1f}s (waited {waited_s:.1f}s)  "
+            f"cache_update={time.monotonic()-t0:.1f}s"
+        )
+        return pending.entries
 
     def _update_cache(self, to_date: datetime, stations: List[TrafficSensorStation]) -> None:
         """
@@ -515,35 +569,65 @@ class TrafficStationManager(StationManager, ABC):
             first_start = start_date
             last_end = start_date
             t_total = time.monotonic()
-            while start_date < max_to_date:
-                batch_num += 1
-                if use_hours_for_batch_size:
-                    to_date = start_date + timedelta(hours=batch_size)
-                else:
-                    to_date = start_date + timedelta(days=batch_size)
-                if to_date > max_to_date:
-                    to_date = max_to_date
+            # While a batch is uploaded, the next one is already downloaded and computed. A single upload worker keeps
+            # the uploads in chronological order (ODH discards data older than the latest measure) and, together with
+            # the single download thread, ensures one request at a time on each API.
+            uploader = ThreadPoolExecutor(max_workers=1, thread_name_prefix="odh-upload") \
+                if self._pipelined_uploads else None
+            pending: Optional[_PendingBatch] = None
+            try:
+                while start_date < max_to_date:
+                    batch_num += 1
+                    if use_hours_for_batch_size:
+                        to_date = start_date + timedelta(hours=batch_size)
+                    else:
+                        to_date = start_date + timedelta(days=batch_size)
+                    if to_date > max_to_date:
+                        to_date = max_to_date
 
-                if to_date.tzinfo is None:
-                    to_date = DEFAULT_TIMEZONE.localize(to_date)
+                    if to_date.tzinfo is None:
+                        to_date = DEFAULT_TIMEZONE.localize(to_date)
 
-                logger.info(f"Computing data for stations {_get_stations_on_logs(stations)} in interval "
-                            f"[{start_date.isoformat()} - {to_date.isoformat()}]")
+                    logger.info(f"Computing data for stations {_get_stations_on_logs(stations)} in interval "
+                                f"[{start_date.isoformat()} - {to_date.isoformat()}]")
 
-                t_batch = time.monotonic()
-                n = self._compute_and_upload_data(start_date, to_date, stations)
-                total_entries += n
-                last_end = to_date
-                t_after_compute = time.monotonic()
-                self._update_cache(to_date, stations)
-                t_after_cache = time.monotonic()
-                logger.info(
-                    f"Batch {batch_num} [{start_date.date()} -> {to_date.date()}]: "
-                    f"compute+upload={t_after_compute-t_batch:.1f}s  "
-                    f"cache_update={t_after_cache-t_after_compute:.1f}s  "
-                    f"total={t_after_cache-t_batch:.1f}s"
-                )
-                start_date = to_date
+                    t_batch = time.monotonic()
+                    if uploader is None:
+                        n = self._compute_and_upload_data(start_date, to_date, stations)
+                        total_entries += n
+                        t_after_compute = time.monotonic()
+                        self._update_cache(to_date, stations)
+                        t_after_cache = time.monotonic()
+                        logger.info(
+                            f"Batch {batch_num} [{start_date.date()} -> {to_date.date()}]: "
+                            f"compute+upload={t_after_compute-t_batch:.1f}s  "
+                            f"cache_update={t_after_cache-t_after_compute:.1f}s  "
+                            f"total={t_after_cache-t_batch:.1f}s"
+                        )
+                    else:
+                        entries = self._download_and_compute(start_date, to_date, stations)
+                        download_s = time.monotonic() - t_batch
+                        previous, pending = pending, None
+                        total_entries += self._finish_batch(previous, stations)
+                        pending = _PendingBatch(
+                            batch_num, start_date, to_date, len(entries), download_s,
+                            uploader.submit(self._upload_entries, entries, start_date, to_date, stations))
+                    last_end = to_date
+                    start_date = to_date
+
+                last, pending = pending, None
+                total_entries += self._finish_batch(last, stations)
+            except BaseException:
+                if pending is not None:
+                    # the upload still running is not wasted: wait for it and keep the checkpoint in sync
+                    try:
+                        self._finish_batch(pending, stations)
+                    except Exception:
+                        logger.exception("The pending upload failed as well")
+                raise
+            finally:
+                if uploader is not None:
+                    uploader.shutdown(wait=True)
 
             logger.info(
                 f"Completed {batch_num} batch(es) in {time.monotonic()-t_total:.1f}s total"

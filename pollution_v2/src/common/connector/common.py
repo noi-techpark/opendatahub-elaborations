@@ -5,18 +5,34 @@
 from __future__ import absolute_import, annotations
 
 import logging
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Callable, Optional, Generic, List
+from typing import Callable, Dict, Optional, Generic, List
 
 import requests
 from keycloak import KeycloakOpenID
 
 from common.data_model.common import MeasureType, StationType, Station, Provenance, DataType
-from common.settings import get_now, ODH_STATIONS_FILTER_ORIGIN
+from common.settings import get_now, ODH_STATIONS_FILTER_ORIGIN, ODH_MAX_CONCURRENT_REQUESTS
 
 logger = logging.getLogger("pollution_v2.common.connector.common")
+
+
+_API_SLOTS: Dict[str, threading.BoundedSemaphore] = {}
+_API_SLOTS_GUARD = threading.Lock()
+
+
+def api_request_slot(base_url: str) -> threading.BoundedSemaphore:
+    """
+    Returns the semaphore limiting the requests in flight towards the API at the given base url (default: one at a
+    time), shared by every connector and thread talking to that API, to avoid overloading it.
+    """
+    with _API_SLOTS_GUARD:
+        if base_url not in _API_SLOTS:
+            _API_SLOTS[base_url] = threading.BoundedSemaphore(max(1, ODH_MAX_CONCURRENT_REQUESTS))
+        return _API_SLOTS[base_url]
 
 
 @dataclass
@@ -172,6 +188,10 @@ class ODHBaseConnector(Generic[MeasureType, StationType]):
         }
 
     def _get_request(self, path: str, query_params: Optional[dict] = None) -> dict or list:
+        with api_request_slot(self._base_reader_url):
+            return self._get_request_unthrottled(path, query_params)
+
+    def _get_request_unthrottled(self, path: str, query_params: Optional[dict] = None) -> dict or list:
         """
         Perform a get request to the ODH.
 
@@ -386,6 +406,11 @@ class ODHBaseConnector(Generic[MeasureType, StationType]):
 
     def _post_request(self, path: str, raw_data: dict or list,
                       query_params: Optional[dict] = None) -> str or dict or list:
+        with api_request_slot(self._base_writer_url):
+            return self._post_request_unthrottled(path, raw_data, query_params)
+
+    def _post_request_unthrottled(self, path: str, raw_data: dict or list,
+                                  query_params: Optional[dict] = None) -> str or dict or list:
         """
         Perform a post request to the ODH.
 

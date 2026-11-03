@@ -34,6 +34,9 @@ class PollutionDispersalManager(TrafficStationManager):
     Manager in charge of executing pollution computation.
     """
 
+    # _compute_and_upload_data is overridden with its own upload logic and state used by _update_cache
+    _pipelined_uploads = False
+
     def __init__(self, connector_collector: ConnectorCollector, provenance: Provenance,
                  checkpoint_cache: Optional[ComputationCheckpointCache] = None) -> None:
         super().__init__(connector_collector, provenance, checkpoint_cache)

@@ -29,7 +29,10 @@ envSecret: {}
 # Environment-specific values (URLs, credentials) are overridden in test.yaml / prod.yaml.
 env:
   ODH_GRANT_TYPE: "client_credentials"
-  ODH_PAGINATION_SIZE: "10000"
+  # one request fits a whole 30 day batch of one station (about 26k traffic measures), instead of 3 paged requests
+  ODH_PAGINATION_SIZE: "30000"
+  # requests in flight at the same time towards each ODH API (reader and writer count separately)
+  ODH_MAX_CONCURRENT_REQUESTS: "1"
   ODH_MAX_POST_BATCH_SIZE: "10000"
   ODH_STATIONS_FILTER_ORIGIN: "A22"
   ODH_MINIMUM_STARTING_DATE: "2023-01-01"
