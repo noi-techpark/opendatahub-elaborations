@@ -13,6 +13,10 @@ image:
 checkpointCache:
   storage: 100Mi
   mountPath: /app/data
+  # All jobs share this volume. On SELinux nodes every pod gets its own random label and relabels the volume
+  # on start, which locks out the pods already using it (sqlite: "unable to open database file").
+  # A fixed level shared by all the jobs prevents that. Do not remove.
+  seLinuxLevel: "s0:c123,c456"
   # storageClassName: ""  # uncomment to override the cluster default
 
 # Sensitive env vars — rendered into a K8s Secret and injected per-container.
@@ -33,7 +37,7 @@ env:
   ODH_COMPUTATION_BATCH_SIZE_VALIDATION: "1"
   ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL: "30"
   ODH_MAX_LOOKBACK_DAYS: "14"
-  COMPUTATION_CHECKPOINT_CACHE_PATH: "data/checkpoint_cache.db"
+  # each job gets its own file <checkpointCache.mountPath>/<job name>.db, see templates/cronjob.yaml
   PROVENANCE_LINEAGE: "u-hopper"
   PROVENANCE_NAME: "a22-pollutant-elaboration"
   PROVENANCE_VERSION: ""
