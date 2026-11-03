@@ -67,8 +67,8 @@ class Observations:
             self.df.at[idx, 'sc'] = road_condition
             self.df.at[idx, 'conf_level'] = conf_level
 
-            # Calcolo sst
-            if row['time'] in sunrise_sunset:
+            # Calcolo sst (temperatura del suolo ad alba e tramonto, se disponibile)
+            if row['time'] in sunrise_sunset and row['temp_suolo'] != 0:
                 self.df.at[idx, 'sst'] = row['temp_suolo']
             else:
                 self.df.at[idx, 'sst'] = 9999
@@ -129,10 +129,10 @@ class Observations:
         first_forecast_time = self.df['observation-time'].iloc[0]
         second_forecast_time = self.df['observation-time'].iloc[1] if len(self.df) > 1 else None
         valid_st_first_or_second = self.df[(self.df['st'] != 9999) &
-                                            (self.df['observation-time'] == first_forecast_time) |
-                                            (self.df['observation-time'] == second_forecast_time)]
+                                           ((self.df['observation-time'] == first_forecast_time) |
+                                            (self.df['observation-time'] == second_forecast_time))]
         if valid_st_first_or_second.empty:
-            raise ValueError("Error: At least one 'st' entry must be at or after the time of the first or second atmospheric forecast.")
+            raise ValueError("Error: At least one valid 'st' entry must be at the first or second observation.")
 
     def to_xml(self, filename):
         """
@@ -241,7 +241,7 @@ def road_condition_from_observations(stato_meteo, temp_suolo, temp_rugiada):
 
 def sun_times(dates, latitude, longitude, local_timezone='Europe/Rome'):
     """
-    Calcola gli orari di alba e tramonto presenti nella serie temporale
+    Calcola gli orari di alba e tramonto presenti nella serie temporale, in UTC (senza timezone) come le osservazioni
 
     Args:
         dates (list of datetime.date): Liste di date per cui calcolare alba e tramonto.
@@ -267,7 +267,7 @@ def sun_times(dates, latitude, longitude, local_timezone='Europe/Rome'):
         s = sun(observer, date=date, tzinfo=local_timezone)
         sunrise_rounded = round_datetime_to_nearest_five_minutes(s['sunrise'].astimezone(local_timezone))
         sunset_rounded = round_datetime_to_nearest_five_minutes(s['sunset'].astimezone(local_timezone))
-        results.append(sunrise_rounded.replace(tzinfo=None))
-        results.append(sunset_rounded.replace(tzinfo=None))
+        results.append(sunrise_rounded.astimezone(pytz.utc).replace(tzinfo=None))
+        results.append(sunset_rounded.astimezone(pytz.utc).replace(tzinfo=None))
 
     return results
