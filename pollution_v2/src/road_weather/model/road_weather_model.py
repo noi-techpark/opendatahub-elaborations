@@ -5,6 +5,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
+import os
 import subprocess
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -122,7 +123,17 @@ class RoadWeatherModel:
             "--output-roadcast", roadcast_filename
         ]
         logger.info(f"running {metro}")
-        subprocess.run(metro, check=True, capture_output=True, timeout=METRO_TIMEOUT)
+        try:
+            subprocess.run(metro, check=True, capture_output=True, text=True, timeout=METRO_TIMEOUT)
+        except subprocess.CalledProcessError as e:
+            metro_log = ""
+            if os.path.exists(log_filename):
+                with open(log_filename, "r", errors="replace") as f:
+                    metro_log = f.read()[-2000:]
+            logger.error(f"METRo failed for station [{station.code}] with exit code {e.returncode}.\n"
+                         f"stdout: {(e.stdout or '')[-2000:]}\nstderr: {(e.stderr or '')[-2000:]}\n"
+                         f"metro.log: {metro_log}")
+            raise
 
     @staticmethod
     def parse_roadcast(roadcast: bytes, station: Station) -> List[RoadCastEntry]:

@@ -143,6 +143,11 @@ class RoadWeatherManager(StationManager):
             logger.warning(f"No observations available for station [{station.code}], unable to compute road condition")
             return []
         max_observation_time = max(observation_times)
+        if max_observation_time <= forecast_start:
+            # METRo requires the first forecast to be before the last observation
+            logger.warning(f"Latest observation of station [{station.code}] ({max_observation_time.isoformat()}) is not "
+                           f"after the forecast start ({forecast_start.isoformat()}), skipping")
+            return []
 
         try:
             res = RoadWeatherModel().compute_data(observation_data, forecast_filename, forecast_start, station)
