@@ -185,3 +185,18 @@ def test_observations_not_suitable_for_metro_are_skipped_and_retried(checkpoint_
     assert fake_metro.calls == []
     assert connectors.road_weather_forecast.posted_measures == []
     assert _checkpoint(checkpoint_cache, station) is None
+
+
+def test_observations_not_after_forecast_start_are_skipped_and_retried(checkpoint_cache, fake_metro, tmp_dir):
+    # METRo refuses a forecast starting after the last observation: the station feed is stale
+    measures = [m for m in load_observation_measures(make_station()) if m.valid_time <= RW_FORECAST_START]
+    assert measures
+    connectors = FakeConnectorCollector(FakeConnector(measures=measures))
+    manager = RoadWeatherManager(connectors, Provenance(None, "test", "test", "0"), checkpoint_cache)
+    station = make_station()
+
+    assert manager.run_computation_for_single_station(station) == 0
+
+    assert fake_metro.calls == []
+    assert connectors.road_weather_forecast.posted_measures == []
+    assert _checkpoint(checkpoint_cache, station) is None

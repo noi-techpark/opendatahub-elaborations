@@ -111,6 +111,8 @@ def main() -> None:
         f"Run summary: stations={summary.ok}ok/{summary.skipped}skipped/{summary.failed}failed  "
         f"entries={summary.entries}  elapsed={_fmt_duration(time.monotonic() - t_job)}"
     )
+    if summary.failed:
+        sys.exit(1)  # let the job show as failed
 
 
 if __name__ == "__main__":
