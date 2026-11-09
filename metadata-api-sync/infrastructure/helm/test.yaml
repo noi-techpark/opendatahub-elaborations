@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+image:
+  repository: "" # injected by CI
+  pullPolicy: IfNotPresent
+  tag: "0.0.0" # injected by CI
+
+env:
+  CONTENT_API_URL: https://tourism.api.opendatahub.testingmachine.eu/v1/
+  AUTH_BASE: https://auth.opendatahub.testingmachine.eu
+  REALM: noi
+  CLIENT_ID: odh-api-metadata
+  # run the job every n seconds (once a week)
+  JOB_SCHEDULE_SEC: "604800"
+  LOG_LEVEL: INFO
+
+envSecret:
+  CLIENT_SECRET: "" # injected by CI
+
+# measured on docker over 40 days: peak memory 72 MiB, cpu negligible (weekly job)
+resources:
+  requests:
+    cpu: 10m
+    memory: 96Mi
+  limits:
+    memory: 192Mi
