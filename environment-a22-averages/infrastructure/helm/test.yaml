@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+image:
+  repository: "" # injected by CI
+  pullPolicy: IfNotPresent
+  tag: "0.0.0" # injected by CI
+
+env:
+  # Open Data Hub writer (bdp-core), in-cluster
+  BASE_URI: http://bdp-core.core.svc.cluster.local/json
+  authorizationUri: https://auth.opendatahub.testingmachine.eu/auth
+  tokenUri: https://auth.opendatahub.testingmachine.eu/auth/realms/noi/protocol/openid-connect/token
+  clientId: odh-mobility-datacollector
+  clientName: odh-mobility-datacollector
+  scope: openid
+
+  # Open Data Hub API v2 (ninja), in-cluster
+  ODH_BASE_URI: http://ninja-api.core.svc.cluster.local/
+  NINJA_CLIENT: odh-mobility-elaborations
+
+  # Data collector recognition
+  origin: a22-algorab
+  stationtype: EnvironmentStation
+  provenance_name: odh-mobility-el-environment-a22-averages
+  provenance_version: "0.0.0" # injected by CI
+
+  LOG_LEVEL: info
+  LOG_STYLE: json
+  SCHEDULER_CRON: "30 5 * * * *"
+  _JAVA_OPTIONS: -Xms128m -Xmx512m
+
+envSecret:
+  clientSecret: "" # injected by CI
+  NINJA_SECRET: "" # injected by CI
+
+# measured on docker over 55 days: peak memory 533 MiB (heap capped at 512m), average cpu 0.001 cores (short hourly job)
+resources:
+  requests:
+    cpu: 50m
+    memory: 512Mi
+  limits:
+    memory: 896Mi
