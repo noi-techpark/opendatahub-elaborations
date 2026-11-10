@@ -36,14 +36,14 @@ public class ODHReaderClient{
     }
 
     public LinkedHashMap getRawData(String station,String type,String from, String to, Integer limit, String dataOrigin) {
-        return ninja.get().uri("/v2/tree/EnvironmentStation/" + type + "/" + from + "/" +  to
+        return ninja.get().uri("/tree/EnvironmentStation/" + type + "/" + from + "/" +  to
                         + "?limit=" + limit + "&where=sactive.eq.true,sorigin.eq." + (dataOrigin != null ? dataOrigin : DATA_ORIGIN) + ",scode.eq."+station+",mperiod.eq.60&select=tmeasurements")
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
 
     public LinkedHashMap getLatestNinjaTree() {
         LinkedHashMap blockLast = ninja.get()
-			        .uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq." + DATA_ORIGIN
+			        .uri("/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq." + DATA_ORIGIN
 							+ ",mperiod.eq.60&select=mvalidtime")
 			        .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
         if (blockLast==null || ((LinkedHashMap<String, Object>) blockLast.get("data")).isEmpty())
@@ -52,7 +52,7 @@ public class ODHReaderClient{
     }
 
     public LinkedHashMap createNewestElaborationMap() {
-        return ninja.get().uri("/v2/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq." + DATA_ORIGIN
+        return ninja.get().uri("/tree/EnvironmentStation/*/latest?limit=-1&where=sactive.eq.true,sorigin.eq." + DATA_ORIGIN
 				+ ",mperiod.eq.3600&select=mvalidtime")
                 .retrieve().bodyToFlux(LinkedHashMap.class).blockLast();
     }
