@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+apiVersion: v2
+name: bluetooth-traffic
+description: Hourly bluetooth traffic elaborations (database job)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+image:
+  repository: ""  # injected by CI
+  tag: ""         # injected by CI
+
+envSecret:
+  JDBC_URL: ""  # injected by CI
+
+jobs:
+  elaborate:
+    # one run per full hour
+    schedule: "0 * * * *"
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    # must finish before the next run
+    activeDeadlineSeconds: 3300
+    # not measured yet on the new jar (docker, JDK 8 + Tomcat: peak 356 MiB), adjust after the first runs
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi

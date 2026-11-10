@@ -1,3 +1,5 @@
-FROM tomcat:8.5-jdk8-openjdk-slim-buster
-COPY target/ROOT.war /usr/local/tomcat/webapps/ROOT.war
-
+FROM eclipse-temurin:21-jre-noble
+RUN useradd --system --uid 10001 app
+USER 10001
+COPY target/app.jar /app/app.jar
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

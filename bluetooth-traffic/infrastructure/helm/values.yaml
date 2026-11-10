@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Sensitive env vars, rendered into a K8s Secret. Injected by CI.
+envSecret: {}
+
+env:
+  LOG_LEVEL: info
+  LOG_STYLE: json
+  # size the heap from the container memory limit
+  _JAVA_OPTIONS: -XX:MaxRAMPercentage=70
+
+# CronJob definitions, per environment in test.yaml / prod.yaml.
+jobs: {}

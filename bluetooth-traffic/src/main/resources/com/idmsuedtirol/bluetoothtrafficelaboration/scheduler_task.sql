@@ -25,60 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -- Davide Montesin <d@vide.bz>
 
 
-with tasks as
-(
-   select id, 
-	       calc_order, 
-	       function_name, 
-	       args, 
-	       enabled, 
-	       -- status,
-	       status = 'RUNNING' running
-     from scheduler_task task
-    where calc_order is not null
-)
-,
-tasks_last_run_id as
-(
-   select *,
-	       (
-	          select id
-	            from scheduler_run run
-	           where run.task_id = tasks.id
-	           order by run.start_time desc, run.id desc
-	           limit 1
-	       ) as last_run_id
-     from tasks
-)
-,
-tasks_last_run as
-(
-   select tasks_last_run_id.*,
-          last_run.start_time as last_start_time,
-          to_char(last_run.stop_time - last_run.start_time,'hh24:mi:ss') as last_duration,
-          last_run.status as last_status,
-          last_run.run_output as last_run_output
-     from tasks_last_run_id
-     left outer join scheduler_run last_run on tasks_last_run_id.last_run_id = last_run.id
-)
-,
-tasks_last_run_status_since as
-(
-   select coalesce(to_char(extract( epoch from (last_start_time - (
-             select max(start_time)
-               from scheduler_run since
-              where since.task_id = tasks_last_run.id
-                and since.status != tasks_last_run.last_status
-          )))/(3600*24), '999990.000'), 'always') same_status_since,
-          (
-          select last_start_time -max(start_time)
-               from scheduler_run since
-              where since.task_id = tasks_last_run.id
-                and since.status != tasks_last_run.last_status
-          ),
-          *
-     from tasks_last_run
-)
-select *
-  from tasks_last_run_status_since
+select id, function_name, args
+  from scheduler_task
+ where calc_order is not null
  order by calc_order
