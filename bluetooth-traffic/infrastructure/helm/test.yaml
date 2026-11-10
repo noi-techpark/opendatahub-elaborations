@@ -16,12 +16,11 @@ jobs:
     successfulJobsHistoryLimit: 3
     failedJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
-    # must finish before the next run
-    activeDeadlineSeconds: 3300
-    # not measured yet on the new jar (docker, JDK 8 + Tomcat: peak 356 MiB), adjust after the first runs
+    # measured on test: peak 86 MiB with the default JVM options, 1-2 s cpu per 10 min (the database does the work)
+    # a run can take hours, concurrencyPolicy Forbid skips the triggers in the meantime
     resources:
       requests:
-        cpu: 100m
-        memory: 256Mi
+        cpu: 10m
+        memory: 128Mi
       limits:
-        memory: 512Mi
+        memory: 192Mi

@@ -72,17 +72,18 @@ public class ElaborationRunner {
 			if (this.stopRequested.getAsBoolean())
 				return;
 		}
+		this.db.newCommand("analyze measurementhistory");
 		this.updateLastElaborationCache();
 		LOG.info("Elaboration done.");
 	}
 
 	private String execute(Task task) throws SQLException, IOException {
 		Optional<Elaboration> elaboration = Elaboration.forFunction(task.functionName());
-		if (elaboration.isEmpty())
+		if (elaboration.isEmpty()) {
 			LOG.warn("Unknown elaboration function '{}', nothing to do", task.functionName());
-		String output = elaboration.isPresent() ? elaboration.get().run(this.db, task.args()) : "";
-		this.db.newCommand("analyze measurementhistory");
-		return output;
+			return "";
+		}
+		return elaboration.get().run(this.db, task.args());
 	}
 
 	private void updateLastElaborationCache() throws SQLException, IOException {

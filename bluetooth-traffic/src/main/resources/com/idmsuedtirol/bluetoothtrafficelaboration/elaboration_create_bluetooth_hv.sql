@@ -47,24 +47,27 @@ min_max as
 			  where s.stationtype = 'TrafficStreetFactor'
 			    and e.destination_id = p.station_id
           ),0) heavy_perc,
-          (select min(timestamp)
-            from measurementhistory eh
-            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+          (select min((select min(eh.timestamp)
+                              from measurementhistory eh
+                             where eh.timeseries_id = ts.id and eh.partition_id = ts.partition_id))
+            from timeseries ts
            where ts.period = p.period
              and ts.station_id = p.station_id
              and ts.type_id = 19
           ) min_timestamp, 
-          (select max(timestamp)
-            from measurementhistory eh
-            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+          (select max((select max(eh.timestamp)
+                              from measurementhistory eh
+                             where eh.timeseries_id = ts.id and eh.partition_id = ts.partition_id))
+            from timeseries ts
            where ts.period = p.period
              and ts.station_id = p.station_id
              and ts.type_id = 19
           ) max_timestamp,
           (
-          select max(timestamp)::date - 1
-            from measurementhistory eh
-            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+          select max((select max(eh.timestamp)
+                              from measurementhistory eh
+                             where eh.timeseries_id = ts.id and eh.partition_id = ts.partition_id))::date - 1
+            from timeseries ts
            where ts.period = p.period
              and ts.station_id = p.station_id
              and ts.type_id = p.type_id
