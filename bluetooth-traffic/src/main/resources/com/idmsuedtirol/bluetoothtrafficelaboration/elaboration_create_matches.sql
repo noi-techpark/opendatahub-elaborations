@@ -65,24 +65,27 @@ stations_min_max as
 (
    select *,
           (
-          select min(timestamp)
-            from measurementstringhistory h
-            join timeseries ts on ts.id = h.timeseries_id and h.partition_id = ts.partition_id
+          select min((select min(h.timestamp)
+                              from measurementstringhistory h
+                             where h.timeseries_id = ts.id and h.partition_id = ts.partition_id))
+            from timeseries ts
            where ts.type_id = 15
              and ts.station_id = ses.origin_id
           ) min_timestamp
           ,
           (
-          select max(timestamp)
-            from measurementstringhistory h
-            join timeseries ts on ts.id = h.timeseries_id and h.partition_id = ts.partition_id
+          select max((select max(h.timestamp)
+                              from measurementstringhistory h
+                             where h.timeseries_id = ts.id and h.partition_id = ts.partition_id))
+            from timeseries ts
            where ts.type_id = 15
              and ts.station_id = ses.origin_id
           ) max_timestamp,
           (
-          select max(timestamp)::date - 1
-            from measurementhistory h
-            join timeseries ts on ts.id = h.timeseries_id and h.partition_id = ts.partition_id
+          select max((select max(h.timestamp)
+                              from measurementhistory h
+                             where h.timeseries_id = ts.id and h.partition_id = ts.partition_id))::date - 1
+            from timeseries ts
            where ts.period = ses.p_period
              and ts.station_id = ses.link_station_id
              and ts.type_id = ses.elaboration_type_id

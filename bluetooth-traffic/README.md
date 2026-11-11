@@ -74,7 +74,9 @@ mvn clean test
 
 ## Deployment
 
-This is a maven project and will produce a war that can be deployed in any j2ee container like tomcat or jetty.
+This is a plain Java 21 application (no application server). `mvn clean package`
+produces the executable `target/app.jar`, which runs all elaborations once and
+exits. In k8s it is run every full hour by a CronJob (`infrastructure/helm`).
 
 Steps:
 
@@ -85,27 +87,21 @@ Steps:
 psql ... < BluetoothTrafficElaboration/deltart.sql
 ```
 
-* change the file src/main/resources/app.properties. set the variable
-  jdbc.connectionString with the jdbc url that connect to the postgres database
-  (or configure it within a CI tool)
+* set the environment variable `JDBC_URL` to the jdbc url that connects to the
+  postgres database (the CI injects it as a secret)
 
 ```
-jdbc.connectionString=jdbc:postgresql://host:port/db?user=...
+JDBC_URL=jdbc:postgresql://host:port/db?user=...&password=...
 ```
 
-* create the war executing the following command
+* run it, locally or in a container (see `infrastructure/docker/Dockerfile`)
 
-```
-mvn clean package
+```bash
+java -jar target/app.jar
 ```
 
-* deploy the bluetoothtrafficelaboration.war to a j2ee container like tomcat or jetty
-
-* open the (simple) dashboard to check if the project is started/working
-
-```
-http(s)://host:port/bluetoothtrafficelaboration
-```
+Progress and results are logged to stdout and stored in the tables
+`scheduler_task` and `scheduler_run`.
 
 ### Configure Elaborations/Tasks
 
@@ -170,3 +166,16 @@ More documentation can be found at
 
 The code in this project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE
 Version 3 license. See the [LICENSE](../LICENSE) file for more information.
+
+### Re-elaborating
+
+`reset-elaboration.sql` deletes this job's elaborated measurements from a date onward (raw data and matches are kept) and resets the latest-value table (`measurement`), so the next runs recompute them. Dry run first, see the header of the file:
+
+```
+psql "$DB" -v from_ts=2025-12-30 -f reset-elaboration.sql
+psql "$DB" -v from_ts=2025-12-30 -v apply=1 -f reset-elaboration.sql
+# after the job has caught up: refresh the latest values again
+psql "$DB" -v sync_only=1 -v apply=1 -f reset-elaboration.sql
+```
+
+`deltart.sql` is not deployed by CI; apply it manually to the database after changing it.

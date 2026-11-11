@@ -9,34 +9,27 @@ import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Properties;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import com.idmsuedtirol.bluetoothtrafficelaboration.ElaborationsInfo.TaskInfo;
+import com.idmsuedtirol.bluetoothtrafficelaboration.DatabaseHelper.Task;
 
 public class ElaborationIT {
-	private final Properties props = new Properties();
 	private DatabaseHelper databaseHelper;
 
 	@Before
-	public void setup() throws IOException, ClassNotFoundException {
-		String jdbcUrl = System.getenv("JDBC_URL");
-		databaseHelper = new DatabaseHelper(jdbcUrl);
+	public void setup() {
+		databaseHelper = new DatabaseHelper(System.getenv("JDBC_URL"));
 	}
 
 	@Test
-	public void testCountBluetooth() throws ClassNotFoundException, IOException, SQLException {
-		ArrayList<TaskInfo> newSelectTaskInfo = databaseHelper.newSelectTaskInfo();
-		assertNotNull(newSelectTaskInfo);
-		assertFalse(newSelectTaskInfo.isEmpty());
-		assertNotNull(newSelectTaskInfo.get(0).args);
-		assertFalse(newSelectTaskInfo.get(0).args.isEmpty());
-		String args = newSelectTaskInfo.get(0).args;
-		String doElaboration = ElaborationCountBluetooth.doElaboration(databaseHelper, args);
-		assertNotNull(doElaboration);
+	public void testCountBluetooth() throws IOException, SQLException {
+		List<Task> tasks = databaseHelper.selectTasks();
+		assertFalse(tasks.isEmpty());
+		assertNotNull(tasks.get(0).args());
+		assertFalse(tasks.get(0).args().isEmpty());
+		assertNotNull(Elaboration.COUNT_BLUETOOTH.run(databaseHelper, tasks.get(0).args()));
 	}
-
 }

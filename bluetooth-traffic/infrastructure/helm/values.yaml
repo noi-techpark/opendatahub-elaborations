@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Sensitive env vars, rendered into a K8s Secret. Injected by CI.
+envSecret: {}
+
+env:
+  LOG_LEVEL: info
+  LOG_STYLE: json
+  # the job only waits for the database: smallest JVM footprint (serial GC, C1 only, small heap and stacks)
+  _JAVA_OPTIONS: -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:MaxRAMPercentage=50 -Xss512k -XX:+ExitOnOutOfMemoryError
+
+# CronJob definitions, per environment in test.yaml / prod.yaml.
+jobs: {}

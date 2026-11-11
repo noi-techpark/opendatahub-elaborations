@@ -52,24 +52,27 @@ min_max as
           p.output_type_id,
           p.input_type_id,
           ST_LENGTH(linegeometry)::numeric link_length,
-          (select min(timestamp)
-            from measurementhistory eh
-            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+          (select min((select min(eh.timestamp)
+                              from measurementhistory eh
+                             where eh.timeseries_id = ts.id and eh.partition_id = ts.partition_id))
+            from timeseries ts
            where ts.period = 1
              and ts.station_id = p.station_id
              and ts.type_id = p.input_type_id
           ) min_timestamp, 
-          (select max(timestamp)
-            from measurementhistory eh
-            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+          (select max((select max(eh.timestamp)
+                              from measurementhistory eh
+                             where eh.timeseries_id = ts.id and eh.partition_id = ts.partition_id))
+            from timeseries ts
            where ts.period = 1
              and ts.station_id = p.station_id
              and ts.type_id = p.input_type_id
           ) max_timestamp,
           (
-          select max(timestamp)::date - 1
-            from measurementhistory eh
-            join timeseries ts on ts.id = eh.timeseries_id and eh.partition_id = ts.partition_id
+          select max((select max(eh.timestamp)
+                              from measurementhistory eh
+                             where eh.timeseries_id = ts.id and eh.partition_id = ts.partition_id))::date - 1
+            from timeseries ts
            where ts.period = p.period
              and ts.station_id = p.station_id
              and ts.type_id = p.output_type_id

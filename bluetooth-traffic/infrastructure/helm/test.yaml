@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: NOI Techpark <digital@noi.bz.it>
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+image:
+  repository: ""  # injected by CI
+  tag: ""         # injected by CI
+
+envSecret:
+  JDBC_URL: ""  # injected by CI
+
+jobs:
+  elaborate:
+    # one run per full hour
+    schedule: "0 * * * *"
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    concurrencyPolicy: Forbid
+    # measured on test: peak 86 MiB with the default JVM options, 1-2 s cpu per 10 min (the database does the work)
+    # a run can take hours, concurrencyPolicy Forbid skips the triggers in the meantime
+    resources:
+      requests:
+        cpu: 10m
+        memory: 128Mi
+      limits:
+        memory: 192Mi
