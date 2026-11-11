@@ -25,6 +25,11 @@ spec:
             app.kubernetes.io/component: {{ $jobName }}
         spec:
           restartPolicy: OnFailure
+          {{- with $.Values.checkpointCache.seLinuxLevel }}
+          securityContext:
+            seLinuxOptions:
+              level: {{ . | quote }}
+          {{- end }}
           volumes:
             - name: checkpoint-cache
               persistentVolumeClaim:
@@ -39,9 +44,14 @@ spec:
                   mountPath: {{ $.Values.checkpointCache.mountPath }}
               env:
                 {{- range $key, $value := $.Values.env }}
+                {{- if ne $key "COMPUTATION_CHECKPOINT_CACHE_PATH" }}
                 - name: {{ $key }}
                   value: {{ $value | quote }}
                 {{- end }}
+                {{- end }}
+                # one checkpoint db per job on the shared volume, jobs never read each other's checkpoints
+                - name: COMPUTATION_CHECKPOINT_CACHE_PATH
+                  value: {{ printf "%s/%s.db" $.Values.checkpointCache.mountPath $jobName | quote }}
                 {{- if $.Values.envSecret }}
                 {{- range $key, $value := $.Values.envSecret }}
                 - name: {{ $key }}

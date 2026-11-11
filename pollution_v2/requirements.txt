@@ -12,4 +12,6 @@ holidays~=0.62
 PyYAML~=6.0
 python-json-logger~=4.1
 
+astral~=3.2
+
 pytest~=8.3

@@ -10,9 +10,10 @@ import os
 import sqlite3
 import time
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from enum import Enum
 from json import JSONDecodeError
-from typing import Optional, TypeVar, Generic, Type
+from typing import Iterator, Optional, TypeVar, Generic, Type
 
 logger = logging.getLogger("pollution_v2.common.cache.common")
 
@@ -22,6 +23,7 @@ class TrafficManagerClass(Enum):
     POLLUTION = "POLLUTION"
     VALIDATION = "VALIDATION"
     DISPERSAL = "DISPERSAL"
+    ROAD_WEATHER = "ROAD_WEATHER"
 
 
 class CacheData(ABC):
@@ -52,10 +54,18 @@ class LocalCache(Generic[CacheDataType], ABC):
         os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         self._init_db()
 
-    def _connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def _connect(self) -> Iterator[sqlite3.Connection]:
+        # sqlite3's own context manager only commits/rolls back, it does not close the connection. Unclosed
+        # connections (3 open files each in WAL mode) pile up until the garbage collector runs and eventually
+        # exhaust the file descriptors ("unable to open database file")
         conn = sqlite3.connect(self._db_path)
-        conn.execute("PRAGMA journal_mode=WAL")
-        return conn
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            with conn:
+                yield conn
+        finally:
+            conn.close()
 
     def _init_db(self) -> None:
         with self._connect() as conn:

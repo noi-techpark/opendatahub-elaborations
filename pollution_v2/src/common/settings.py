@@ -42,6 +42,8 @@ ODH_PAGINATION_SIZE = int(os.getenv("ODH_PAGINATION_SIZE", "5000"))
 _max_post = os.getenv("ODH_MAX_POST_BATCH_SIZE")
 ODH_MAX_POST_BATCH_SIZE = int(_max_post) if _max_post else None
 ODH_PARALLEL_REQUESTS = int(os.getenv("ODH_PARALLEL_REQUESTS", "10"))
+# maximum number of requests in flight at the same time towards each ODH API (reader and writer are separate APIs)
+ODH_MAX_CONCURRENT_REQUESTS = int(os.getenv("ODH_MAX_CONCURRENT_REQUESTS", "1"))
 ODH_MINIMUM_STARTING_DATE = DEFAULT_TIMEZONE.localize(
     dateutil.parser.parse(os.getenv("ODH_MINIMUM_STARTING_DATE", "2018-01-01"))
 )
@@ -82,7 +84,11 @@ if not os.path.exists(TMP_DIR):
     os.makedirs(TMP_DIR)
 
 # Road weather
-METRO_WS_PREDICTION_ENDPOINT = os.getenv("METRO_WS_PREDICTION_ENDPOINT", "http://metro:80/predict/?station_code=")
+# METRo runs on the system python, since it needs python-libxml2 (see the Dockerfile)
+METRO_PYTHON = os.getenv("METRO_PYTHON", "/usr/bin/python3")
+METRO_BIN = os.getenv("METRO_BIN", "/usr/local/metro/usr/bin/metro")
+# METRo input with the station parameters, one file per station, named parameters_<WRF code>.xml
+METRO_PARAMETERS_DIR = os.getenv("METRO_PARAMETERS_DIR", os.path.join(os.path.dirname(__file__), "..", "config", "metro"))
 ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS = int(os.getenv("ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS", "60"))
 ROAD_WEATHER_NUM_FORECASTS = int(os.getenv("ROAD_WEATHER_NUM_FORECASTS", "45"))
 

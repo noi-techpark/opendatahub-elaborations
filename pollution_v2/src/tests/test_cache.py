@@ -77,3 +77,17 @@ def test_different_manager_codes_are_independent(cache: ComputationCheckpointCac
 
     assert cache.get(cp_poll.unique_id()).checkpoint_dt == cp_poll.checkpoint_dt
     assert cache.get(cp_valid.unique_id()).checkpoint_dt == cp_valid.checkpoint_dt
+
+
+def test_connections_are_closed(cache: ComputationCheckpointCache):
+    import os
+    fd_dir = "/proc/self/fd"
+    if not os.path.isdir(fd_dir):
+        pytest.skip("needs /proc to count open file descriptors")
+
+    checkpoint = _checkpoint()
+    before = len(os.listdir(fd_dir))
+    for _ in range(200):
+        cache.set(checkpoint)
+        cache.get(checkpoint.unique_id())
+    assert len(os.listdir(fd_dir)) - before < 5
