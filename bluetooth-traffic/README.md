@@ -166,3 +166,16 @@ More documentation can be found at
 
 The code in this project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE
 Version 3 license. See the [LICENSE](../LICENSE) file for more information.
+
+### Re-elaborating
+
+`reset-elaboration.sql` deletes this job's elaborated measurements from a date onward (raw data and matches are kept) and resets the latest-value table (`measurement`), so the next runs recompute them. Dry run first, see the header of the file:
+
+```
+psql "$DB" -v from_ts=2025-12-30 -f reset-elaboration.sql
+psql "$DB" -v from_ts=2025-12-30 -v apply=1 -f reset-elaboration.sql
+# after the job has caught up: refresh the latest values again
+psql "$DB" -v sync_only=1 -v apply=1 -f reset-elaboration.sql
+```
+
+`deltart.sql` is not deployed by CI; apply it manually to the database after changing it.

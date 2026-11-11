@@ -97,7 +97,7 @@ $$
                     raise exception 'timestamp inconsistency';
                 end if;
 
-                select count(*) into cnt from measurementhistory t1
+                select count(*), max(t1.double_value) into cnt, val from measurementhistory t1
                 where t1.timestamp = ele.timestamp and
                       t1.timeseries_id = v_timeseries_id and
                       t1.partition_id = v_partition_id and
