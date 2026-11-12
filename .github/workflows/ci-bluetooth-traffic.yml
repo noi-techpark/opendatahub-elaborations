@@ -14,7 +14,7 @@ env:
   DOCKER_TAG: ${{ github.sha }}
   JAVA_VERSION: "21"
   KUBERNETES_NAMESPACE: collector
-  K8S_NAME: odh-mobility-el-bluetooth-traffic
+  K8S_NAME: el-bluetooth-traffic
 
 jobs:
   test:
