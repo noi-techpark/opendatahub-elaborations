@@ -16,6 +16,7 @@ jobs:
     successfulJobsHistoryLimit: 3
     failedJobsHistoryLimit: 3
     concurrencyPolicy: Forbid
+    activeDeadlineSeconds: 14400
     # measured on test: peak 86 MiB with the default JVM options, 1-2 s cpu per 10 min (the database does the work)
     # a run can take hours, concurrencyPolicy Forbid skips the triggers in the meantime
     resources:
