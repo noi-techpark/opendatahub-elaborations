@@ -6,7 +6,7 @@ from __future__ import absolute_import, annotations
 
 import datetime
 import logging
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import pandas as pd
 
@@ -42,13 +42,15 @@ class PollutionComputationModel:
             ))
         return pollution_entries
 
-    def compute_data(self, validation: ValidationMeasureCollection,
+    def compute_data(self, validation: Optional[ValidationMeasureCollection],
                      traffic: TrafficMeasureCollection, station: TrafficSensorStation) -> List[PollutionEntry]:
+        # validation is None when running with POLLUTION_COMPUTE_WITHOUT_VALIDATION: no validation guard applied
+        require_validation = validation is not None
         validation_data_types = set()
         valid_measures = []
         validated_datetimes = set()
 
-        for measure in validation.measures:
+        for measure in (validation.measures if require_validation else []):
             validation_data_types.add(str(measure.data_type))
             if measure.value == 1:
                 valid_measures.append(measure)
@@ -60,13 +62,14 @@ class PollutionComputationModel:
 
         for measure in traffic.measures:
             traffic_data_types.add(str(measure.data_type))
-            if measure.valid_time in validated_datetimes:
+            if not require_validation or measure.valid_time in validated_datetimes:
                 run_on_datetimes.add(measure.valid_time)
             else:
                 skip_datetimes.add(measure.valid_time)
 
-        logger.info(f"{len(validation.measures)} validation measures on {len(validation_data_types)} data types")
-        logger.info(f"{len(valid_measures)} valid measures on {len(validation_data_types)} data types")
+        if require_validation:
+            logger.info(f"{len(validation.measures)} validation measures on {len(validation_data_types)} data types")
+            logger.info(f"{len(valid_measures)} valid measures on {len(validation_data_types)} data types")
         logger.info(f"{len(traffic.measures)} traffic measures on {len(traffic_data_types)} data types")
 
         if skip_datetimes:
