@@ -15,7 +15,7 @@ from common.data_model.history import HistoryMeasureCollection
 from common.data_model.traffic import TrafficMeasureCollection
 from common.data_model.validation import ValidationEntry, ValidationTypeClass
 from common.model.helper import ModelHelper
-from common.settings import PERIOD_10MIN
+from common.settings import HISTORY_TIMEZONE, PERIOD_1DAY
 from validator.Validator import validator
 
 logger = logging.getLogger("pollution_v2.validator.model.validation_model")
@@ -77,7 +77,7 @@ class ValidationModel:
                 out_df = validator(date.strftime('%Y-%m-%d'), traffic_df, history_df,
                                    stations_df[["station_id", "km"]].drop_duplicates().set_index("station_id")["km"].to_dict(),
                                    stations_df[["station_id", "station_type"]].drop_duplicates().set_index("station_id")["station_type"].to_dict())
-                lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), PERIOD_10MIN, traffic.get_stations())
+                lst = self._get_entries_from_df(out_df, date.strftime('%Y-%m-%d'), PERIOD_1DAY, traffic.get_stations())
                 res.extend(lst)
         else:
             logger.warning("0 validated entries found skipping pollution computation")
@@ -95,11 +95,21 @@ class ValidationModel:
         :param stations_dict: the stations related to the measures in the format station_code: Station
         :return: the list of entries
         """
+        # one record per station and vehicle class, stamped at the start of the next day like the history sums;
+        # the day is valid only if all of its intervals are valid
+        valid_time = HISTORY_TIMEZONE.localize(datetime.fromisoformat(date) + timedelta(days=1))
+
+        def _daily_flag(flags) -> int:
+            if (flags == 0).any():
+                return 0
+            return 1 if (flags == 1).all() else 999
+
+        daily = in_df.groupby(["station_code", "variable"])["is_valid"].agg(_daily_flag).reset_index()
         out_entries = []
-        for _, row in in_df.iterrows():
+        for _, row in daily.iterrows():
             out_entries.append(ValidationEntry(
                 station=stations_dict[row['station_code']],
-                valid_time=datetime.fromisoformat(f"{date}T{row['time']}"),
+                valid_time=valid_time,
                 vehicle_class=VehicleClass(row["variable"]),
                 entry_class=ValidationTypeClass.VALID,
                 entry_value=row["is_valid"],

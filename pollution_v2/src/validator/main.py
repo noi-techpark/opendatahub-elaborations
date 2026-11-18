@@ -17,6 +17,7 @@ from common.manager.traffic_station import RunStats
 from common.settings import (
     COMPUTATION_CHECKPOINT_CACHE_PATH,
     DEFAULT_TIMEZONE,
+    HISTORY_TIMEZONE,
     ODH_COMPUTATION_BATCH_SIZE_VALIDATION,
     ODH_MINIMUM_STARTING_DATE,
     PROVENANCE_ID,
@@ -25,6 +26,7 @@ from common.settings import (
     PROVENANCE_VERSION,
     SENTRY_SAMPLE_RATE,
     get_now,
+    get_previous_midnight,
 )
 from validator.manager.validation import ValidationManager
 
@@ -63,7 +65,8 @@ def main() -> None:
     iteration = 0
     while True:
         iteration += 1
-        max_to_date = DEFAULT_TIMEZONE.localize(get_now())
+        # only complete days are validated, as a day is valid only if all its intervals are
+        max_to_date = HISTORY_TIMEZONE.localize(get_previous_midnight())
         logger.info(f"Catch-up iteration {iteration}: processing up to {max_to_date.isoformat()}")
 
         try:

@@ -50,7 +50,7 @@ def main() -> None:
     manager = PollutionComputationManager(connector_collector, provenance, checkpoint_cache)
 
     min_from_date = ODH_MINIMUM_STARTING_DATE
-    # pollution computation runs up to previous midnight to stay in sync with the validation window
+    # pollution computation runs up to the previous midnight, i.e. complete days only
     max_to_date = DEFAULT_TIMEZONE.localize(get_previous_midnight())
 
     stations = manager.get_station_list()

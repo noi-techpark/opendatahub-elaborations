@@ -12,8 +12,6 @@ from common.cache.common import TrafficManagerClass
 from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation, TrafficMeasureCollection
 from common.data_model.entry import GenericEntry
-from common.data_model.validation import ValidationMeasureCollection
-from common.settings import POLLUTION_COMPUTE_WITHOUT_VALIDATION
 from common.manager.traffic_station import TrafficStationManager
 from common.data_model.common import DataType, MeasureCollection
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
@@ -34,18 +32,7 @@ class PollutionComputationManager(TrafficStationManager):
         return self._connector_collector.pollution
 
     def get_input_connector(self) -> ODHBaseConnector:
-        # Without validation requirement the date range is driven by traffic data instead of validation results
-        if POLLUTION_COMPUTE_WITHOUT_VALIDATION:
-            return self._connector_collector.traffic
-        return self._connector_collector.validation
-
-    def _download_validation_data(self, from_date: datetime, to_date: datetime,
-                                  traffic_station: TrafficSensorStation) -> ValidationMeasureCollection:
-        return ValidationMeasureCollection(
-            measures=self._connector_collector.validation.get_measures(
-                from_date=from_date, to_date=to_date, station=traffic_station
-            )
-        )
+        return self._connector_collector.traffic
 
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime,
                                    stations: List[TrafficSensorStation]) -> List[GenericEntry]:
@@ -54,22 +41,19 @@ class PollutionComputationManager(TrafficStationManager):
             return []
 
         traffic_station = stations[0]
-        validation_data = []
         traffic_data = []
         try:
-            if not POLLUTION_COMPUTE_WITHOUT_VALIDATION:
-                validation_data = self._download_validation_data(start_date, to_date, traffic_station)
             traffic_data = self._download_traffic_data(start_date, to_date, [traffic_station])
         except Exception as e:
             logger.exception(
-                f"Unable to download validation and traffic data for station [{traffic_station.code}] "
+                f"Unable to download traffic data for station [{traffic_station.code}] "
                 f"in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]",
                 exc_info=e,
             )
 
-        if traffic_data and (validation_data or POLLUTION_COMPUTE_WITHOUT_VALIDATION):
+        if traffic_data:
             model = PollutionComputationModel()
-            return model.compute_data(validation_data or None, TrafficMeasureCollection(traffic_data), traffic_station)
+            return model.compute_data(TrafficMeasureCollection(traffic_data), traffic_station)
 
         return []
 

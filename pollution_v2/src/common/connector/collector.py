@@ -103,7 +103,7 @@ class ConnectorCollector:
             validation=ODHBaseConnector(
                 station_type="TrafficSensor",
                 measure_types=[dt.name for dt in ValidationMeasure.get_data_types()],
-                period=PERIOD_10MIN,
+                period=PERIOD_1DAY,
                 build_station=TrafficSensorStation.from_odh_repr,
                 build_measure=ValidationMeasure.from_odh_repr,
                 **common_kwargs,

@@ -21,27 +21,27 @@ The TrafficData is periodically pulled from the A22 collection, data validation 
 **Components**:
 
 - *Jobs*: `validator`, `pollution-computer`, `road-weather` and `pollution-dispersal` are independent, containerized entry points (`src/<job>/main.py`), each on its own cron schedule. Locally, `docker-compose.yml` runs each job's container with `supercronic` handling the schedule; in the cluster, each job is a Kubernetes `CronJob` (see `infrastructure/helm`).
-- *Data validator*: This component downloads traffic data from ODH, validates them and upload them again into ODH.
+- *Data validator*: This component downloads traffic data and daily history from ODH, validates one complete day at a time and uploads one daily validity record per station and vehicle class (see [Validation](#validation-algorithm-criteria)).
 - *Road weather*: This job computes the road condition forecast of the road weather (RWIS) stations listed in `src/config/road_weather.yaml` (which also maps each ODH station to its WRF/METRo station code). For each station it downloads the latest WRF forecast from CISMA and the observations of the surrounding hours (from 16 hours before to 8 hours after the forecast start) from ODH, and runs the METRo model (`weather`) on them to get the roadcast. The road condition (e.g. "Dry road", "Ice / snow on the road") is uploaded to ODH for each of the next `ROAD_WEATHER_NUM_FORECASTS` steps of `ROAD_WEATHER_MINUTES_BETWEEN_FORECASTS` minutes, together with the confidence level of the forecast, which is low when the observations lack data. All the times are UTC. Unlike the other jobs it does not walk through past batches: a forecast already processed (the start of the last one is kept in the checkpoint cache) is skipped, and one that failed is retried at the next run.
 - *Pollution computer*: This task handles the computation of a batch of measures. It downloads the traffic data from the OpenDataHub (Using the TrafficMeasure connector), computes the pollution measures (using the Pollution Computation Model) and it uploads the new measure to the ODH using the PollutionMeasure connector.
 
 #### Validation Algorithm Criteria
 
-The validation algorithm is designed to assign a validity flag (`is_valid`) to traffic data, which can be either 1 (valid), 0 (not valid) or 999 (None). This flag is determined through a three-layer validation process:
+The validator runs once a day and validates every complete day (00:00-24:00 UTC) since its last output, catching up day by day. For each station and vehicle class it writes a single record with period 24h, stamped at 00:00 UTC of the following day (like the daily history sums). Its `is_valid` value is 1 (valid), 0 (not valid) or 999 (None). A day is valid only if the day-level checks (layers 1, 1.1, 2) pass and every 10-minute interval of the day passes layer 3.
 
-1. **Layer 1 - Daily traffic volume assessment at individual stations**  
-   This layer compares the total number of vehicles recorded at a monitoring station throughout the day against statistically derived historical data. If historical data is unavailable for a specific station, data from neighboring stations is used, assuming similar average behavior. The statistical comparison uses the Z-score method, which assesses how much the current value deviates from a reference parameter. This parameter is historically determined based on the day type (weekday or holiday) and the time of year. The calculated Z-score is compared to an acceptable range defined by lower and upper boundaries.
+The layers work on a station section and driving direction, summing all lanes and vehicle classes:
 
-   1. **Layer 1.1 - Consistency check with adjacent sations**
-      If a daily data set is flagged as invalid by Layer 1, an additional check evaluates whether the anomaly detected at one station systematically occurs at neighboring stations. This helps identify potential false positives, particularly when anomalies might be due to genuine, significant changes in road conditions rather than data errors. Here, the Z-score method is also used, but the reference parameter is based on values observed at adjacent stations instead of historical data.
+1. **Layer 1 - Daily traffic volume**
+   Compares the day's total vehicle count with the history for the same day type (weekday or holiday) and time of year, using the Z-score. If the station has no history, neighboring stations are used as reference. The Z-score must lie within the configured lower and upper limits.
 
-2. **Layer 2 - Daily traffic volume evaluation on individual lanes**
-   This layer mirrors Layer 1 but focuses on the ratio of daily traffic volumes between driving and passing lanes. This ratio is compared with historical data. This validation criterion helps detect anomalies in a single lane's traffic sensor that aren't significant enough to cause a Layer 1 validation failure.
+   1. **Layer 1.1 - Consistency with adjacent stations**
+      If Layer 1 fails, the Z-score of the day's total is also computed against adjacent stations, to tell genuine traffic changes from data errors.
+
+2. **Layer 2 - Lane distribution**
+   Compares the day's ratio between driving and passing lane volumes with its history, detecting faults of a single lane's sensor.
 
 3. **Layer 3 - Time series anomalies**
-   Layer 3 assesses the consistency of daily time series data, identifying anomalies such as sudden increases or decreases and persistent null values.
-
-Each layer assigns a validation flag to the data, which are then combined to determine a final, unified validation state.
+   Checks each 10-minute interval for sudden drops and for persistent zero values.
 
 The validation parameters are defined in the file `pollution_v2/src/config/validator.yaml`. The Z-score limit parameters can be set to *null* to effectively disable their influence.
 
@@ -270,7 +270,6 @@ docker run --rm --entrypoint python pollution-v2 -m pytest tests
 | ODH_COMPUTATION_BATCH_SIZE_POLL_ELABORATION            | No       | The maximum size (in days) of a batch to compute pollution.                                                                                                                                                             | 30                                        |
 | ODH_COMPUTATION_BATCH_SIZE_VALIDATION                  | No       | The maximum size (in days) of a batch to compute validation.                                                                                                                                                            | 1                                         |
 | ODH_COMPUTATION_BATCH_SIZE_POLL_DISPERSAL              | No       | The range (in days) used to look for the pollution dispersal computation starting date.                                                                                                                                | 30                                        |
-| POLLUTION_COMPUTE_WITHOUT_VALIDATION | No | If `true`, pollution is computed on all traffic data even if it is not (yet) validated; the validation guard is skipped. | false |
 | REQUESTS_TIMEOUT                                       | No       | Timeout (in seconds) for requests to ODH and other HTTP endpoints.                                                                                                                                                      | 300                                       |
 | REQUESTS_MAX_RETRIES                                   | No       | Maximum number of retries for failed requests.                                                                                                                                                                          | 1                                         |
 | REQUESTS_SLEEP_TIME                                    | No       | Sleep time (in seconds) between requests.                                                                                                                                                                               | 0                                         |

@@ -6,14 +6,13 @@ from __future__ import absolute_import, annotations
 
 import datetime
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 import pandas as pd
 
 from common.data_model.common import VehicleClass
 from common.data_model.pollution import PollutionEntry, PollutantClass
 from common.data_model import TrafficMeasureCollection, TrafficSensorStation
-from common.data_model.validation import ValidationMeasureCollection
 from common.model.helper import ModelHelper
 from pollution_computer.model.CopertEmissions import copert_emissions
 
@@ -42,41 +41,11 @@ class PollutionComputationModel:
             ))
         return pollution_entries
 
-    def compute_data(self, validation: Optional[ValidationMeasureCollection],
-                     traffic: TrafficMeasureCollection, station: TrafficSensorStation) -> List[PollutionEntry]:
-        # validation is None when running with POLLUTION_COMPUTE_WITHOUT_VALIDATION: no validation guard applied
-        require_validation = validation is not None
-        validation_data_types = set()
-        valid_measures = []
-        validated_datetimes = set()
+    def compute_data(self, traffic: TrafficMeasureCollection, station: TrafficSensorStation) -> List[PollutionEntry]:
+        traffic_data_types = {str(measure.data_type) for measure in traffic.measures}
+        run_on_datetimes = {measure.valid_time for measure in traffic.measures}
 
-        for measure in (validation.measures if require_validation else []):
-            validation_data_types.add(str(measure.data_type))
-            if measure.value == 1:
-                valid_measures.append(measure)
-                validated_datetimes.add(measure.valid_time)
-
-        traffic_data_types = set()
-        skip_datetimes = set()
-        run_on_datetimes = set()
-
-        for measure in traffic.measures:
-            traffic_data_types.add(str(measure.data_type))
-            if not require_validation or measure.valid_time in validated_datetimes:
-                run_on_datetimes.add(measure.valid_time)
-            else:
-                skip_datetimes.add(measure.valid_time)
-
-        if require_validation:
-            logger.info(f"{len(validation.measures)} validation measures on {len(validation_data_types)} data types")
-            logger.info(f"{len(valid_measures)} valid measures on {len(validation_data_types)} data types")
         logger.info(f"{len(traffic.measures)} traffic measures on {len(traffic_data_types)} data types")
-
-        if skip_datetimes:
-            diff_date = {date.strftime("%m/%d/%Y") for date in skip_datetimes}
-            logger.warning(f"{len(skip_datetimes)} discarded records: no validation for dates {sorted(diff_date)} "
-                           f"on station [{station.code}]")
-
         logger.info(f"Ready to process pollution computation on {len(run_on_datetimes)} datetimes")
 
         traffic_entries = traffic.get_entries()
@@ -89,5 +58,5 @@ class PollutionComputationModel:
             pollution_df = copert_emissions(traffic_df, year)
             return self._get_pollution_entries_from_df(pollution_df, traffic.get_stations())
 
-        logger.info("0 validated entries found, skipping pollution computation")
+        logger.info("0 traffic entries found, skipping pollution computation")
         return []

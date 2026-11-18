@@ -70,9 +70,6 @@ PROVENANCE_VERSION = os.getenv("PROVENANCE_VERSION", "0.1.0")
 # Checkpoint cache (SQLite file — delete to reset, or set to empty string to disable)
 COMPUTATION_CHECKPOINT_CACHE_PATH = os.getenv("COMPUTATION_CHECKPOINT_CACHE_PATH", "data/checkpoint_cache.db")
 
-# If true, pollution is computed on all traffic data, even if it has not (yet) been validated
-POLLUTION_COMPUTE_WITHOUT_VALIDATION = os.getenv("POLLUTION_COMPUTE_WITHOUT_VALIDATION", "false").lower() in ("1", "true", "yes")
-
 # Optional prefix for data type names (e.g. for test environments)
 DATATYPE_PREFIX = os.getenv("DATATYPE_PREFIX", "")
 
