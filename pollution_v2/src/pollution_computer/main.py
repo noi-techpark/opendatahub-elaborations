@@ -23,7 +23,7 @@ from common.settings import (
     PROVENANCE_NAME_POLL_ELABORATION,
     PROVENANCE_VERSION,
     SENTRY_SAMPLE_RATE,
-    get_previous_midnight,
+    get_now,
 )
 from pollution_computer.manager.pollution_computation import PollutionComputationManager
 
@@ -50,8 +50,8 @@ def main() -> None:
     manager = PollutionComputationManager(connector_collector, provenance, checkpoint_cache)
 
     min_from_date = ODH_MINIMUM_STARTING_DATE
-    # pollution computation runs up to the previous midnight, i.e. complete days only
-    max_to_date = DEFAULT_TIMEZONE.localize(get_previous_midnight())
+    # pollution computation runs up to now; windows not finished yet are left out by the manager
+    max_to_date = get_now(DEFAULT_TIMEZONE)
 
     stations = manager.get_station_list()
     stations = [s for s in stations if s.km > 0]

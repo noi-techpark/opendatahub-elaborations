@@ -13,7 +13,7 @@ from common.connector.common import ODHBaseConnector
 from common.data_model import TrafficSensorStation, TrafficMeasureCollection
 from common.data_model.entry import GenericEntry
 from common.manager.traffic_station import TrafficStationManager
-from common.data_model.common import DataType, MeasureCollection
+from common.data_model.common import DataType, MeasureCollection, MeasureType
 from common.data_model.pollution import PollutionMeasure, PollutionMeasureCollection, PollutionEntry
 from pollution_computer.model.pollution_computation_model import PollutionComputationModel
 
@@ -34,6 +34,19 @@ class PollutionComputationManager(TrafficStationManager):
     def get_input_connector(self) -> ODHBaseConnector:
         return self._connector_collector.traffic
 
+    def _update_cache(self, to_date: datetime, stations: List[TrafficSensorStation]) -> None:
+        # The starting date is always derived from the latest pollution output. A checkpoint would move past windows
+        # we deliberately left out because they are not finished yet (see _drop_unfinished_windows) and skip them.
+        return
+
+    @staticmethod
+    def _drop_unfinished_windows(traffic_data: List[MeasureType], latest_input_date: datetime) -> List[MeasureType]:
+        """
+        A window is finished only once a record of a following window exists, i.e. every window starting
+        before the latest input record. The latest window itself might still receive data and is computed later.
+        """
+        return [m for m in traffic_data if m.valid_time < latest_input_date]
+
     def _download_data_and_compute(self, start_date: datetime, to_date: datetime,
                                    stations: List[TrafficSensorStation]) -> List[GenericEntry]:
         if len(stations) != 1:
@@ -50,6 +63,15 @@ class PollutionComputationManager(TrafficStationManager):
                 f"in the interval [{start_date.isoformat()}] - [{to_date.isoformat()}]",
                 exc_info=e,
             )
+
+        if traffic_data:
+            # Computed up to the current time, so leave out the windows that may not be complete yet
+            latest_input_date = self._get_latest_date(self.get_input_connector(), [traffic_station])
+            total = len(traffic_data)
+            traffic_data = self._drop_unfinished_windows(traffic_data, latest_input_date)
+            if len(traffic_data) < total:
+                logger.info(f"[{traffic_station.code}] Skipped {total - len(traffic_data)} measures at or after the "
+                            f"latest input record {latest_input_date.isoformat()}: window not finished yet")
 
         if traffic_data:
             model = PollutionComputationModel()

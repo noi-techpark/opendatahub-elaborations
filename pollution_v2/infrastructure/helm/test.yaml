@@ -31,7 +31,7 @@ jobs:
         memory: "1Gi"
 
   pollution-computer:
-    schedule: "0 4 * * *"
+    schedule: "*/30 * * * *"
     command: ["python", "-m", "pollution_computer.main"]
     successfulJobsHistoryLimit: 3
     failedJobsHistoryLimit: 3
