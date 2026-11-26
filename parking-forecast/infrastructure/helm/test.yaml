@@ -45,3 +45,9 @@ jobs:
         memory: "512Mi"
       limits:
         memory: "1Gi"
+
+data:
+  storageClassName: "sbs-default"
+
+result:
+  storageClassName: "sbs-default"
