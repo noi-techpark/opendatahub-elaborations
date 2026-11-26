@@ -9,6 +9,9 @@ image:
 envSecret:
   ODH_CLIENT_SECRET: ""  # injected by CI
 
+checkpointCache:
+  storage: 1Gi  # Scaleway block storage minimum
+
 env:
   ODH_AUTHENTICATION_URL: "https://auth.opendatahub.testingmachine.eu/auth/"
   ODH_BASE_READER_URL: "https://mobility.api.opendatahub.testingmachine.eu"
