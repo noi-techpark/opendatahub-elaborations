@@ -77,7 +77,7 @@ jobs:
           yq -i '.image.repository = "${{ env.DOCKER_IMAGE }}"' ${{ env.VALUES_YAML }}
           yq -i '.image.tag = "${{ env.DOCKER_TAG }}"' ${{ env.VALUES_YAML }}
           yq -i '.image.pullPolicy = "IfNotPresent"' ${{ env.VALUES_YAML }}
-          yq -i '.envSecret.JDBC_URL = "jdbc:postgresql://${{ secrets.DB_URL_TEST }}:5432/bdp?user=${{ secrets.DB_USER_TEST }}&password=${{ secrets.DB_PWD_TEST }}"' ${{ env.VALUES_YAML }}
+          yq -i '.envSecret.JDBC_URL = "jdbc:postgresql://${{ secrets.DB_URL_TEST }}:11936/bdp?user=${{ secrets.DB_USER_TEST }}&password=${{ secrets.DB_PWD_TEST }}"' ${{ env.VALUES_YAML }}
 
       - name: Deploy on cluster
         uses: noi-techpark/github-actions/helm-deploy-scw@v3
