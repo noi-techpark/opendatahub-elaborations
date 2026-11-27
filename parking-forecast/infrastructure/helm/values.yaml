@@ -25,14 +25,6 @@ data:
   mountPath: /app/data
   storageClassName: "gp3"
 
-# result.json, written by predict and served by the nginx Deployment. Needs a
-# ReadWriteMany StorageClass (EFS) since the job pods and nginx mount it
-# concurrently. Must match the directory of RESULT_JSON_PATH below.
-result:
-  storage: 1Gi
-  mountPath: /app/data/result
-  storageClassName: "efs"
-
 # Sensitive env vars — rendered into a K8s Secret and injected per-container.
 # Set in test.yaml / prod.yaml (or injected by CI via yq).
 envSecret: {}

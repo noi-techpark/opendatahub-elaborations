@@ -48,6 +48,3 @@ jobs:
 
 data:
   storageClassName: "sbs-default"
-
-result:
-  storageClassName: "sbs-default"

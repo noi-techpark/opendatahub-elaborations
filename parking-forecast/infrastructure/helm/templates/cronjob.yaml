@@ -25,24 +25,20 @@ spec:
             app.kubernetes.io/component: {{ $jobName }}
         spec:
           restartPolicy: OnFailure
-          # The EBS volume is single-attach: prefer the node where another job
-          # pod already has it. The zone is enforced by the PV's node affinity.
+          # The data volume is ReadWriteOnce: run on the node where nginx
+          # (which mounts the same volume) is scheduled.
           affinity:
             podAffinity:
-              preferredDuringSchedulingIgnoredDuringExecution:
-                - weight: 100
-                  podAffinityTerm:
-                    topologyKey: kubernetes.io/hostname
-                    labelSelector:
-                      matchLabels:
-                        {{- include "parking-forecast.selectorLabels" $ | nindent 24 }}
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - topologyKey: kubernetes.io/hostname
+                  labelSelector:
+                    matchLabels:
+                      {{- include "parking-forecast.selectorLabels" $ | nindent 22 }}
+                      app.kubernetes.io/component: nginx
           volumes:
             - name: data
               persistentVolumeClaim:
                 claimName: {{ $.Release.Name }}-data
-            - name: result
-              persistentVolumeClaim:
-                claimName: {{ $.Release.Name }}-result
           containers:
             - name: {{ $jobName }}
               image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
@@ -51,8 +47,6 @@ spec:
               volumeMounts:
                 - name: data
                   mountPath: {{ $.Values.data.mountPath }}
-                - name: result
-                  mountPath: {{ $.Values.result.mountPath }}
               env:
                 {{- range $key, $value := $.Values.env }}
                 - name: {{ $key }}

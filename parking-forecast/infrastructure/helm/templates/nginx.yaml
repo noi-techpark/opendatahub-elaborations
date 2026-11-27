@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 #
-# Serves result.json (see templates/pvc.yaml's shared "result" claim, written
+# Serves result.json (the "result" subdirectory of the data claim, written
 # by the predict CronJob) for legacy STA-facing consumers. This
 # chart intentionally stops at a ClusterIP Service — routing an external
 # hostname to it (Ingress, DNS cutover from the old VM's nginx) is
@@ -31,7 +31,7 @@ spec:
       volumes:
         - name: data
           persistentVolumeClaim:
-            claimName: {{ .Release.Name }}-result
+            claimName: {{ .Release.Name }}-data
       containers:
         - name: nginx
           image: nginx:latest
@@ -40,6 +40,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /usr/share/nginx/html
+              subPath: result
               readOnly: true
 ---
 apiVersion: v1

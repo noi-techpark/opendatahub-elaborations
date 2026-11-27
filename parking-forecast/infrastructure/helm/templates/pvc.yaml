@@ -17,19 +17,3 @@ spec:
   {{- if .Values.data.storageClassName }}
   storageClassName: {{ .Values.data.storageClassName }}
   {{- end }}
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: {{ .Release.Name }}-result
-  labels:
-    {{- include "parking-forecast.labels" . | nindent 4 }}
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: {{ .Values.result.storage }}
-  {{- if .Values.result.storageClassName }}
-  storageClassName: {{ .Values.result.storageClassName }}
-  {{- end }}
